@@ -6,7 +6,7 @@ Created on Wed Jul 10 21:52:13 2013
 """
 import pygame, sys, time, socket
 import celestialdata, kepler
-from numpy import array
+from numpy import array, degrees
 
 FONT = None
 
@@ -15,42 +15,50 @@ class System:
         self.network = Network(self)
         self.display = None
         self.celestials = {}
+        self.vessels = {}
+        self.UT = 0
+        self.temp = []
         
         f = open("celestial.txt","w")
         f.close()
 
     def parse(self,data):
-        print "PARSE:",data
+        #print "PARSE:",data
         tok = data.split('\t')
         vType = tok[0]   # Type, should be V
         if vType == "V":
             vStatus = tok[1] # Status (flying, etc.)
             vPID = tok[2]    # Unique ID
             vT = tok[3]      # Game time
-            vMT = tok[4]     # Mission time
-            vAcc =  tok[5]   # Acceleration magnitude
-            vAlt = tok[6]    # Altitude
-            vAnM = tok[7]    # Angular momentum
-            vAnV = tok[8]    # Angular velocity
-            vAtm = tok[9]    # Atmosphere density
-            vGF  = tok[10]   # Gee force
-            vGFi = tok[11]   # Geefore immediate
-            vRAlt = tok[12]  # Height from surface (altitude?)
-            vRAlt2 = tok[13] # Height from terrain (radar altimeter)
-            vHor = tok[14]   # Horizontal surface spee d
-            vLat = tok[15]   # Latitude
-            vLon = tok[16]   # Longitude
-            vOVel = tok[17]  # Orbital velocity
-            vPQSAlt = tok[18]# PQS altitude ?
-            vRBVel = tok[19] # RB velocity?
-            vSPAcc = tok[20] # Specific accceleration
-            vSVel = tok[21]  # Surface velocity (horizontal?)
-            vSPrs = tok[22]  # Static pressure
-            vTAlt = tok[23]  # Terrain altitude
-            vVVel = tok[24]  # Vertical speed
-            vDPrs = tok[25]  # Dynamic pressure (atm)
-            vSPrs2 = tok[26] # Static pressure (atm)
-            vTemp = tok[27]  # Temperature
+            self.UT = float(vT)
+            
+            vRV = tok[4]
+            vMT = tok[5]     # Mission time
+            vAcc =  tok[6]   # Acceleration magnitude
+            vAlt = tok[7]    # Altitude
+            vAnM = tok[8]    # Angular momentum
+            vAnV = tok[9]    # Angular velocity
+            vAtm = tok[10]    # Atmosphere density
+            vGF  = tok[11]   # Gee force
+            vGFi = tok[12]   # Geefore immediate
+            vRAlt = tok[13]  # Height from surface (altitude?)
+            vRAlt2 = tok[14] # Height from terrain (radar altimeter)
+            vHor = tok[15]   # Horizontal surface spee d
+            vLat = tok[16]   # Latitude
+            vLon = tok[17]   # Longitude
+            print "vlat",vLat
+            print "vlon",vLon
+            vOVel = tok[18]  # Orbital velocity
+            vPQSAlt = tok[19]# PQS altitude ?
+            vRBVel = tok[20] # RB velocity?
+            vSPAcc = tok[21] # Specific accceleration
+            vSVel = tok[22]  # Surface velocity (horizontal?)
+            vSPrs = tok[23]  # Static pressure
+            vTAlt = tok[24]  # Terrain altitude
+            vVVel = tok[25]  # Vertical speed
+            vDPrs = tok[26]  # Dynamic pressure (atm)
+            vSPrs2 = tok[27] # Static pressure (atm)
+            vTemp = tok[28]  # Temperature
             
             print "Status:",vStatus
             print "Velocity:",vSVel
@@ -60,18 +68,24 @@ class System:
             print "SAlt:",vRAlt
             print "TAlt:",vRAlt2
             if vStatus == "L" or vStatus == "S" or vStatus == "P" or vStatus == "F":
-                vRef = tok[28]
+                vRef = tok[29]
             else:
-                vRef = tok[28]
-                vOEph = tok[29]
-                vOSma = tok[30]
-                VOEcc = tok[31]
-                VOInc = tok[32]
-                VOLAN = tok[33]
-                VOAoP = tok[34]
-                VOM0 = tok[35]
+                vRef = tok[29]
+                vOEph = tok[30]
+                vOSma = tok[31]
+                VOEcc = tok[32]
+                VOInc = tok[33]
+                VOLAN = tok[34]
+                VOAoP = tok[35]
+                VOM0 = tok[36]
+                
+            rv = vRV.split(':')
+            trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
+            self.temp.append((vPID,trv))
+            
+            
         elif vType == "C":
-            print "Celestial data"
+            #print "Celestial data"
             f = open("celestial.txt","a")
             f.write(data + "\n")
             f.close()
@@ -92,9 +106,15 @@ class System:
                 else:
                     atm = float(atm)
                 rv = rv.split(':')
-                trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[0]), float(rv[1]), float(rv[2])])]
+                trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
                 self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm)
-                self.display.viewPlot.draw()
+                if name == "Eeloo":
+                    self.display.viewPlot.draw()
+                
+            if name == "Kerbin":
+                for vessel in self.temp:
+                    self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
+                self.display.viewGroundTrack.draw()
             
             
             
@@ -217,8 +237,46 @@ class GroundTrack(Canvas):
         self.latitude  = 180
         
         #self.thetas 
+    def cc(self,pos):
+        ''' Ground track 0,0 is top left corner of the map image '''
+        #pos[0] %= 360.0
+        pos[0] *= 1.6666666666666667
+        pos[1] *= -1.6666666666666667
+        pos[0] += 100+300
+        pos[1] += 150
+        
+        return [int(pos[0]), int(pos[1])]
+        
     def draw(self):
-        pass
+        self.fill((0,0,0))
+        self.blit(self.map,(0,0))
+        
+        for vessel in self.display.system.vessels.values():
+            curpos = self.cc(vessel.orbit.get_ground(self.display.system.UT))
+            print "DRAWING INTO",curpos
+            print "!"*50
+            print "UT",self.display.system.UT
+            pygame.draw.circle(self,[255,255,255],curpos,3)
+            period = vessel.orbit.getPeriod()
+            step = period / 30
+            #points = []
+            lp = np = None
+            
+            for i in xrange(60):
+                lp = np
+                i -= 30
+                np = self.cc(vessel.orbit.get_ground(self.display.system.UT + i*step))
+                if i == -30:
+                    continue
+                # TODO: this is just for showcasing
+                print "###",i,np,"<",lp
+                if np[0] < lp[0]:
+                    print "!"*30+"CUT"*10
+                    continue
+                else:
+                    pygame.draw.line(self,[255,255,255],lp,np)
+            #pygame.draw.lines(self,[255,255,255],True,points)
+            
     
     
 class Plot(Canvas):
@@ -230,23 +288,42 @@ class Plot(Canvas):
         self.draw()
     
     def cc(self,pos):
-        pos[0] += int(self.resolution[0]/2.0)
-        pos[1] += int(self.resolution[1]/2.0)
-        return pos
+        pos[0] += self.resolution[0]/2.0
+        pos[1] += self.resolution[1]/2.0
+        return [int(pos[0]),int(pos[1])]
         
     def draw(self):
         print "Redraw"
         self.fill([0,0,0])
         # Draw sun
         
-        pygame.draw.circle(self,[255,255,0],self.cc([0,0]),3)
+        pygame.draw.circle(self,[255,255,0],self.cc([0,0]),4)
         
         for celestial in self.display.system.celestials.values():
             if celestial.parent == self.display.system.celestials["Sun"]:
                 print "Drawing",celestial.name
                 if celestial.name == "Kerbin":
-                    color = [0,255,0]
+                    color = pygame.Color("blue")
                     radius = 2
+                elif celestial.name == "Moho":
+                    color = pygame.Color("brown")
+                    radius = 1
+                elif celestial.name == "Eve":
+                    color = pygame.Color("purple")
+                    radius = 2
+                elif celestial.name == "Duna":
+                    color = pygame.Color("orange")
+                    radius = 2
+                elif celestial.name == "Dres":
+                    color = pygame.Color("gray")
+                    radius = 2
+                elif celestial.name == "Jool":
+                    color = pygame.Color("green")
+                    radius = 3
+                elif celestial.name == "Eeloo":
+                    color = pygame.Color("cyan")
+                    radius = 2
+                    
                 else:
                     color = [255,255,255]
                     radius = 2
@@ -258,6 +335,20 @@ class Plot(Canvas):
 
                 print "DRAWING AT",x,y
                 pygame.draw.circle(self,color,self.cc([x,y]),radius)
+                
+                # Draw orbit
+                
+                period = celestial.orbit.getPeriod()
+                step = period / 40
+                points = []
+                for i in xrange(40):
+     
+                    np = celestial.orbit.get(i*step)[0]
+                    nx = int(np[0] / 5e8)
+                    ny = int(np[1] / 5e8)
+                    points.append(self.cc([nx,ny]))
+                    
+                pygame.draw.lines(self,color,True,points)
                 
         
 class Display:
@@ -281,7 +372,7 @@ class Display:
         self.monitor = pygame.Surface((self.basewidth,self.baseheight))
         self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
         
-        self.viewGroundTrack = Canvas(self,(800,300))
+        self.viewGroundTrack = GroundTrack(self,(800,300))
         self.viewPlot = Plot(self,(400,300))
         self.viewData = MainMenu(self,(400,300))
         
@@ -298,6 +389,9 @@ class Display:
         #self.font = pygame.font.match_font("consolas")
         #self.font = pygame.font.Font(self.font,12)
         
+        self.icon = pygame.image.load("icon.png")
+        pygame.display.set_icon(self.icon)
+        pygame.display.set_caption("KSP Mission Control")
         
         self.map_kerbin = pygame.image.load("maps/kerbin.png")
         self.viewGroundTrack.blit(self.map_kerbin,(0,0))

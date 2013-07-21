@@ -4,9 +4,10 @@
  * this stuff is worth it, you can buy me a beer in return.
 """
 
-from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan 
+from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
+PI2 = pi * 2
 
 class Orbit:
     ''' This class provides orbit prediction '''
@@ -83,7 +84,7 @@ class Orbit:
         
         # Auxilary variable xi
         self.xi = self.v0l**2.0 / 2.0 - self.mu / self.r0l 
-        
+        print "xi",self.xi
         if self.xi == 0:
             self.a = inf
             self.alpha = 1.0
@@ -179,7 +180,7 @@ class Orbit:
         print "Position:",R
         print "Velocity:",V
         print "Check:",f*gd-fd*g
-        return R,V
+        return [R,V]
             
     def FindC2C3(self, psi):
         if psi > 1e-20:
@@ -197,11 +198,14 @@ class Orbit:
                 
     
     
-    def get_ground(self,r,t):
+    def get_ground(self,t):
+        
+        r = self.get(t)[0]
         
         # Theta is the angular velocity (rad/s) of the planet
-        theta = -0.000290888209 * t
-        
+        #theta =  0.000290888209 * t
+        #theta = -0.0002908882 * t
+        theta =  -0.0002908882086657216 * t - 1.5707963267948966
         # Create a rotation matrix
         rot_matrix = array([[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]])
         
@@ -212,7 +216,7 @@ class Orbit:
         ur = rr / norm(rr)
         
         # Solve declination
-        declination = degrees(arcsin(ur[2]))
+        declination = arcsin(ur[2])
         
         # Solve right ascension
         if ur[1] > 0:
@@ -220,9 +224,14 @@ class Orbit:
         elif ur[1] <= 0:
             rasc = -degrees(arccos(ur[0]/ cos(declination)))
            # print "360-",np.degrees(np.arccos(ur[0]/ np.cos(declination)))
+        declination = degrees(declination)
+        print "theta",degrees(theta),"degrees, rad",theta
         print "Declination:",declination,"degrees, rad",radians(declination)
         print "R. ascension:",rasc,"degrees, rad",radians(rasc)
         print "Cos declination",cos(declination)
         print "ur",ur
     
-        return declination,rasc
+        return [rasc,declination]
+        
+    def getPeriod(self):
+        return PI2*sqrt(self.a**3/self.mu)

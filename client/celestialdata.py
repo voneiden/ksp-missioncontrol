@@ -42,6 +42,10 @@ class Sun(Celestial):
 class Planet(Celestial):
     def __init__(self,parent,name,**kwargs):
         Celestial.__init__(self,parent,name,**kwargs)
+
+class Vessel(Celestial):
+    def __init__(self,parent,name,**kwargs):
+        Celestial.__init__(self,parent,name,**kwargs)
         
         '''
 Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)
