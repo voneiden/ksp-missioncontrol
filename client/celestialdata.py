@@ -4,21 +4,24 @@ Created on Wed Jul 17 21:49:42 2013
 
 @author: snaipperi
 """
-from numpy import array, cross, norm, inf, pi, arccos
+from numpy import array, cross, inf, pi, arccos
+from numpy.linalg import norm
+
+import kepler
 
 PI2 = 2*pi
 #Define constants
 class Celestial(object):
-    def __init__(self,parent,**kwargs):
+    def __init__(self,parent,name,**kwargs):
         self.parent = parent
+        self.name = name
         
-        if "elements" in kwargs:
-            pass
-        elif "rv" in kwargs:
-            r = kwargs["rv"][0]
-            v = kwargs["rv"][1]
-            
-            self.orbitFromVectors(r,v)
+        if "trv" in kwargs and self.parent:
+            self.orbit = kepler.Orbit(self.parent,**kwargs)
+        #elif "elements" in kwargs:
+        #    pass
+        elif not self.parent:
+            self.orbit = None
         else:
             raise AttributeError
             
@@ -28,52 +31,19 @@ class Celestial(object):
         else:
             self.mu = None
     
-    def orbitFromVectors(self,vec_r,vec_v):
-        ''' Based on Vallado '''
-        if not isinstance(vec_r,array) or isinstance(vec_v,array):
-            raise AttributeError("Needs array")
-        
-        mu = self.parent.mu
-        
-        nrm_r = norm(vec_r)
-        nrm_v = norm(vec_v)        
-        
-        # (1) Calculate angular momentum
-        vec_h = cross(vec_r, vec_v)
-        nrm_h = norm(vec_h)
-        
-        # (2) Calculate node vector
-        vec_n = cross(array([0,0,1]), vec_h)
-        
-        # (3) Calculate eccentricity vector
-        
-        vec_e = ( (nrm_v**2 - mu/nrm_r)*vec_r - (vec_r.dot(vec_r))*vec_v ) / mu
-        nrm_e = norm(e)
-        
-        if round(nrm_e,6) == 1.0:
-            periapsis = nrm_h**2 / mu
-            a = inf
-        else:
-            xi = nrm_v**2 / 2 - mu/nrm_r
-            a = -mu/(2*xi)
-            periapsis = a (1-nrm_e)
-            
-        
-        i = arccos(vec_h[2] / nrm_h)
-        if vec_n[1] < 0:
-            i = PI2 - i
+
         
         
         
 class Sun(Celestial):
-    def __init__(self):
-        Celestial.__init__(self)
+    def __init__(self,**kwargs):
+        Celestial.__init__(self,None,"Sun",**kwargs)
         
 class Planet(Celestial):
-    def __init__(self):
-        Celestial.__init__(self)
+    def __init__(self,parent,name,**kwargs):
+        Celestial.__init__(self,parent,name,**kwargs)
         
-        
+        '''
 Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)
 
 Kerbin = Planet("Kerbin", Kerbol,
@@ -163,3 +133,4 @@ Eeloo = Planet("Eeloo",Kerbol,
                    mu=74410815000 ,
                    radius=210000,
                    SoI=119082940) 
+                   '''

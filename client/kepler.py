@@ -11,25 +11,65 @@ from numpy.linalg import norm
 class Orbit:
     ''' This class provides orbit prediction '''
     
-    def __init__(self,mu,r0,v0,t0):
+    def __init__(self,parent,**kwargs):
         ''' 
-        mu - gravitational constant of the parent body
-        r0 - initial position (3d array)
-        v0 - initial velocity (3d array)
-        t0 - initial epoch (time)
+        kwargs needs to contain either elements or trv (time, pos, vel)
         '''
-        self.mu = mu
-        self.r0 = r0
-        self.v0 = v0
-        self.t0 = t0
+        self.parent = parent
+        self.mu = parent.mu
         
-        self.recalculate()
+        if "elements" in kwargs:
+            self.recalculateFromElements(kwargs["elements"])
+        elif "trv" in kwargs:
+            self.recalculateFromTRV(kwargs["trv"])
+        else:
+            raise AttributeError
         
-    def recalculate(self):
+        
+        
+        
+    def recalculateFromElements(self,elements):
+        ''' Based on Vallado '''
+        if not isinstance(vec_r,array) or isinstance(vec_v,array):
+            raise AttributeError("Needs array")
+        
+        mu = self.mu
+        
+        nrm_r = norm(vec_r)
+        nrm_v = norm(vec_v)        
+        
+        # (1) Calculate angular momentum
+        vec_h = cross(vec_r, vec_v)
+        nrm_h = norm(vec_h)
+        
+        # (2) Calculate node vector
+        vec_n = cross(array([0,0,1]), vec_h)
+        
+        # (3) Calculate eccentricity vector
+        
+        vec_e = ( (nrm_v**2 - mu/nrm_r)*vec_r - (vec_r.dot(vec_r))*vec_v ) / mu
+        nrm_e = norm(vec_e)
+        
+        if round(nrm_e,6) == 1.0:
+            periapsis = nrm_h**2 / mu
+            a = inf
+        else:
+            xi = nrm_v**2 / 2 - mu/nrm_r
+            a = -mu/(2*xi)
+            periapsis = a (1-nrm_e)
+            
+        
+        i = arccos(vec_h[2] / nrm_h)
+        if vec_n[1] < 0:
+            i = PI2 - i
+    def recalculateFromTRV(self,trv):
         ''' 
         Call this function every time the initial parameters are changed.
         It calculates some auxilary variables.
         '''
+        self.t0 = trv[0]
+        self.r0 = trv[1]
+        self.v0 = trv[2]
         
         print "Initializing.."
         print "mu",self.mu

@@ -4,12 +4,20 @@ Created on Wed Jul 10 21:52:13 2013
 
 @author: snaipperi
 """
-import pygame,sys,time, socket
+import pygame, sys, time, socket
+import celestialdata, kepler
+from numpy import array
+
 FONT = None
 
 class System:
     def __init__(self):
         self.network = Network(self)
+        self.display = None
+        self.celestials = {}
+        
+        f = open("celestial.txt","w")
+        f.close()
 
     def parse(self,data):
         print "PARSE:",data
@@ -62,7 +70,33 @@ class System:
                 VOLAN = tok[33]
                 VOAoP = tok[34]
                 VOM0 = tok[35]
-        
+        elif vType == "C":
+            print "Celestial data"
+            f = open("celestial.txt","a")
+            f.write(data + "\n")
+            f.close()
+            
+            name = tok[1]
+            ref = tok[2]
+            rv = tok[3]
+            mu = tok[4]
+            radius = tok[5]
+            SoI = tok[6]
+            atm = tok[7]
+            
+            if name == "Sun":
+                self.celestials[name] = celestialdata.Sun(mu=float(mu),radius=float(radius))
+            else:
+                if atm == "None":
+                    atm = False
+                else:
+                    atm = float(atm)
+                rv = rv.split(':')
+                trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[0]), float(rv[1]), float(rv[2])])]
+                self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm)
+                self.display.viewPlot.draw()
+            
+            
             
 class Button(object):
     ''' Button object for easy clickin' '''
@@ -182,12 +216,50 @@ class GroundTrack(Canvas):
         self.longitude = 180
         self.latitude  = 180
         
-        self.thetas 
+        #self.thetas 
     def draw(self):
         pass
     
     
+class Plot(Canvas):
+    def __init__(self,display,resolution):
+        Canvas.__init__(self,display,resolution)
+        self.display = display
+        self.resolution = resolution
+        
+        self.draw()
+    
+    def cc(self,pos):
+        pos[0] += int(self.resolution[0]/2.0)
+        pos[1] += int(self.resolution[1]/2.0)
+        return pos
+        
+    def draw(self):
+        print "Redraw"
+        self.fill([0,0,0])
+        # Draw sun
+        
+        pygame.draw.circle(self,[255,255,0],self.cc([0,0]),3)
+        
+        for celestial in self.display.system.celestials.values():
+            if celestial.parent == self.display.system.celestials["Sun"]:
+                print "Drawing",celestial.name
+                if celestial.name == "Kerbin":
+                    color = [0,255,0]
+                    radius = 2
+                else:
+                    color = [255,255,255]
+                    radius = 2
+                    
+                rv = celestial.orbit.get(0)
+                r = rv[0]
+                x = int(r[0] / 5e8)
+                y = int(r[1] / 5e8)
 
+                print "DRAWING AT",x,y
+                pygame.draw.circle(self,color,self.cc([x,y]),radius)
+                
+        
 class Display:
     def __init__(self,system,width=800,height=600):
         pygame.init()
@@ -198,6 +270,8 @@ class Display:
         
         
         self.system = system
+        self.system.display = self
+        
         self.basewidth = width
         self.baseheight = height
         
@@ -208,7 +282,7 @@ class Display:
         self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
         
         self.viewGroundTrack = Canvas(self,(800,300))
-        self.viewPlot = Canvas(self,(400,300))
+        self.viewPlot = Plot(self,(400,300))
         self.viewData = MainMenu(self,(400,300))
         
         self.focus = None
