@@ -7,6 +7,8 @@
 from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
+import logging
+
 PI2 = pi * 2
 
 class Orbit:
@@ -14,7 +16,8 @@ class Orbit:
     
     def __init__(self,parent,**kwargs):
         ''' 
-        kwargs needs to contain either elements or trv (time, pos, vel)
+        kwargs needs to contain currently trv (time, pos, vel)
+		Calculating from elements is not available yet
         '''
         self.parent = parent
         self.mu = parent.mu
@@ -30,10 +33,14 @@ class Orbit:
         
         
     def recalculateFromElements(self,elements):
-        ''' Based on Vallado '''
+        ''' 
+		Based on Vallado, calculates an orbit from orbital elements
+		Not ready to be used yet!
+		'''
         if not isinstance(vec_r,array) or isinstance(vec_v,array):
             raise AttributeError("Needs array")
         
+		# Define initial variables
         mu = self.mu
         
         nrm_r = norm(vec_r)
@@ -63,20 +70,26 @@ class Orbit:
         i = arccos(vec_h[2] / nrm_h)
         if vec_n[1] < 0:
             i = PI2 - i
-    def recalculateFromTRV(self,trv):
+    
+	def recalculateFromTRV(self,trv):
         ''' 
+		Based on Vallado. This function calculates orbit parameters from given
+		trv = [t0,r0,v0] where
+		t0 - Time of observation (float)
+		r0 - Position vector (numpy.array) of observation
+		v0 - Velocity vector (numpy.array) of observation
+		
         Call this function every time the initial parameters are changed.
-        It calculates some auxilary variables.
         '''
         self.t0 = trv[0]
         self.r0 = trv[1]
         self.v0 = trv[2]
         
-        print "Initializing.."
-        print "mu",self.mu
-        print "r0",self.r0 
-        print "v0",self.v0
-        print "t0",self.t0
+        logging.debug("Initializing..")
+        logging.debug("mu %f"%self.mu)
+        logging.debug("r0 %s"%str(self.r0))
+        logging.debug("v0 %s"%str(self.v0))
+        logging.debug("t0 %s"%str(self.t0))
         
         # Normalized position and velocity vectors
         self.r0l = norm(self.r0)
@@ -84,7 +97,8 @@ class Orbit:
         
         # Auxilary variable xi
         self.xi = self.v0l**2.0 / 2.0 - self.mu / self.r0l 
-        print "xi",self.xi
+        logging.debug("xi %f"%self.xi)
+		
         if self.xi == 0:
             self.a = inf
             self.alpha = 1.0
@@ -100,7 +114,7 @@ class Orbit:
         self.h = cross(self.r0,self.v0)
         self.hl = norm(self.h)
         
-        # Umm.. 
+        # Umm.. p is not period
         self.p = self.hl**2 / self.mu
         
         # Dot product of position and velocity        
@@ -111,46 +125,50 @@ class Orbit:
         
         
     def get(self,t):
-        ''' Get position and velocity at time t '''
+        ''' 
+		Get 3D position and velocity at time t 
+		Returns [r (numpy.array), v (numpy.array)]
+		'''
         
-        # Delta-t
+        # (1) Delta-t
         dt = t - self.t0
         
         
-        print "Semi-major",self.a
-        print "alpha:",self.alpha
+        logging.debug("Semi-major: %f"%self.a)
+        logging.debug("alpha: %f"%self.alpha)
         
-        # Create the initial X variable guess for
-        # a) Elliptic or circular orbit
+        # (2) Create the initial X variable guess for
+        #  2a) Elliptic or circular orbit
         if self.alpha > 1e-20:
             X0 = sqrt(self.mu) * dt * self.alpha
         
-        # b) Parabolic orbit
+        #  2b) Parabolic orbit
         elif abs(self.alpha) < 1e-20:
             self.s = arctan((1)/(3*sqrt(self.mu / self.p**3)*dt)) / 2.0
-            print "s:",self.s
             self.w = arctan(tan(self.s)**(1.0/3.0))
             X0 = sqrt(self.p) * 2 * (cos(2*self.w)/sin(2*self.w))
+			logging.debug("s: %f"%self.s)
         
-        # c) Hyperbolic orbit
+        #  2c) Hyperbolic orbit
         elif self.alpha < -1e-20:
             X0 = sign(dt) * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sign(dt) * sqrt(-self.mu * self.a) * (1- self.r0 * self.alpha)))
     
         else:
-            print "Error, alpha is",self.alpha
+            logging.error("Error, ALPHA")
             raise SyntaxError
         
-        print "X0 is",X0
+        logging.debug("X0: %f"%X0)
         Xnew = X0
         
-        # Loop until we get a good value
+        # (3) Loop until we get an accurate (tolerance 1e-6) value for X
         while True:
             psi = Xnew**2 * self.alpha
-            print "psi",psi
             c2,c3 = self.FindC2C3(psi)
-            print "c2",c2
-            print "c3",c3
-            r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
+			
+			logging.debug("psi: %f"%psi)
+            logging.debug("c2: %f"%c2)
+            logging.debug("c3: %f"%c3)
+			
             r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
 
             Xold = Xnew
@@ -159,79 +177,98 @@ class Orbit:
             if abs(Xnew - Xold) < 1e-6:
                 break
         
-        print "X optimized at",Xnew
+        logging.debug("X optimized at %f"%Xnew)
         
-        # Calculate universal functions f, g and f-dot and g-dot
+        # (4) Calculate universal functions f, g and f-dot and g-dot
         f = 1 - Xnew**2/self.r0l * c2
         g = dt - Xnew**3 / sqrt(self.mu) * c3
         gd = 1 - Xnew**2/r * c2
         fd = sqrt(self.mu) / (r*self.r0l) * Xnew * (psi * c3 - 1)
 
-        print "f",f
-        print "g",g
-        print "fd",fd
-        print "gd",gd
+        logging.debug("f: %f"%f)
+        logging.debug("g: %f"%g)
+        logging.debug("fd: %f"%fd)
+        logging.debug("gd: %f"%gd)
+		
+		# 
         R = f * self.r0 + g * self.v0 
         V = fd * self.r0 + gd * self.v0 
-        print
-        print "r",r
-        print "r0l",self.r0l
-        
-        print "Position:",R
-        print "Velocity:",V
-        print "Check:",f*gd-fd*g
+		
+        logging.debug( "r: %f"%r)
+        logging.debug( "r0l: %f"%self.r0l)
+        logging.debug( "Position: %s"%str(R))
+        logging.debug( "Velocity: %s"%str(V))
+        logging.debug( "Check: %f"%(f*gd-fd*g))
+		
         return [R,V]
             
     def FindC2C3(self, psi):
+		'''
+		Finds the helper variables c2 and c3 when given psi
+		'''
         if psi > 1e-20:
-            c2 = (1 - cos(sqrt(psi))) / psi
-            c3 = (sqrt(psi) - sin(sqrt(psi))) / sqrt(psi**3)
+			sqrtpsi = sqrt(psi)
+            c2 = (1 - cos(sqrtpsi)) / psi
+            c3 = (sqrtpsi - sin(sqrtpsi)) / sqrt(psi**3)
         else:
             if psi < -1e-20:
-                c2 = (1 - cosh(sqrt(-psi))) / psi
-                c3 = (sinh(sqrt(-psi)) - sqrt(-psi)) / sqrt(-psi**3)
+				sqrtpsi = sqrt(-psi)
+                c2 = (1 - cosh(sqrtpsi)) / psi
+                c3 = (sinh(sqrtpsi) - sqrtpsi) / sqrt(-psi**3)
                 
             else:
                 c2 = 0.5
                 c3 = 1.0/6.0
+				
         return (c2,c3)
                 
     
     
-    def get_ground(self,t):
-        
+    def getGround(self,t):
+        ''' 
+		Get ground position given t
+		Currently supports only Kerbin
+		
+				 float			  float
+		returns [right ascension, declination]
+		'''
+		
+		# (1) Get current 3D position
         r = self.get(t)[0]
         
-        # Theta is the angular velocity (rad/s) of the planet
-        #theta =  0.000290888209 * t
-        #theta = -0.0002908882 * t
+		# (2) Calculate theta (planet rotation)
+		# -0.00029.. Kerbins angular velocity rad(/s)
+		#  1.57079.. 90 degrees, initial t=0 rotation (depends on map?)
+		
         theta =  -0.0002908882086657216 * t - 1.5707963267948966
-        # Create a rotation matrix
+        
+		# (3) Create a rotation matrix and rotate the current position
         rot_matrix = array([[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]])
-        
-        # Rotate our "position"
         rr = dot(r,rot_matrix)
-        
-        # Normalize rotated position vector
         ur = rr / norm(rr)
         
-        # Solve declination
+        # (4) Solve declination (latitude)
         declination = arcsin(ur[2])
         
-        # Solve right ascension
+        # (5) Solve right ascension (longitude)
         if ur[1] > 0:
             rasc = degrees(arccos(ur[0] / cos(declination)))
         elif ur[1] <= 0:
             rasc = -degrees(arccos(ur[0]/ cos(declination)))
-           # print "360-",np.degrees(np.arccos(ur[0]/ np.cos(declination)))
+		
+		# (6) Data to degrees, NOTE the order of return
         declination = degrees(declination)
-        print "theta",degrees(theta),"degrees, rad",theta
-        print "Declination:",declination,"degrees, rad",radians(declination)
-        print "R. ascension:",rasc,"degrees, rad",radians(rasc)
-        print "Cos declination",cos(declination)
-        print "ur",ur
+        
+		logging.debug("Theta: %f degrees, rad %f"%(degrees(theta),theta))
+        logging.debug("Declination: %f degrees, rad %f"%(declination,radians(declination)))
+        logging.debug("R. ascension: %f degrees, rad %f"%(rasc,radians(rasc)))
+        logging.debug("ur: %s"%str(ur))
     
         return [rasc,declination]
         
     def getPeriod(self):
+		''' 
+		Gets the period of orbit.
+		Note! Currently works only on e<1 orbits!
+		'''
         return PI2*sqrt(self.a**3/self.mu)

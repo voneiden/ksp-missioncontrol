@@ -10,7 +10,12 @@ from numpy import array, degrees
 
 FONT = None
 
-class System:
+class System(object):
+	''' 
+	Core class
+	
+	Links together the network, display and available KSP data
+	'''
     def __init__(self):
         self.network = Network(self)
         self.display = None
@@ -23,10 +28,13 @@ class System:
         f.close()
 
     def parse(self,data):
-        #print "PARSE:",data
+		''' Parse incoming TCP data '''
+
         tok = data.split('\t')
-        vType = tok[0]   # Type, should be V
-        if vType == "V":
+        oType = tok[0] # Object type
+		
+		# Object type (V)essel
+        if oType == "V":
             vStatus = tok[1] # Status (flying, etc.)
             vPID = tok[2]    # Unique ID
             vT = tok[3]      # Game time
@@ -46,8 +54,10 @@ class System:
             vHor = tok[15]   # Horizontal surface spee d
             vLat = tok[16]   # Latitude
             vLon = tok[17]   # Longitude
-            print "vlat",vLat
-            print "vlon",vLon
+			
+            logging.info("vlat: %s"%str(vLat))
+            logging.info("vlon: %s"%str(vLon)
+			
             vOVel = tok[18]  # Orbital velocity
             vPQSAlt = tok[19]# PQS altitude ?
             vRBVel = tok[20] # RB velocity?
@@ -60,15 +70,11 @@ class System:
             vSPrs2 = tok[27] # Static pressure (atm)
             vTemp = tok[28]  # Temperature
             
-            print "Status:",vStatus
-            print "Velocity:",vSVel
-            print "Altitude:",vAlt
-            print "Pressure:",vSPrs
-            print "Dynamic pressure:",vDPrs
-            print "SAlt:",vRAlt
-            print "TAlt:",vRAlt2
+            # If ship status (L)anded, (S)plashed, (P)relaunch or (F)lying
             if vStatus == "L" or vStatus == "S" or vStatus == "P" or vStatus == "F":
                 vRef = tok[29]
+				
+			# Else (O)rbital, (S-)ub(-O)rbital or (E)scaping
             else:
                 vRef = tok[29]
                 vOEph = tok[30]
@@ -78,14 +84,19 @@ class System:
                 VOLAN = tok[34]
                 VOAoP = tok[35]
                 VOM0 = tok[36]
-                
+            
+			# Parse position and velocity
             rv = vRV.split(':')
             trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
+			
+			# TODO: Stash the vessel for now, load it after Eeloo has been received
             self.temp.append((vPID,trv))
             
-            
-        elif vType == "C":
-            #print "Celestial data"
+        
+		# Object type (C)elestial body
+        elif oType == "C":
+
+			# DEBUG: saving celestial stuff into a text file
             f = open("celestial.txt","a")
             f.write(data + "\n")
             f.close()
@@ -98,6 +109,7 @@ class System:
             SoI = tok[6]
             atm = tok[7]
             
+			# Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
                 self.celestials[name] = celestialdata.Sun(mu=float(mu),radius=float(radius))
             else:
@@ -105,12 +117,17 @@ class System:
                     atm = False
                 else:
                     atm = float(atm)
+					
+				# Parse orbit and generate it
                 rv = rv.split(':')
                 trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
                 self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm)
+				
+				# Eeloo is the last planet, so render the viewplot
                 if name == "Eeloo":
                     self.display.viewPlot.draw()
-                
+            
+			# TODO unstash test ships
             if name == "Kerbin":
                 for vessel in self.temp:
                     self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
@@ -119,7 +136,16 @@ class System:
             
             
 class Button(object):
-    ''' Button object for easy clickin' '''
+    ''' 
+	Button object for easy clickin' 
+	
+	Shape is a rectangle
+	Text is.. text
+	bgcolor - background color
+	bcolor  - text color
+	bgactive - hilight when hovering mouse over
+	bgclick  - hilight when clicking
+	'''
     
     def __init__(self,shape,text,bgcolor=(0,0,0),bgactive=(0,50,0),bcolor=(0,255,0),bgclick=(0,150,0)):
         self.shape = shape
@@ -146,6 +172,13 @@ class Button(object):
     
 
 class Canvas(pygame.Surface):
+	'''
+	Base canvas class
+	
+	Implements mouse tracking and clicks
+	and defocus events. You probably want
+	to subclass this.
+	'''
     def __init__(self,display,resolution):
         pygame.Surface.__init__(self,resolution)
         
@@ -154,19 +187,25 @@ class Canvas(pygame.Surface):
         self.activeButton = None
         
     def motion(self,pos):
-        print "motion",self,pos
+	''' Handle mouse motion '''
+        print("motion %s"%str(self,pos))
+		
         rect = pygame.Rect(pos,(1,1))
         newActive = None
         
+		# Check for button highlights
         for button in self.buttons:
             if button.shape.contains(rect):
                 button.render(self,True)
                 newActive = button
-                
+        
+		# And remove hilight from old button if any
         if self.activeButton and self.activeButton != newActive:
             self.activeButton.render(self)
         self.activeButton = newActive
+		
     def click(self,pos):
+	''' Handle mouse click '''
         print "click",self,pos
         rect = pygame.Rect(pos,(1,1))
         for button in self.buttons:
@@ -179,13 +218,16 @@ class Canvas(pygame.Surface):
                 pygame.event.post(pygame.event.Event(pygame.USEREVENT+1,{'canvas':self}))
                 
         print "Done"
+		
     def testButton(self):
+	''' Obsolete test button for debugging '''
         shape = pygame.Rect(10,10,40,20)
         button = Button(shape,"Test")
         self.buttons.append(button)
         button.render(self)
         
     def defocus(self):
+	''' Handle canvas defocus (mouse moves out of canvas boundary '''
         print "DEFOCUS"
         if self.activeButton:
             self.activeButton.render(self)
@@ -194,6 +236,7 @@ class Canvas(pygame.Surface):
 
 
 class MainMenu(Canvas):
+	''' Canvas for MainMenu '''
     def __init__(self,display,resolution):
         Canvas.__init__(self,display,resolution)
         self.display = display
@@ -223,6 +266,7 @@ class MainMenu(Canvas):
         
 
 class GroundTrack(Canvas):
+	''' Canvas for rendering ground track '''
     def __init__(self,display,resolution):
         Canvas.__init__(self,display,resolution)
         self.display = display
@@ -280,6 +324,7 @@ class GroundTrack(Canvas):
     
     
 class Plot(Canvas):
+	''' Canvas for rendering orbit plots '''
     def __init__(self,display,resolution):
         Canvas.__init__(self,display,resolution)
         self.display = display
@@ -352,6 +397,7 @@ class Plot(Canvas):
                 
         
 class Display:
+	''' The display class handles events, window resizing and maintains correct aspect ratio '''
     def __init__(self,system,width=800,height=600):
         pygame.init()
         
@@ -368,7 +414,7 @@ class Display:
         
         self.window = pygame.display.set_mode((self.basewidth, self.baseheight),pygame.RESIZABLE)
         
-        # The monitor is always 800x600, 4:3
+        # The monitor is always 800x600, 4:3. Consider it a virtual monitor.
         self.monitor = pygame.Surface((self.basewidth,self.baseheight))
         self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
         
@@ -386,9 +432,6 @@ class Display:
         
         self.x = 30
         
-        #self.font = pygame.font.match_font("consolas")
-        #self.font = pygame.font.Font(self.font,12)
-        
         self.icon = pygame.image.load("icon.png")
         pygame.display.set_icon(self.icon)
         pygame.display.set_caption("KSP Mission Control")
@@ -405,6 +448,7 @@ class Display:
         sw = float(self.window.get_width())
         sh = float(self.window.get_height())
         
+		# 4:3 aspect ratio
         if sw/sh >= 1.333333333:
             self.transformHeight = int(sh)
             self.transformWidth = int(640 * (sh / 480.0))
@@ -414,7 +458,9 @@ class Display:
         
         self.transformCenterWidth = int((sw-self.transformWidth)/2)
         self.transformCenterHeight = int((sh-self.transformHeight)/2)
-            
+    
+	# Obsolete?
+	"""
     def render_groundTrack(self):
         self.viewGroundTrack.fill((0,0,0))
         self.viewGroundTrack.blit(self.map_kerbin,(0,0))
@@ -425,17 +471,22 @@ class Display:
         
         #self.viewData.blit(cstr1,(0,0))
         #self.viewData.testButton()
-        
+    """  
         
     def getRpos(self,pos):
         ''' Get relative position in the 800x600 window '''
-        print pos
+        print(pos)
         x = int((pos[0] - self.transformCenterWidth) / float(self.window.get_width()) * 800)
         y = int((pos[1] - self.transformCenterHeight)/ float(self.window.get_height()) * 600)
-        print (x,y)
+        print ((x,y))
         return (x,y)
         
     def getCanvas(self,rpos):
+		''' Find out which canavas is under the relative position
+		If you want to make a custom layout, you probably want to edit here
+		
+		TODO: Make this more flexible for easy theming
+		'''
         x,y = rpos
         if x < 400 and y < 300:
             return (self.viewPlot,(x,y))
@@ -446,7 +497,11 @@ class Display:
         
         
     def mainloop(self):
-        ''' Mainloop. Attempts to stay at 20fps '''
+        ''' 
+		Mainloop. Attempts to stay at 20fps 
+		
+		Probably it doesn't.
+		'''
         
         while True:
             self.monitor.fill((255,255,255))
