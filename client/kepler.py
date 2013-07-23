@@ -4,7 +4,7 @@
  * this stuff is worth it, you can buy me a beer in return.
 """
 
-from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi
+from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi, nan
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
 import logging
@@ -108,7 +108,7 @@ class Orbit:
             # Semi major axis
             self.a  = -self.mu / (2*self.xi) 
             
-            if self.a == numpy.nan:
+            if self.a == nan:
                 print "There's a problem with semi-major axis. Problem details:"
                 print "Position:",self.r0
                 print "Velocity:",self.v0

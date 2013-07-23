@@ -4,7 +4,7 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
 """
-import pygame, sys, time, socket
+import pygame, sys, time, socket, logging
 import celestialdata, kepler, views
 from numpy import array, degrees
 
