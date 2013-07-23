@@ -114,12 +114,14 @@ namespace MissionControl  {
 
 		public string FullSync() {
 			List<string> buffer = new List<string>();
-			foreach (Vessel vessel in FlightGlobals.Vessels) {
-				buffer.Add (utils.getStateLine (vessel));
-			}
 			foreach (CelestialBody celestial in FlightGlobals.Bodies) {
 				buffer.Add (utils.getCelestialState (celestial));
 			}
+
+			foreach (Vessel vessel in FlightGlobals.Vessels) {
+				buffer.Add (utils.getStateLine (vessel));
+			}
+
 			buffer.Add ("SYNCOK");
 			Debug.Log ("SYNC MSG:" + buffer.ToString ());
 			return string.Join (";",buffer.ToArray ());

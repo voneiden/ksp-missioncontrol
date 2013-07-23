@@ -89,8 +89,10 @@ class System(object):
             rv = vRV.split(':')
             trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
             
+            self.vessels[vPID] = celestialdata.Vessel(self.celestials["Kerbin"],vPID,trv=trv)
+            self.display.viewGroundTrack.draw()
             # TODO: Stash the vessel for now, load it after Eeloo has been received
-            self.temp.append((vPID,trv))
+            #self.temp.append((vPID,trv))
             
         
         # Object type (C)elestial body
@@ -128,10 +130,10 @@ class System(object):
                     self.display.viewPlot.draw()
             
             # TODO unstash test ships
-            if name == "Kerbin":
-                for vessel in self.temp:
-                    self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
-                self.display.viewGroundTrack.draw()
+            #if name == "Kerbin":
+            #    for vessel in self.temp:
+            #        self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
+                
             
             
             
