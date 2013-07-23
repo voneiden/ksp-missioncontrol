@@ -17,7 +17,7 @@ class Orbit:
     def __init__(self,parent,**kwargs):
         ''' 
         kwargs needs to contain currently trv (time, pos, vel)
-		Calculating from elements is not available yet
+        Calculating from elements is not available yet
         '''
         self.parent = parent
         self.mu = parent.mu
@@ -34,13 +34,13 @@ class Orbit:
         
     def recalculateFromElements(self,elements):
         ''' 
-		Based on Vallado, calculates an orbit from orbital elements
-		Not ready to be used yet!
-		'''
+        Based on Vallado, calculates an orbit from orbital elements
+        Not ready to be used yet!
+        '''
         if not isinstance(vec_r,array) or isinstance(vec_v,array):
             raise AttributeError("Needs array")
         
-		# Define initial variables
+        # Define initial variables
         mu = self.mu
         
         nrm_r = norm(vec_r)
@@ -71,16 +71,17 @@ class Orbit:
         if vec_n[1] < 0:
             i = PI2 - i
     
-	def recalculateFromTRV(self,trv):
+    def recalculateFromTRV(self,trv):
         ''' 
-		Based on Vallado. This function calculates orbit parameters from given
-		trv = [t0,r0,v0] where
-		t0 - Time of observation (float)
-		r0 - Position vector (numpy.array) of observation
-		v0 - Velocity vector (numpy.array) of observation
-		
+        Based on Vallado. This function calculates orbit parameters from given
+        trv = [t0,r0,v0] where
+        t0 - Time of observation (float)
+        r0 - Position vector (numpy.array) of observation
+        v0 - Velocity vector (numpy.array) of observation
+        
         Call this function every time the initial parameters are changed.
         '''
+        
         self.t0 = trv[0]
         self.r0 = trv[1]
         self.v0 = trv[2]
@@ -98,7 +99,7 @@ class Orbit:
         # Auxilary variable xi
         self.xi = self.v0l**2.0 / 2.0 - self.mu / self.r0l 
         logging.debug("xi %f"%self.xi)
-		
+        
         if self.xi == 0:
             self.a = inf
             self.alpha = 1.0
@@ -106,7 +107,11 @@ class Orbit:
         else:
             # Semi major axis
             self.a  = -self.mu / (2*self.xi) 
-        
+            
+            if self.a == numpy.nan:
+                print "There's a problem with semi-major axis. Problem details:"
+                print "Position:",self.r0
+                print "Velocity:",self.v0
             # Auxilary variable alpha
             self.alpha = 1.0 / self.a
         
@@ -126,9 +131,9 @@ class Orbit:
         
     def get(self,t):
         ''' 
-		Get 3D position and velocity at time t 
-		Returns [r (numpy.array), v (numpy.array)]
-		'''
+        Get 3D position and velocity at time t 
+        Returns [r (numpy.array), v (numpy.array)]
+        '''
         
         # (1) Delta-t
         dt = t - self.t0
@@ -147,7 +152,7 @@ class Orbit:
             self.s = arctan((1)/(3*sqrt(self.mu / self.p**3)*dt)) / 2.0
             self.w = arctan(tan(self.s)**(1.0/3.0))
             X0 = sqrt(self.p) * 2 * (cos(2*self.w)/sin(2*self.w))
-			logging.debug("s: %f"%self.s)
+            logging.debug("s: %f"%self.s)
         
         #  2c) Hyperbolic orbit
         elif self.alpha < -1e-20:
@@ -155,7 +160,7 @@ class Orbit:
     
         else:
             logging.error("Error, ALPHA")
-            raise SyntaxError
+            raise AttributeError
         
         logging.debug("X0: %f"%X0)
         Xnew = X0
@@ -164,11 +169,11 @@ class Orbit:
         while True:
             psi = Xnew**2 * self.alpha
             c2,c3 = self.FindC2C3(psi)
-			
-			logging.debug("psi: %f"%psi)
+            
+            logging.debug("psi: %f"%psi)
             logging.debug("c2: %f"%c2)
             logging.debug("c3: %f"%c3)
-			
+            
             r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
 
             Xold = Xnew
@@ -189,60 +194,60 @@ class Orbit:
         logging.debug("g: %f"%g)
         logging.debug("fd: %f"%fd)
         logging.debug("gd: %f"%gd)
-		
-		# 
+        
+        # 
         R = f * self.r0 + g * self.v0 
         V = fd * self.r0 + gd * self.v0 
-		
+        
         logging.debug( "r: %f"%r)
         logging.debug( "r0l: %f"%self.r0l)
         logging.debug( "Position: %s"%str(R))
         logging.debug( "Velocity: %s"%str(V))
         logging.debug( "Check: %f"%(f*gd-fd*g))
-		
+        
         return [R,V]
             
     def FindC2C3(self, psi):
-		'''
-		Finds the helper variables c2 and c3 when given psi
-		'''
+        '''
+        Finds the helper variables c2 and c3 when given psi
+        '''
         if psi > 1e-20:
-			sqrtpsi = sqrt(psi)
+            sqrtpsi = sqrt(psi)
             c2 = (1 - cos(sqrtpsi)) / psi
             c3 = (sqrtpsi - sin(sqrtpsi)) / sqrt(psi**3)
         else:
             if psi < -1e-20:
-				sqrtpsi = sqrt(-psi)
+                sqrtpsi = sqrt(-psi)
                 c2 = (1 - cosh(sqrtpsi)) / psi
                 c3 = (sinh(sqrtpsi) - sqrtpsi) / sqrt(-psi**3)
                 
             else:
                 c2 = 0.5
                 c3 = 1.0/6.0
-				
+                
         return (c2,c3)
                 
     
     
     def getGround(self,t):
         ''' 
-		Get ground position given t
-		Currently supports only Kerbin
-		
-				 float			  float
-		returns [right ascension, declination]
-		'''
-		
-		# (1) Get current 3D position
+        Get ground position given t
+        Currently supports only Kerbin
+        
+                 float              float
+        returns [right ascension, declination]
+        '''
+        
+        # (1) Get current 3D position
         r = self.get(t)[0]
         
-		# (2) Calculate theta (planet rotation)
-		# -0.00029.. Kerbins angular velocity rad(/s)
-		#  1.57079.. 90 degrees, initial t=0 rotation (depends on map?)
-		
+        # (2) Calculate theta (planet rotation)
+        # -0.00029.. Kerbins angular velocity rad(/s)
+        #  1.57079.. 90 degrees, initial t=0 rotation (depends on map?)
+        
         theta =  -0.0002908882086657216 * t - 1.5707963267948966
         
-		# (3) Create a rotation matrix and rotate the current position
+        # (3) Create a rotation matrix and rotate the current position
         rot_matrix = array([[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]])
         rr = dot(r,rot_matrix)
         ur = rr / norm(rr)
@@ -255,11 +260,11 @@ class Orbit:
             rasc = degrees(arccos(ur[0] / cos(declination)))
         elif ur[1] <= 0:
             rasc = -degrees(arccos(ur[0]/ cos(declination)))
-		
-		# (6) Data to degrees, NOTE the order of return
+        
+        # (6) Data to degrees, NOTE the order of return
         declination = degrees(declination)
         
-		logging.debug("Theta: %f degrees, rad %f"%(degrees(theta),theta))
+        logging.debug("Theta: %f degrees, rad %f"%(degrees(theta),theta))
         logging.debug("Declination: %f degrees, rad %f"%(declination,radians(declination)))
         logging.debug("R. ascension: %f degrees, rad %f"%(rasc,radians(rasc)))
         logging.debug("ur: %s"%str(ur))
@@ -267,8 +272,8 @@ class Orbit:
         return [rasc,declination]
         
     def getPeriod(self):
-		''' 
-		Gets the period of orbit.
-		Note! Currently works only on e<1 orbits!
-		'''
+        ''' 
+        Gets the period of orbit.
+        Note! Currently works only on e<1 orbits!
+        '''
         return PI2*sqrt(self.a**3/self.mu)
