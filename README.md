@@ -10,3 +10,17 @@ The network protocol needs still standardization. Perhaps it can be used by othe
 
 Contributors are welcome!
 
+Dependencies
+============
+
+Plugin: RemoteTech
+
+32-bit Client
+* Python 2.7 32-bit  (Python 3 experimental)
+* pygame http://www.pygame.org/download.shtml
+* numpy http://sourceforge.net/projects/numpy/files/NumPy/1.7.1/
+
+64-bit Client
+* Python 2.7 64-bit (Python 3 experimental)
+* pygame 64-bit http://www.lfd.uci.edu/~gohlke/pythonlibs/#pygame
+* numpy 64-bit http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
