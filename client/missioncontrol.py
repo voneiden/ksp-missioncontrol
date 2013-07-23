@@ -200,19 +200,6 @@ class Display:
         self.transformBlankWidth  = int((sw-self.transformWidth)/2)
         self.transformBlankHeight = int((sh-self.transformHeight)/2)
     
-    # Obsolete?
-    """
-    def render_groundTrack(self):
-        self.viewGroundTrack.fill((0,0,0))
-        self.viewGroundTrack.blit(self.map_kerbin,(0,0))
-        
-    def render_data(self):
-        #self.viewData.fill((0,0,0))
-        pass
-        
-        #self.viewData.blit(cstr1,(0,0))
-        #self.viewData.testButton()
-    """  
         
     def getRpos(self,pos):
         ''' Get relative position in the 800x600 window '''
@@ -271,14 +258,27 @@ class Display:
                     self.scaledmonitor = pygame.Surface((self.transformWidth,self.transformHeight))                
                 
                 
-                elif event.type in (pygame.QUIT, pygame.KEYDOWN):
+                
+                    
+                elif event.type == pygame.KEYDOWN:
+                    if self.focus.focusElement:
+                        self.focus.focusElement.keydown(event)
+                
+                elif event.type == pygame.KEYUP:
+                    if self.focus.focusElement:
+                        self.focus.focusElement.keyup(event)
+                        
+                # Button click hilight event (used to dehilight) OBSOLETE
+                #elif event.type == pygame.USEREVENT+1:
+                #    event.button.defocus()
+                elif event.type == pygame.QUIT:
                     sys.exit()
-                    
-                # Button click hilight event (used to dehilight)
-                elif event.type == pygame.USEREVENT+1:
-                    if event.canvas.activeButton:
-                        event.canvas.activeButton.render(event.canvas,True)
-                    
+            # TODO, more flexilibty for custom canvas layout
+            for canvas in [self.viewGroundTrack,self.viewPlot,self.viewData]:
+                if canvas.focusElement:
+                    canvas.focusElement.tick()
+            
+            
             for event in postprocess_motion:
                 canvas,rpos = self.getCanvas(self.getRpos(event.pos))
                 canvas.motion(rpos)
@@ -293,6 +293,7 @@ class Display:
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     canvas,rpos = self.getCanvas(self.getRpos(event.pos))
                     canvas.click(rpos)
+                    
                     
             self.system.network.recv()
             
@@ -319,12 +320,16 @@ class Network:
         self.buffer = ''
         self.system = system
         
-    def connect(self):
+    def connect(self,ip):
+        # TODO: IP should include port
+        
+        print "Connecting to",ip
         self.socket = socket.socket()
         try:
-            self.socket.connect(("192.168.1.13",11211))
+            self.socket.connect((ip,11211))
         except socket.error:
             self.socket = None
+        print "Done"
             
     def recv(self):
         if self.socket:
