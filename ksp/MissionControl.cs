@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KSP.IO;
-using RemoteTech;
+//using RemoteTech; // RemoteTech removed to make debugging easier for now
 using MissionControl;
 /* 
 
@@ -65,7 +65,9 @@ namespace MissionControl  {
 
 
 		// Check if RemoteTech is active
+		// Remote tech is disabled by default for testing purposes.
 		public void CheckRemote() {
+			/*
 			if (RemoteTech.RTGlobals.coreList.ActiveCore != null) {
 				Debug.Log ("Remote connection:" + RemoteTech.RTGlobals.coreList.ActiveCore.InContact.ToString ());
 				if (RemoteTech.RTGlobals.coreList.ActiveCore.InContact == true && FlightGlobals.ActiveVessel != null) {
@@ -84,6 +86,9 @@ namespace MissionControl  {
 					}
 				}
 			}
+			*/
+			Vessel ActiveVessel = FlightGlobals.ActiveVessel;
+			server.SendAll (utils.getStateLine (ActiveVessel));
 		}
 		public void ProcessIncoming(string data) {
 			Debug.Log ("Received message:" + data);
