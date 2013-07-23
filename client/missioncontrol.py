@@ -5,7 +5,7 @@
  * this stuff is worth it, you can buy me a beer in return.
 """
 import pygame, sys, time, socket
-import celestialdata, kepler
+import celestialdata, kepler, views
 from numpy import array, degrees
 
 FONT = None
@@ -135,273 +135,14 @@ class System(object):
             
             
             
-class Button(object):
-    ''' 
-	Button object for easy clickin' 
-	
-	Shape is a rectangle
-	Text is.. text
-	bgcolor - background color
-	bcolor  - text color
-	bgactive - hilight when hovering mouse over
-	bgclick  - hilight when clicking
-	'''
-    
-    def __init__(self,shape,text,bgcolor=(0,0,0),bgactive=(0,50,0),bcolor=(0,255,0),bgclick=(0,150,0)):
-        self.shape = shape
-        self.text = text
-        self.bgcolor = bgcolor
-        self.bcolor = bcolor
-        self.bgactive = bgactive
-        self.bgclick = bgclick
-        
-    def render(self,surface,active=False,click=False):
-        if active:
-            bg = self.bgactive
-        elif click:
-            bg = self.bgclick
-        else: 
-            bg = self.bgcolor
-        pygame.draw.rect(surface,bg,self.shape)
-        pygame.draw.rect(surface,self.bcolor,self.shape,1)
-        txt = FONT.render(self.text,False,self.bcolor)
-        surface.blit(txt,(self.shape[0]+2,self.shape[1]+2))
-        
-    def click(self):
-        pass
-    
 
-class Canvas(pygame.Surface):
-	'''
-	Base canvas class
-	
-	Implements mouse tracking and clicks
-	and defocus events. You probably want
-	to subclass this.
-	'''
-    def __init__(self,display,resolution):
-        pygame.Surface.__init__(self,resolution)
-        
-        self.display = display
-        self.buttons = []
-        self.activeButton = None
-        
-    def motion(self,pos):
-	''' Handle mouse motion '''
-        print("motion %s"%str(self,pos))
-		
-        rect = pygame.Rect(pos,(1,1))
-        newActive = None
-        
-		# Check for button highlights
-        for button in self.buttons:
-            if button.shape.contains(rect):
-                button.render(self,True)
-                newActive = button
-        
-		# And remove hilight from old button if any
-        if self.activeButton and self.activeButton != newActive:
-            self.activeButton.render(self)
-        self.activeButton = newActive
-		
-    def click(self,pos):
-	''' Handle mouse click '''
-        print "click",self,pos
-        rect = pygame.Rect(pos,(1,1))
-        for button in self.buttons:
-            print "Buttons",len(self.buttons)
-            if button.shape.contains(rect):
-                print "BUTTON CLICK"
-                button.render(self,False,True)
-                button.click()
-                # Create a button click event so that hilight can be removed
-                pygame.event.post(pygame.event.Event(pygame.USEREVENT+1,{'canvas':self}))
-                
-        print "Done"
-		
-    def testButton(self):
-	''' Obsolete test button for debugging '''
-        shape = pygame.Rect(10,10,40,20)
-        button = Button(shape,"Test")
-        self.buttons.append(button)
-        button.render(self)
-        
-    def defocus(self):
-	''' Handle canvas defocus (mouse moves out of canvas boundary '''
-        print "DEFOCUS"
-        if self.activeButton:
-            self.activeButton.render(self)
-            self.activeButton = None
-
-
-
-class MainMenu(Canvas):
-	''' Canvas for MainMenu '''
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
-        self.draw()
-        
-    def draw(self):
-        self.fill((0,0,0))
-        self.buttons = []
-        
-        if self.display.system.network.socket:
-            cstr1 = FONT.render("Connected: Yes",False,(255,255,255))
-        else:
-            cstr1 = FONT.render("Connected: No",False,(255,255,255))
-        self.blit(cstr1,(5,5))
-        
-        btn_connect = Button(pygame.Rect(5,25,60,20),"Connect")
-        self.buttons.append(btn_connect)
-        btn_connect.render(self)
-        btn_connect.click = self.doConnect
-        
-    def doConnect(self):
-        self.display.system.network.connect()
-        self.draw()
-        if self.display.system.network.socket:
-            self.display.system.network.socket.send("FULLSYNC;")
-        
-        
-
-class GroundTrack(Canvas):
-	''' Canvas for rendering ground track '''
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
-        self.resolution = resolution
-        
-        #self.map_kerbin = pygame.image.load("maps/kerbin.png")
-        self.maps = {}
-        self.maps["kerbin"] = pygame.image.load("maps/kerbin.png")
-        self.map = self.maps["kerbin"]
-        
-        self.longitude = 180
-        self.latitude  = 180
-        
-        #self.thetas 
-    def cc(self,pos):
-        ''' Ground track 0,0 is top left corner of the map image '''
-        #pos[0] %= 360.0
-        pos[0] *= 1.6666666666666667
-        pos[1] *= -1.6666666666666667
-        pos[0] += 100+300
-        pos[1] += 150
-        
-        return [int(pos[0]), int(pos[1])]
-        
-    def draw(self):
-        self.fill((0,0,0))
-        self.blit(self.map,(0,0))
-        
-        for vessel in self.display.system.vessels.values():
-            curpos = self.cc(vessel.orbit.get_ground(self.display.system.UT))
-            print "DRAWING INTO",curpos
-            print "!"*50
-            print "UT",self.display.system.UT
-            pygame.draw.circle(self,[255,255,255],curpos,3)
-            period = vessel.orbit.getPeriod()
-            step = period / 30
-            #points = []
-            lp = np = None
-            
-            for i in xrange(60):
-                lp = np
-                i -= 30
-                np = self.cc(vessel.orbit.get_ground(self.display.system.UT + i*step))
-                if i == -30:
-                    continue
-                # TODO: this is just for showcasing
-                print "###",i,np,"<",lp
-                if np[0] < lp[0]:
-                    print "!"*30+"CUT"*10
-                    continue
-                else:
-                    pygame.draw.line(self,[255,255,255],lp,np)
-            #pygame.draw.lines(self,[255,255,255],True,points)
-            
-    
-    
-class Plot(Canvas):
-	''' Canvas for rendering orbit plots '''
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
-        self.resolution = resolution
-        
-        self.draw()
-    
-    def cc(self,pos):
-        pos[0] += self.resolution[0]/2.0
-        pos[1] += self.resolution[1]/2.0
-        return [int(pos[0]),int(pos[1])]
-        
-    def draw(self):
-        print "Redraw"
-        self.fill([0,0,0])
-        # Draw sun
-        
-        pygame.draw.circle(self,[255,255,0],self.cc([0,0]),4)
-        
-        for celestial in self.display.system.celestials.values():
-            if celestial.parent == self.display.system.celestials["Sun"]:
-                print "Drawing",celestial.name
-                if celestial.name == "Kerbin":
-                    color = pygame.Color("blue")
-                    radius = 2
-                elif celestial.name == "Moho":
-                    color = pygame.Color("brown")
-                    radius = 1
-                elif celestial.name == "Eve":
-                    color = pygame.Color("purple")
-                    radius = 2
-                elif celestial.name == "Duna":
-                    color = pygame.Color("orange")
-                    radius = 2
-                elif celestial.name == "Dres":
-                    color = pygame.Color("gray")
-                    radius = 2
-                elif celestial.name == "Jool":
-                    color = pygame.Color("green")
-                    radius = 3
-                elif celestial.name == "Eeloo":
-                    color = pygame.Color("cyan")
-                    radius = 2
-                    
-                else:
-                    color = [255,255,255]
-                    radius = 2
-                    
-                rv = celestial.orbit.get(0)
-                r = rv[0]
-                x = int(r[0] / 5e8)
-                y = int(r[1] / 5e8)
-
-                print "DRAWING AT",x,y
-                pygame.draw.circle(self,color,self.cc([x,y]),radius)
-                
-                # Draw orbit
-                
-                period = celestial.orbit.getPeriod()
-                step = period / 40
-                points = []
-                for i in xrange(40):
-     
-                    np = celestial.orbit.get(i*step)[0]
-                    nx = int(np[0] / 5e8)
-                    ny = int(np[1] / 5e8)
-                    points.append(self.cc([nx,ny]))
-                    
-                pygame.draw.lines(self,color,True,points)
-                
-        
 class Display:
 	''' The display class handles events, window resizing and maintains correct aspect ratio '''
     def __init__(self,system,width=800,height=600):
         pygame.init()
         
         self.font = pygame.font.Font("unispace.ttf",12)
+        views.FONT = self.font
         global FONT
         FONT = self.font
         
@@ -418,9 +159,9 @@ class Display:
         self.monitor = pygame.Surface((self.basewidth,self.baseheight))
         self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
         
-        self.viewGroundTrack = GroundTrack(self,(800,300))
-        self.viewPlot = Plot(self,(400,300))
-        self.viewData = MainMenu(self,(400,300))
+        self.viewGroundTrack = views.GroundTrack(self,(800,300))
+        self.viewPlot = views.Plot(self,(400,300))
+        self.viewData = views.MainMenu(self,(400,300))
         
         self.focus = None
         
