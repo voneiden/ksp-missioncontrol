@@ -11,11 +11,11 @@ from numpy import array, degrees
 FONT = None
 
 class System(object):
-	''' 
-	Core class
-	
-	Links together the network, display and available KSP data
-	'''
+    ''' 
+    Core class
+
+    Links together the network, display and available KSP data
+    '''
     def __init__(self):
         self.network = Network(self)
         self.display = None
@@ -28,12 +28,12 @@ class System(object):
         f.close()
 
     def parse(self,data):
-		''' Parse incoming TCP data '''
+        ''' Parse incoming TCP data '''
 
         tok = data.split('\t')
         oType = tok[0] # Object type
-		
-		# Object type (V)essel
+        
+        # Object type (V)essel
         if oType == "V":
             vStatus = tok[1] # Status (flying, etc.)
             vPID = tok[2]    # Unique ID
@@ -54,10 +54,10 @@ class System(object):
             vHor = tok[15]   # Horizontal surface spee d
             vLat = tok[16]   # Latitude
             vLon = tok[17]   # Longitude
-			
+            
             logging.info("vlat: %s"%str(vLat))
-            logging.info("vlon: %s"%str(vLon)
-			
+            logging.info("vlon: %s"%str(vLon))
+            
             vOVel = tok[18]  # Orbital velocity
             vPQSAlt = tok[19]# PQS altitude ?
             vRBVel = tok[20] # RB velocity?
@@ -73,8 +73,8 @@ class System(object):
             # If ship status (L)anded, (S)plashed, (P)relaunch or (F)lying
             if vStatus == "L" or vStatus == "S" or vStatus == "P" or vStatus == "F":
                 vRef = tok[29]
-				
-			# Else (O)rbital, (S-)ub(-O)rbital or (E)scaping
+                
+            # Else (O)rbital, (S-)ub(-O)rbital or (E)scaping
             else:
                 vRef = tok[29]
                 vOEph = tok[30]
@@ -85,18 +85,18 @@ class System(object):
                 VOAoP = tok[35]
                 VOM0 = tok[36]
             
-			# Parse position and velocity
+            # Parse position and velocity
             rv = vRV.split(':')
             trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
-			
-			# TODO: Stash the vessel for now, load it after Eeloo has been received
+            
+            # TODO: Stash the vessel for now, load it after Eeloo has been received
             self.temp.append((vPID,trv))
             
         
-		# Object type (C)elestial body
+        # Object type (C)elestial body
         elif oType == "C":
 
-			# DEBUG: saving celestial stuff into a text file
+            # DEBUG: saving celestial stuff into a text file
             f = open("celestial.txt","a")
             f.write(data + "\n")
             f.close()
@@ -109,7 +109,7 @@ class System(object):
             SoI = tok[6]
             atm = tok[7]
             
-			# Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
+            # Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
                 self.celestials[name] = celestialdata.Sun(mu=float(mu),radius=float(radius))
             else:
@@ -117,17 +117,17 @@ class System(object):
                     atm = False
                 else:
                     atm = float(atm)
-					
-				# Parse orbit and generate it
+                    
+                # Parse orbit and generate it
                 rv = rv.split(':')
                 trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
                 self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm)
-				
-				# Eeloo is the last planet, so render the viewplot
+                
+                # Eeloo is the last planet, so render the viewplot
                 if name == "Eeloo":
                     self.display.viewPlot.draw()
             
-			# TODO unstash test ships
+            # TODO unstash test ships
             if name == "Kerbin":
                 for vessel in self.temp:
                     self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
@@ -137,7 +137,7 @@ class System(object):
             
 
 class Display:
-	''' The display class handles events, window resizing and maintains correct aspect ratio '''
+    ''' The display class handles events, window resizing and maintains correct aspect ratio '''
     def __init__(self,system,width=800,height=600):
         pygame.init()
         
@@ -165,10 +165,11 @@ class Display:
         
         self.focus = None
         
+        
         self.transformWidth = self.basewidth
         self.transformHeight = self.baseheight
-        self.transformCenterWidth = 0
-        self.transformCenterHeight = 0
+        self.transformBlankWidth = 0
+        self.transformBlankHeight = 0
         self.lastTick = time.time()
         
         self.x = 30
@@ -180,7 +181,6 @@ class Display:
         self.map_kerbin = pygame.image.load("maps/kerbin.png")
         self.viewGroundTrack.blit(self.map_kerbin,(0,0))
         
-        self.render_data()
         
         
     
@@ -189,19 +189,19 @@ class Display:
         sw = float(self.window.get_width())
         sh = float(self.window.get_height())
         
-		# 4:3 aspect ratio
+        # 4:3 aspect ratio
         if sw/sh >= 1.333333333:
             self.transformHeight = int(sh)
-            self.transformWidth = int(640 * (sh / 480.0))
+            self.transformWidth = int(800.0 * (sh / 600.0))
         else:
             self.transformWidth = int(sw)
-            self.transformHeight = int(480 * (sw / 640))
+            self.transformHeight = int(600.0 * (sw / 800.0))
         
-        self.transformCenterWidth = int((sw-self.transformWidth)/2)
-        self.transformCenterHeight = int((sh-self.transformHeight)/2)
+        self.transformBlankWidth  = int((sw-self.transformWidth)/2)
+        self.transformBlankHeight = int((sh-self.transformHeight)/2)
     
-	# Obsolete?
-	"""
+    # Obsolete?
+    """
     def render_groundTrack(self):
         self.viewGroundTrack.fill((0,0,0))
         self.viewGroundTrack.blit(self.map_kerbin,(0,0))
@@ -216,18 +216,18 @@ class Display:
         
     def getRpos(self,pos):
         ''' Get relative position in the 800x600 window '''
-        print(pos)
-        x = int((pos[0] - self.transformCenterWidth) / float(self.window.get_width()) * 800)
-        y = int((pos[1] - self.transformCenterHeight)/ float(self.window.get_height()) * 600)
+        print(pos)    
+        x = int((pos[0] - self.transformBlankWidth) / float(self.transformWidth) * 800)
+        y = int((pos[1] - self.transformBlankHeight)/ float(self.transformHeight) * 600)
         print ((x,y))
         return (x,y)
         
     def getCanvas(self,rpos):
-		''' Find out which canavas is under the relative position
-		If you want to make a custom layout, you probably want to edit here
-		
-		TODO: Make this more flexible for easy theming
-		'''
+        ''' Find out which canavas is under the relative position
+        If you want to make a custom layout, you probably want to edit here
+        
+        TODO: Make this more flexible for easy theming
+        '''
         x,y = rpos
         if x < 400 and y < 300:
             return (self.viewPlot,(x,y))
@@ -239,10 +239,10 @@ class Display:
         
     def mainloop(self):
         ''' 
-		Mainloop. Attempts to stay at 20fps 
-		
-		Probably it doesn't.
-		'''
+        Mainloop. Attempts to stay at 20fps 
+        
+        Probably it doesn't.
+        '''
         
         while True:
             self.monitor.fill((255,255,255))
@@ -299,7 +299,7 @@ class Display:
             self.window.fill((0,0,0))
             pygame.transform.scale(self.monitor,(self.transformWidth,self.transformHeight),self.scaledmonitor)
             
-            self.window.blit(self.scaledmonitor,(self.transformCenterWidth,self.transformCenterHeight))
+            self.window.blit(self.scaledmonitor,(self.transformBlankWidth,self.transformBlankHeight))
             
             pygame.display.flip()
             #print self.window.get_size()
