@@ -7,7 +7,6 @@
 from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi, nan
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
-import logging
 
 PI2 = pi * 2
 

@@ -10,6 +10,12 @@ from numpy import array, degrees
 
 FONT = None
 
+#soh = logging.StreamHandler(sys.stdout)
+#soh.setLevel(logging.DEBUG)
+logger = logging.getLogger()
+#logger.addHandler(soh)
+logger.setLevel(logging.DEBUG)
+logging.debug("TESTING")
 class System(object):
     ''' 
     Core class
