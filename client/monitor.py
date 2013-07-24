@@ -17,7 +17,7 @@ class Monitor(object):
     virtualSurface is always rendered on. After that the virtual surface is scaled on
     scaled surface to create that sweet pixely look.
     '''
-    def __init__(self,display,resolution):
+    def __init__(self,display,resolution=(1024,768)):
         self.display = display
         self.system = display.system
         
@@ -26,6 +26,9 @@ class Monitor(object):
         
         self.scaledResolution = resolution
         self.scaledSurface = pygame.Surface(resolution)
+        
+        self.display.window = pygame.display.set_mode(resolution,
+                                              pygame.RESIZABLE)
         
         self.views = {}
         
@@ -99,6 +102,9 @@ class Monitor43(Monitor):
     
     This monitor defines a view where there's a thin top menu bar, two top small views and one big bottom view.
     '''
+    def __init(self,display):
+        Monitor.__init__(self,display,(1024,768))
+        
     def setupViews(self):        
         viewTopMenu = views.HorizontalMenu(self, (1024,28), pygame.Rect((0,0),(1024,28)))
         viewPlot = views.Plot(self, (512,370), pygame.Rect((0,28),(512,370)))
@@ -122,6 +128,9 @@ class Monitor169(Monitor):
     16:9 HIGH DEFINITION (with pixels!!)
     Virtual resolution is 1280 x 720 (WXGA, 921 kilopixels) or SWVGA ?!?! (1000x562, 562 kilopixels)
     '''
+    def __init(self,display):
+        Monitor.__init__(self,display,(1280,720))
+        
     def setupViews(self):
         pass
     
@@ -130,5 +139,8 @@ class Monitor1610(Monitor):
     16:10 Older LCD
     Virtual resolution is 1280 x 800 (WXGA, 1 megapixel) or 1000x625, 625 kilopixels
     '''
+    def __init(self,display):
+        Monitor.__init__(self,display,(1280,800))
+        
     def setupViews(self):
         pass

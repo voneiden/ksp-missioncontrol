@@ -146,23 +146,43 @@ class System(object):
 
 class Display:
     ''' The display class handles events, window resizing and maintains correct aspect ratio '''
-    def __init__(self,system,width=800,height=600):
+    def __init__(self,system,width=1024,height=768):
         pygame.init()
+        
+        self.system = system
+        self.system.display = self
         
         self.font = pygame.font.Font("unispace.ttf",12)
         views.FONT = self.font
         global FONT
         FONT = self.font
         
+        self.window = None
         
-        self.system = system
-        self.system.display = self
+        info = pygame.display.Info()
+        aspect = round(float(info.current_w) / float(info.current_h),2)
+        print "Current aspect ratio",aspect
+        if aspect == 1.33:
+            self.monitor = monitor.Monitor43(self)
+            
+        # Support for 16:9 monitors
+        #elif aspect == 1.78:
+        #    self.monitor = monitor.Monitor169(self)
+            
+            
+        # Support for 16:10 monitors
+        #elif aspect == 1.6:
+        #    self.monitor = monitor.Monitor1610(self)
+            
+        # Default to 4:3
+        else:
+            self.monitor = monitor.Monitor43(self)
+            
         
-        self.basewidth = width
-        self.baseheight = height
         
-        self.window = pygame.display.set_mode((self.basewidth, self.baseheight),pygame.RESIZABLE)
+
         
+       
         # The monitor is always 800x600, 4:3. Consider it a virtual monitor.
         # 1.12 monitor has been updated to 1024x768 4:3, or other widescreen formats
         
@@ -175,15 +195,8 @@ class Display:
         self.viewData = views.MainMenu(self,(400,300))
         '''
         
-        self.monitor = monitor.Monitor43(self,(self.basewidth,self.baseheight))
-        
         self.focus = None
         
-        
-        self.transformWidth = self.basewidth
-        self.transformHeight = self.baseheight
-        self.transformBlankWidth = 0
-        self.transformBlankHeight = 0
         self.lastTick = time.time()
         
         self.x = 30
