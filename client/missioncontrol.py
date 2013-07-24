@@ -5,7 +5,7 @@
  * this stuff is worth it, you can buy me a beer in return.
 """
 import pygame, sys, time, socket, logging
-import celestialdata, kepler, views
+import celestialdata, kepler, views, monitor
 from numpy import array, degrees
 
 FONT = None
@@ -164,12 +164,18 @@ class Display:
         self.window = pygame.display.set_mode((self.basewidth, self.baseheight),pygame.RESIZABLE)
         
         # The monitor is always 800x600, 4:3. Consider it a virtual monitor.
+        # 1.12 monitor has been updated to 1024x768 4:3, or other widescreen formats
+        
+        '''
         self.monitor = pygame.Surface((self.basewidth,self.baseheight))
         self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
         
         self.viewGroundTrack = views.GroundTrack(self,(800,300))
         self.viewPlot = views.Plot(self,(400,300))
         self.viewData = views.MainMenu(self,(400,300))
+        '''
+        
+        self.monitor = monitor.Monitor43(self,(self.basewidth,self.baseheight))
         
         self.focus = None
         
@@ -186,12 +192,12 @@ class Display:
         pygame.display.set_icon(self.icon)
         pygame.display.set_caption("KSP Mission Control")
         
-        self.map_kerbin = pygame.image.load("maps/kerbin.png")
-        self.viewGroundTrack.blit(self.map_kerbin,(0,0))
+        #self.map_kerbin = pygame.image.load("maps/kerbin.png")
+        #self.viewGroundTrack.blit(self.map_kerbin,(0,0))
         
         
         
-    
+    """
     def recalculate_transforms(self):
         ''' Calculates window stretching to maintain aspect ratio '''
         sw = float(self.window.get_width())
@@ -217,6 +223,7 @@ class Display:
         print ((x,y))
         return (x,y)
         
+        
     def getCanvas(self,rpos):
         ''' Find out which canavas is under the relative position
         If you want to make a custom layout, you probably want to edit here
@@ -231,7 +238,7 @@ class Display:
         else:
             return (self.viewGroundTrack,(x,y-300))
         
-        
+    """    
     def mainloop(self):
         ''' 
         Mainloop. Attempts to stay at 20fps 
@@ -240,11 +247,7 @@ class Display:
         '''
         
         while True:
-            self.monitor.fill((255,255,255))
-
-            self.monitor.blit(self.viewPlot,(0,0))
-            self.monitor.blit(self.viewData,(400,0))
-            self.monitor.blit(self.viewGroundTrack,(0,300))
+            self.monitor.fill()
             
             # Event categories that should be post-processed
             postprocess_clicks = []
@@ -262,8 +265,8 @@ class Display:
                 # In case of window resize, calculate new window requirements to maintain 4:3 aspect ratio
                 elif event.type == pygame.VIDEORESIZE:
                     self.window = pygame.display.set_mode(event.size, pygame.RESIZABLE)
-                    self.recalculate_transforms()
-                    self.scaledmonitor = pygame.Surface((self.transformWidth,self.transformHeight))                
+                    self.monitor.transform()
+                          
                 
                 
                 
@@ -282,33 +285,40 @@ class Display:
                 elif event.type == pygame.QUIT:
                     sys.exit()
             # TODO, more flexilibty for custom canvas layout
-            for canvas in [self.viewGroundTrack,self.viewPlot,self.viewData]:
-                if canvas.focusElement:
-                    canvas.focusElement.tick()
+            for view in self.monitor.views['overview']:
+                if view.focusElement:
+                    view.focusElement.tick()
             
             
             for event in postprocess_motion:
-                canvas,rpos = self.getCanvas(self.getRpos(event.pos))
-                canvas.motion(rpos)
+                #TODO localize this
+                view = self.monitor.getView(self.monitor.getRelativePosition(event.pos))
+                if view:
+                    view[0].motion(view[1])
                 
                 # Defocus old canvas
-                if canvas != self.focus:
-                    if self.focus:
-                        self.focus.defocus()
-                    self.focus = canvas
+                    if view[0] != self.focus:
+                        if self.focus:
+                            self.focus.defocus()
+                        self.focus = view[0]
                     
             for event in postprocess_clicks:
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    canvas,rpos = self.getCanvas(self.getRpos(event.pos))
-                    canvas.click(rpos)
+                    # TODO localize this
+                    view = self.monitor.getView(self.monitor.getRelativePosition(event.pos))
+                    if view:
+                        view[0].click(view[1])
                     
                     
             self.system.network.recv()
             
-            self.window.fill((0,0,0))
-            pygame.transform.scale(self.monitor,(self.transformWidth,self.transformHeight),self.scaledmonitor)
+            self.window.fill((255,0,0))
+
+            pygame.transform.scale(self.monitor.virtualSurface,
+                                   (self.monitor.transformWidth,self.monitor.transformHeight),
+                                   self.monitor.scaledSurface)
             
-            self.window.blit(self.scaledmonitor,(self.transformBlankWidth,self.transformBlankHeight))
+            self.window.blit(self.monitor.scaledSurface, (self.monitor.transformBlankWidth, self.monitor.transformBlankHeight))
             
             pygame.display.flip()
             #print self.window.get_size()

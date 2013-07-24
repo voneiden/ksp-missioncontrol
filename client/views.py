@@ -176,16 +176,20 @@ class Input(Element):
             self.text += chr(self.key)
             
 class Canvas(pygame.Surface):
-    def __init__(self,display,resolution):
-        pygame.Surface.__init__(self,resolution)
+    def __init__(self, monitor, resolution, position):
+        pygame.Surface.__init__(self, resolution)
         
-        self.display = display
+        self.monitor = monitor
+        self.resolution = resolution
+        self.position = position
         
         # This list contains all the canvas elements
         self.elements = []
         
         self.hilightElement = None
         self.focusElement = None
+        
+
         
         
     def motion(self,pos):
@@ -239,12 +243,13 @@ class Canvas(pygame.Surface):
             self.focusElement.defocus()
             self.focusElement = None
 
-
+    def draw(self):
+        self.fill(0,0,0)
+        
 
 class MainMenu(Canvas):
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
+    def __init__(self, monitor, resolution, position):
+        Canvas.__init__(self, monitor, resolution, position)
         
         self.btn_connect = Button(self,pygame.Rect(5,25,60,20),"Connect")
         self.elements.append(self.btn_connect)
@@ -260,7 +265,7 @@ class MainMenu(Canvas):
     def draw(self):
         self.fill((0,0,0))
         
-        if self.display.system.network.socket:
+        if self.monitor.system.network.socket:
             cstr1 = FONT.render("Connected: Yes",False,(255,255,255))
         else:
             cstr1 = FONT.render("Connected: No",False,(255,255,255))
@@ -273,18 +278,16 @@ class MainMenu(Canvas):
         
     def doConnect(self):
         ip = self.inp_ip.text 
-        self.display.system.network.connect(ip)
+        self.monitor.system.network.connect(ip)
         self.draw()
-        if self.display.system.network.socket:
-            self.display.system.network.socket.send("FULLSYNC;")
+        if self.monitor.system.network.socket:
+            self.monitor.system.network.socket.send("FULLSYNC;")
         
         
 
 class GroundTrack(Canvas):
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
-        self.resolution = resolution
+    def __init__(self, monitor, resolution, position):
+        Canvas.__init__(self, monitor, resolution, position)
         
         #self.map_kerbin = pygame.image.load("maps/kerbin.png")
         self.maps = {}
@@ -311,11 +314,11 @@ class GroundTrack(Canvas):
         self.fill((0,0,0))
         self.blit(self.map,(0,0))
         
-        for vessel in self.display.system.vessels.values():
-            curpos = self.cc(vessel.orbit.getGround(self.display.system.UT))
+        for vessel in self.monitor.system.vessels.values():
+            curpos = self.cc(vessel.orbit.getGround(self.monitor.system.UT))
             print "DRAWING INTO",curpos
             print "!"*50
-            print "UT",self.display.system.UT
+            print "UT",self.monitor.system.UT
             pygame.draw.circle(self,[255,255,255],curpos,3)
             period = vessel.orbit.getPeriod()
             step = period / 30
@@ -326,7 +329,7 @@ class GroundTrack(Canvas):
                 if np:
                     lp = [np[0],np[1]]
                 i -= 30
-                np = vessel.orbit.getGround(self.display.system.UT + i*step)
+                np = vessel.orbit.getGround(self.monitor.system.UT + i*step)
                 if i == -30:
                     continue
                 # TODO: this is just for showcasing
@@ -365,10 +368,8 @@ class GroundTrack(Canvas):
                 print "np",np
     
 class Plot(Canvas):
-    def __init__(self,display,resolution):
-        Canvas.__init__(self,display,resolution)
-        self.display = display
-        self.resolution = resolution
+    def __init__(self, monitor, resolution, position):
+        Canvas.__init__(self, monitor, resolution, position)
         
         self.draw()
     
@@ -384,8 +385,8 @@ class Plot(Canvas):
         
         pygame.draw.circle(self,[255,255,0],self.cc([0,0]),4)
         
-        for celestial in self.display.system.celestials.values():
-            if celestial.parent == self.display.system.celestials["Sun"]:
+        for celestial in self.monitor.system.celestials.values():
+            if celestial.parent == self.monitor.system.celestials["Sun"]:
                 print "Drawing",celestial.name
                 if celestial.name == "Kerbin":
                     color = pygame.Color("blue")
@@ -434,5 +435,46 @@ class Plot(Canvas):
                     points.append(self.cc([nx,ny]))
                     
                 pygame.draw.lines(self,color,True,points)
-                
+           
+class HorizontalMenu(Canvas):
+    '''
+    Horizontal top menu for changing view modes and gods know what
+    '''
+    def __init__(self,monitor,resolution,position):
+        Canvas.__init__(self,monitor,resolution,position)
+        self.draw()
         
+    def draw(self):
+        self.fill((0,255,0))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
