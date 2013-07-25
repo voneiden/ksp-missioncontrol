@@ -13,70 +13,79 @@ namespace MissionControl  {
 			Orbit orbit = vessel.GetOrbit ();
 			//string referenceBody = FlightGlobals.Bodies.IndexOf (orbit.referenceBody).ToString ();
 			string referenceBody = orbit.referenceBody.GetName ();
-			if (vessel.situation == Vessel.Situations.LANDED || 
-			    vessel.situation == Vessel.Situations.SPLASHED || 
-			    vessel.situation == Vessel.Situations.PRELAUNCH) {
-				List<string> buffer = new List<string>();
-				buffer.Add ("V");
-				if (vessel.situation == Vessel.Situations.LANDED) { buffer.Add ("L"); }
-				else if (vessel.situation == Vessel.Situations.SPLASHED) { buffer.Add ("S"); }
-				else if (vessel.situation == Vessel.Situations.PRELAUNCH) { buffer.Add ("P"); }
-				//buffer.Add ("L");
-				buffer.Add (vessel.id.ToString ());
-				buffer.Add (Planetarium.GetUniversalTime ().ToString ());
-				buffer.AddRange(getFlightData (vessel));
 
-				buffer.Add (referenceBody);
-				buffer.Add (vessel.latitude.ToString ());
-				buffer.Add (vessel.longitude.ToString ());
-				return string.Join ("\t",buffer.ToArray ());
-			}
-			else if (vessel.situation == Vessel.Situations.FLYING) {
-				List<string> buffer = new List<string>();
-				buffer.Add ("V");
-				buffer.Add ("F");
-				buffer.Add (vessel.id.ToString ());
-				buffer.Add (Planetarium.GetUniversalTime ().ToString ());
-				buffer.AddRange(getFlightData (vessel));
+			List<string> buffer = new List<string>();
+			buffer.Add ("V");
 
-				buffer.Add (referenceBody);
-				buffer.Add (vessel.latitude.ToString ());
-				buffer.Add (vessel.longitude.ToString ());
-				return string.Join ("\t",buffer.ToArray ());
+			if (vessel.situation == Vessel.Situations.LANDED) {
+				buffer.Add ("L");
 			} 
-			else if (vessel.situation == Vessel.Situations.ORBITING || 
-			         vessel.situation == Vessel.Situations.DOCKED || 
-			         vessel.situation == Vessel.Situations.SUB_ORBITAL ||
-			         vessel.situation == Vessel.Situations.ESCAPING) {
-
-				List<string> buffer = new List<string>();
-				buffer.Add ("V");
-				if (vessel.situation == Vessel.Situations.ORBITING) { buffer.Add ("O"); }
-				else if (vessel.situation == Vessel.Situations.DOCKED) { buffer.Add ("D"); }
-				else if (vessel.situation == Vessel.Situations.SUB_ORBITAL) { buffer.Add ("SO"); }
-				else if (vessel.situation == Vessel.Situations.ESCAPING) { buffer.Add ("E"); }
-
-				//buffer.Add ("K");
-				buffer.Add (vessel.id.ToString ());
-				buffer.Add (Planetarium.GetUniversalTime ().ToString ());
-
-				buffer.AddRange(getFlightData (vessel));
-
-
-				buffer.Add (referenceBody);
-				buffer.Add (orbit.epoch.ToString ());
-				buffer.Add (orbit.semiMajorAxis.ToString ());
-				buffer.Add (orbit.eccentricity.ToString ());
-				buffer.Add (orbit.inclination.ToString ());
-				buffer.Add (orbit.LAN.ToString ());
-				buffer.Add (orbit.argumentOfPeriapsis.ToString ());
-				buffer.Add (orbit.meanAnomalyAtEpoch.ToString ());
-				return string.Join ("\t",buffer.ToArray ());
+			else if (vessel.situation == Vessel.Situations.SPLASHED) {
+				buffer.Add ("S");
+			} 
+			else if (vessel.situation == Vessel.Situations.PRELAUNCH) {
+				buffer.Add ("P");
+			} 
+			else if (vessel.situation == Vessel.Situations.FLYING) {
+				buffer.Add ("F");
 			}
+			else if (vessel.situation == Vessel.Situations.ORBITING) {
+				buffer.Add ("O");
+			} 
+			else if (vessel.situation == Vessel.Situations.DOCKED) {
+				buffer.Add ("D");
+			} 
+			else if (vessel.situation == Vessel.Situations.SUB_ORBITAL) {
+				buffer.Add ("SO");
+			} 
+			else if (vessel.situation == Vessel.Situations.ESCAPING) {
+				buffer.Add ("E");
+			} 
+
 			else {
 				Debug.Log ("Unknown vessel situation");
-				return "";
+				return "X";
 			}
+				//buffer.Add ("L");
+
+			buffer.Add (vessel.id.ToString ());
+			buffer.Add (Planetarium.GetUniversalTime ().ToString ());
+			buffer.Add (referenceBody);
+
+			buffer.Add (vessel.longitude.ToString ());
+			buffer.Add (vessel.latitude.ToString ());
+			// Why was this zero?
+			Vector3d r = orbit.getRelativePositionAtUT (Planetarium.GetUniversalTime ());
+			Vector3d v = orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ());
+
+			//Vector3d r = orbit.pos.xzy;
+			//Vector3d v = orbit.vel.xzy;
+
+			String rx = r.x.ToString (); // X in pygame?
+			String ry = r.y.ToString (); // Z in pygame?
+			String rz = r.z.ToString (); // Y in pygame?
+
+			String vx = v.x.ToString ();
+			String vy = v.y.ToString ();
+			String vz = v.z.ToString ();
+
+			buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);
+
+			/*
+			buffer.Add (orbit.epoch.ToString ());
+			buffer.Add (orbit.semiMajorAxis.ToString ());
+			buffer.Add (orbit.eccentricity.ToString ());
+			buffer.Add (orbit.inclination.ToString ());
+			buffer.Add (orbit.LAN.ToString ());
+			buffer.Add (orbit.argumentOfPeriapsis.ToString ());
+			buffer.Add (orbit.meanAnomalyAtEpoch.ToString ());
+			*/
+
+			//buffer.AddRange(getFlightData (vessel));
+
+	
+			return string.Join ("\t",buffer.ToArray ());
+			
 		}
 
 		public List<string> getFlightData (Vessel vessel)
@@ -85,17 +94,35 @@ namespace MissionControl  {
 
 			Orbit orbit = vessel.GetOrbit ();
 
-			Vector3d r = orbit.getRelativePositionAtUT (0);
-			Vector3d v = orbit.getOrbitalVelocityAtUT (0);
+			// Why was this zero?
+			Vector3d r = orbit.getRelativePositionAtUT (Planetarium.GetUniversalTime ());
+			Vector3d v = orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ());
 
-			String rx = r.x.ToString ();
-			String ry = r.y.ToString ();
-			String rz = r.z.ToString ();
+			//Vector3d r = orbit.pos.xzy;
+			//Vector3d v = orbit.vel.xzy;
+
+			String rx = r.x.ToString (); // X in pygame?
+			String ry = r.y.ToString (); // Z in pygame?
+			String rz = r.z.ToString (); // Y in pygame?
 
 			String vx = v.x.ToString ();
 			String vy = v.y.ToString ();
 			String vz = v.z.ToString ();
 
+			//Debug.Log ("SPEED1 " + orbit.getOrbitalVelocityAtUT(
+
+			Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
+			Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("SPEED3: " + orbit.GetRelativeVel ().ToString () );
+			// GetRelativeVel seems to be OK to get the correct position
+
+			//Debug.Log ("SPEED4: " + orbit.GetRotFrameVel ( ().ToString () );
+
+
+			Debug.Log ("POSIT1: " + orbit.getPositionAtUT(Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("POSIT2: " + orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used pos
+			Debug.Log ("POSIT3: " + orbit.getTruePositionAtUT (Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("POSIT4: " + orbit.pos.xzy.ToString ());
 			buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);
 
 			buffer.Add (vessel.missionTime.ToString ());
@@ -171,6 +198,11 @@ namespace MissionControl  {
 				buffer.Add ("None");
 			}
 
+			// Angular velocity data
+			buffer.Add (celestial.zUpAngularVelocity.magnitude.ToString ());
+
+			buffer.Add (celestial.initialRotation.ToString ());
+			buffer.Add (celestial.rotationAngle.ToString ());
 			return string.Join ("\t",buffer.ToArray ());
 		}
 	}

@@ -4,7 +4,7 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
 """
-from numpy import array, cross, inf, pi, arccos
+from numpy import array, cross, inf, pi, arccos, radians
 from numpy.linalg import norm
 
 import kepler
@@ -16,12 +16,32 @@ class Celestial(object):
         self.parent = parent
         self.name = name
         
+        self.orbit = None
+        self.state = None
+        self.coordinates = None
+        self.planet_rotation_adjustment = 0
+        self.update(**kwargs)
+        
+    
+
+    def update(self,**kwargs):
+        if "state" in kwargs:
+            self.state = kwargs["state"]
+            
+        # If time position and velocity are defined, create an orbit
         if "trv" in kwargs and self.parent:
             self.orbit = kepler.Orbit(self.parent,**kwargs)
-        #elif "elements" in kwargs:
-        #    pass
+            self.coordinates = None
+        
+        # If the object has no parent, it's probably the sun
         elif not self.parent:
             self.orbit = None
+            
+        # If coordinates are defined, lets use them instead of orbit
+        elif "coordinates" in kwargs:
+            self.coordinates = kwargs["coordinates"]
+            self.orbit = None
+            
         else:
             raise AttributeError
             
@@ -30,9 +50,11 @@ class Celestial(object):
             self.mu = kwargs["mu"]
         else:
             self.mu = None
-    
-
-        
+            
+        if "rotation" in kwargs:
+            self.angular_velocity = kwargs["rotation"][0]
+            self.initial_rotation = radians(kwargs["rotation"][1])
+            
         
         
 class Sun(Celestial):
@@ -46,6 +68,7 @@ class Planet(Celestial):
 class Vessel(Celestial):
     def __init__(self,parent,name,**kwargs):
         Celestial.__init__(self,parent,name,**kwargs)
+        
         
         '''
 Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)

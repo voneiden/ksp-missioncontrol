@@ -4,7 +4,7 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
 """
-import pygame
+import pygame, logging
 
 FONT = None
 class Element(object):
@@ -180,6 +180,9 @@ class Canvas(pygame.Surface):
         pygame.Surface.__init__(self, resolution)
         
         self.monitor = monitor
+        self.display = monitor.display
+        self.system  = monitor.system
+        
         self.resolution = resolution
         self.position = position
         
@@ -193,7 +196,7 @@ class Canvas(pygame.Surface):
         
         
     def motion(self,pos):
-        print ("motion",self,pos)
+        #print ("motion",self,pos)
         rect = pygame.Rect(pos,(1,1))
 
         if self.hilightElement and not self.hilightElement.shape.contains(rect):
@@ -233,7 +236,7 @@ class Canvas(pygame.Surface):
 
         
     def defocus(self):
-        print "DEFOCUS"
+        #print "DEFOCUS"
         if self.hilightElement:
             self.hilightElement.dehilight()
             self.hilightElement = None
@@ -294,6 +297,9 @@ class GroundTrack(Canvas):
         self.maps["kerbin"] = pygame.image.load("maps/kerbin.png")
         self.map = self.maps["kerbin"]
         
+        # TMP is used to render ground tracks of non-active vessels
+        self.tmp = pygame.Surface(resolution)
+        
         self.longitude = 180
         self.latitude  = 180
         
@@ -310,20 +316,39 @@ class GroundTrack(Canvas):
         
         return [int(x), int(y)]
         
+    def draw_tmp(self):
+        ''' Draws the tmp ground track for non active vessels '''
+        self.tmp.fill((0,0,0))
+        
     def draw(self):
         self.fill((0,0,0))
         self.blit(self.map,(0,0))
         
-        for vessel in self.monitor.system.vessels.values():
-            curpos = self.cc(vessel.orbit.getGround(self.monitor.system.UT))
-            print "DRAWING INTO",curpos
-            print "!"*50
-            print "UT",self.monitor.system.UT
+        #for vessel in self.monitor.system.vessels.values():
+        vessel = self.system.active_vessel
+        print "DRAW",vessel
+        if vessel:
+            print "or",vessel.orbit
+        
+        
+        if vessel and vessel.orbit:
+            lonlat = vessel.orbit.getGround(self.monitor.system.UT)
+            #logging.info("clat: %f"%lonlat[1])
+            #logging.info("clon: %f"%lonlat[0])
+            r,v = vessel.orbit.get(self.monitor.system.UT)
+            #logging.info("r: %s"%str(r))
+            #logging.info("v: %s"%str(v))
+            curpos = self.cc(lonlat)
+            
+            #print "DRAWING INTO",curpos
+            #print "!"*50
+            #print "UT",self.monitor.system.UT
             pygame.draw.circle(self,[255,255,255],curpos,3)
             period = vessel.orbit.getPeriod()
             step = period / 30
             #points = []
             lp = np = None
+            
             
             for i in xrange(60):
                 if np:
@@ -333,7 +358,7 @@ class GroundTrack(Canvas):
                 if i == -30:
                     continue
                 # TODO: this is just for showcasing
-                print "###",i,np,"<",lp
+               # print "###",i,np,"<",lp
                 
                 # Check if new point has wrapped. What's a smart way to do this, I DUNNO?
                 if lp[0] - np[0] > 180:
@@ -364,9 +389,15 @@ class GroundTrack(Canvas):
                     pygame.draw.line(self,[255,255,255],self.cc(lp),self.cc(np))
             #pygame.draw.lines(self,[255,255,255],True,points)
             
-                print "lp",lp
-                print "np",np
-    
+                #print "lp",lp
+                #print "np",np
+        elif vessel:
+            curpos = self.cc(vessel.coordinates)
+            pygame.draw.circle(self,[255,255,255],curpos,3)
+            
+        else:
+            return
+
 class Plot(Canvas):
     def __init__(self, monitor, resolution, position):
         Canvas.__init__(self, monitor, resolution, position)

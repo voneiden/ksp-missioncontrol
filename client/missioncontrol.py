@@ -6,7 +6,7 @@
 """
 import pygame, sys, time, socket, logging
 import celestialdata, kepler, views, monitor
-from numpy import array, degrees
+from numpy import array, degrees, radians
 
 FONT = None
 
@@ -14,8 +14,8 @@ FONT = None
 #soh.setLevel(logging.DEBUG)
 logger = logging.getLogger()
 #logger.addHandler(soh)
-logger.setLevel(logging.DEBUG)
-logging.debug("TESTING")
+logger.setLevel(logging.INFO)
+print("TESTING")
 class System(object):
     ''' 
     Core class
@@ -29,7 +29,10 @@ class System(object):
         self.vessels = {}
         self.UT = 0
         self.temp = []
+        self.active_vessel = None
+
         
+        #['c8b4cfeb-d7e8-4364-805f-703470710b3a', 'add4a8ae-187c-4ed6-b263-8a5353366ffe', 'db99cf0d-5436-47f2-9183-1a860e08beb3', '91fd5018-61a9-4c68-a1b2-0dda247c5c61']
         f = open("celestial.txt","w")
         f.close()
 
@@ -37,15 +40,20 @@ class System(object):
         ''' Parse incoming TCP data '''
 
         tok = data.split('\t')
-        oType = tok[0] # Object type
+        header = tok[0] # Object type
         
         # Object type (V)essel
-        if oType == "V":
-            vStatus = tok[1] # Status (flying, etc.)
-            vPID = tok[2]    # Unique ID
-            vT = tok[3]      # Game time
-            self.UT = float(vT)
+        if header == "V":
+            vessel_state   = tok[1] # Status (flying, etc.)
+            vessel_PID     = tok[2] # Unique ID
+            universal_time = tok[3] # Game time
+            reference_body = tok[4] # Reference body (what body is vessel orbiting?)
+            longitude      = tok[5]
+            latitude       = tok[6]
+            vessel_rv      = tok[7]
             
+            self.UT = float(universal_time)
+            """
             vRV = tok[4]
             vMT = tok[5]     # Mission time
             vAcc =  tok[6]   # Acceleration magnitude
@@ -90,19 +98,53 @@ class System(object):
                 VOLAN = tok[34]
                 VOAoP = tok[35]
                 VOM0 = tok[36]
+            """
+            # Parse position and velocity if we are sub-orbital or orbital
+            # TODO: What about docked ships?
+            if vessel_state == "SO" or vessel_state == "O":
+                rv = vessel_rv.split(':') 
+                print "vessel position update",rv
+                trv = [float(self.UT), array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
+                if vessel_PID in self.vessels:
+                    
+                    # TEMP: debugging..
+                    #self.vessels[vPID].lon = vLon
+                    #self.vessels[vPID].lat = vLat
+                    
+                    
+                    self.vessels[vessel_PID].update(state=vessel_state, trv=trv)
+                    
+                    
+                    
+                    self.celestials["Kerbin"].planet_rotation_adjustment = 0
+                    rasc,dec = self.vessels[vessel_PID].orbit.getGround(self.UT)
+                    
+                    print "Game lon:",longitude
+                    print "Sim  lon:",rasc
+                    print "Diff:",float(longitude)%360 - rasc%360
+                    
+                    self.celestials["Kerbin"].planet_rotation_adjustment = radians((float(longitude) - rasc)%360)
+                    
+                    self.active_vessel = self.vessels[vessel_PID]
+                else:
+                    self.vessels[vessel_PID] = celestialdata.Vessel(self.celestials["Kerbin"], vessel_PID, state=vessel_state, trv=trv)
+                    
+            else:
+                coordinates=(float(longitude),float(latitude))
+                print "coordinates:",coordinates
+                if vessel_PID in self.vessels:
+                    self.vessels[vessel_PID].update(state=vessel_state, coordinates=coordinates)
+                    self.active_vessel = self.vessels[vessel_PID]
+                else:
+                    self.vessels[vessel_PID] = celestialdata.Vessel(self.celestials["Kerbin"], vessel_PID, state=vessel_state, coordinates=coordinates)
             
-            # Parse position and velocity
-            rv = vRV.split(':')
-            trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
-            
-            self.vessels[vPID] = celestialdata.Vessel(self.celestials["Kerbin"],vPID,trv=trv)
-            self.display.viewGroundTrack.draw()
+            self.display.monitor.viewGroundTrack.draw()
             # TODO: Stash the vessel for now, load it after Eeloo has been received
             #self.temp.append((vPID,trv))
             
         
         # Object type (C)elestial body
-        elif oType == "C":
+        elif header == "C":
 
             # DEBUG: saving celestial stuff into a text file
             f = open("celestial.txt","a")
@@ -117,6 +159,13 @@ class System(object):
             SoI = tok[6]
             atm = tok[7]
             
+            angular_velocity = tok[8]
+            initial_rotation = tok[9]
+            rot_angle = tok[10]
+            print "name:",name
+            print "vang1",angular_velocity
+            print "initr",initial_rotation
+            print "rotation angle:",rot_angle
             # Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
                 self.celestials[name] = celestialdata.Sun(mu=float(mu),radius=float(radius))
@@ -129,18 +178,18 @@ class System(object):
                 # Parse orbit and generate it
                 rv = rv.split(':')
                 trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
-                self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm)
+                self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm, rotation=(float(angular_velocity), float(initial_rotation)))
                 
                 # Eeloo is the last planet, so render the viewplot
                 if name == "Eeloo":
-                    self.display.viewPlot.draw()
-            
-            # TODO unstash test ships
-            #if name == "Kerbin":
-            #    for vessel in self.temp:
-            #        self.vessels[vessel[0]] = celestialdata.Vessel(self.celestials["Kerbin"],vessel[0],trv=vessel[1])
-                
-            
+                    self.display.monitor.viewPlot.draw()
+ 
+        # Active vessel information
+        elif header == "AV":
+            if tok[1] in self.vessels:
+                self.active_vessel = self.vessels[tok[1]]
+            else:
+                logging.error("Active vessel suggested by server was not found in local vessel list")
             
             
 
@@ -208,50 +257,6 @@ class Display:
         #self.map_kerbin = pygame.image.load("maps/kerbin.png")
         #self.viewGroundTrack.blit(self.map_kerbin,(0,0))
         
-        
-        
-    """
-    def recalculate_transforms(self):
-        ''' Calculates window stretching to maintain aspect ratio '''
-        sw = float(self.window.get_width())
-        sh = float(self.window.get_height())
-        
-        # 4:3 aspect ratio
-        if sw/sh >= 1.333333333:
-            self.transformHeight = int(sh)
-            self.transformWidth = int(800.0 * (sh / 600.0))
-        else:
-            self.transformWidth = int(sw)
-            self.transformHeight = int(600.0 * (sw / 800.0))
-        
-        self.transformBlankWidth  = int((sw-self.transformWidth)/2)
-        self.transformBlankHeight = int((sh-self.transformHeight)/2)
-    
-        
-    def getRpos(self,pos):
-        ''' Get relative position in the 800x600 window '''
-        print(pos)    
-        x = int((pos[0] - self.transformBlankWidth) / float(self.transformWidth) * 800)
-        y = int((pos[1] - self.transformBlankHeight)/ float(self.transformHeight) * 600)
-        print ((x,y))
-        return (x,y)
-        
-        
-    def getCanvas(self,rpos):
-        ''' Find out which canavas is under the relative position
-        If you want to make a custom layout, you probably want to edit here
-        
-        TODO: Make this more flexible for easy theming
-        '''
-        x,y = rpos
-        if x < 400 and y < 300:
-            return (self.viewPlot,(x,y))
-        elif x >= 400 and y < 300:
-            return (self.viewData,(x-400,y))
-        else:
-            return (self.viewGroundTrack,(x,y-300))
-        
-    """    
     def mainloop(self):
         ''' 
         Mainloop. Attempts to stay at 20fps 

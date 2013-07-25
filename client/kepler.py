@@ -7,6 +7,7 @@
 from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi, nan
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
+import logging
 
 PI2 = pi * 2
 
@@ -233,8 +234,9 @@ class Orbit:
         Get ground position given t
         Currently supports only Kerbin
         
-                 float              float
+                 float            float
         returns [right ascension, declination]
+                 longitude        latitude
         '''
         
         # (1) Get current 3D position
@@ -243,11 +245,17 @@ class Orbit:
         # (2) Calculate theta (planet rotation)
         # -0.00029.. Kerbins angular velocity rad(/s)
         #  1.57079.. 90 degrees, initial t=0 rotation (depends on map?)
+        #          0.000290888208665722
+        #theta =  -0.0002908882086657216 * t #- 1.5707963267948966
+        # 22.0827470297 degree diff
+        theta = -self.parent.angular_velocity * t  + self.parent.planet_rotation_adjustment #radians( 64.9449644128)#- self.parent.initial_rotation
         
-        theta =  -0.0002908882086657216 * t - 1.5707963267948966
-        
+        #print "rotation with time:",degrees(self.parent.angular_velocity * t)%360
+        #print "+90"
+        #print "Theta",degrees(theta)%360
         # (3) Create a rotation matrix and rotate the current position
         rot_matrix = array([[cos(theta), sin(theta), 0], [-sin(theta), cos(theta), 0], [0, 0, 1]])
+        #rot_matrix = array([[cos(theta), -sin(theta), 0], [sin(theta), cos(theta), 0], [0, 0, 1]])
         rr = dot(r,rot_matrix)
         ur = rr / norm(rr)
         
@@ -267,7 +275,19 @@ class Orbit:
         logging.debug("Declination: %f degrees, rad %f"%(declination,radians(declination)))
         logging.debug("R. ascension: %f degrees, rad %f"%(rasc,radians(rasc)))
         logging.debug("ur: %s"%str(ur))
-    
+        
+        xy = array([ur[0],ur[1],0.0])
+        
+        #trasc1 = degrees(arccos(xy.dot(array([1,0,0]))))
+        #trasc2 = degrees(arccos(xy.dot(array([1,0,0]))))
+        """
+        logging.info("Test right ascension 1a:" + str(trasc1))
+        logging.info("Test right ascension 1b:" + str((trasc1+degrees(theta))%360))
+        logging.info("Test right ascension 1c:" + str((trasc1-degrees(theta))%360))
+        logging.info("Test right ascension 2a:" + str(trasc2))
+        logging.info("Test right ascension 2b:" + str((trasc2+degrees(theta))%360))
+        logging.info("Test right ascension 2c:" + str((trasc2-degrees(theta))%360))
+        """
         return [rasc,declination]
         
     def getPeriod(self):
