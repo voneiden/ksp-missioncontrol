@@ -12,7 +12,8 @@ import kepler
 PI2 = 2*pi
 #Define constants
 class Celestial(object):
-    def __init__(self,parent,name,**kwargs):
+    def __init__(self,system,parent,name,**kwargs):
+        self.system = system
         self.parent = parent
         self.name = name
         
@@ -20,6 +21,8 @@ class Celestial(object):
         self.state = None
         self.coordinates = None
         self.planet_rotation_adjustment = 0
+        self.tmp_debug = 0
+        
         self.update(**kwargs)
         
     
@@ -58,16 +61,16 @@ class Celestial(object):
         
         
 class Sun(Celestial):
-    def __init__(self,**kwargs):
-        Celestial.__init__(self,None,"Sun",**kwargs)
+    def __init__(self,system,**kwargs):
+        Celestial.__init__(self,system,None,"Sun",**kwargs)
         
 class Planet(Celestial):
-    def __init__(self,parent,name,**kwargs):
-        Celestial.__init__(self,parent,name,**kwargs)
+    def __init__(self,system,parent,name,**kwargs):
+        Celestial.__init__(self,system,parent,name,**kwargs)
 
 class Vessel(Celestial):
-    def __init__(self,parent,name,**kwargs):
-        Celestial.__init__(self,parent,name,**kwargs)
+    def __init__(self,system,parent,name,**kwargs):
+        Celestial.__init__(self,system,parent,name,**kwargs)
         
         
         '''

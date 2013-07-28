@@ -39,7 +39,7 @@ public class Server : MonoBehaviour {
  
 	public void Send(int socketIndex, string data)
 	{
-		Debug.Log ("Sending to client " + socketIndex.ToString ());
+		//Debug.Log ("Sending to client " + socketIndex.ToString ());
 		Socket client = m_Connections [socketIndex] as Socket;
 		byte[] byteData = System.Text.Encoding.ASCII.GetBytes (data +  ";");
 		//client.Send (byteData);
@@ -69,7 +69,7 @@ public class Server : MonoBehaviour {
 	public void SendAll(string data)
 	{
 		byte[] byteData = System.Text.Encoding.ASCII.GetBytes (data +  ";");
-		Debug.Log ("Sending to all clients");
+		//Debug.Log ("Sending to all clients");
 		foreach (Socket socket in m_Connections) {
 			//socket.Send (byteData);
 			try

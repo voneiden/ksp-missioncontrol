@@ -71,6 +71,26 @@ namespace MissionControl  {
 
 			buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);
 
+			Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
+			Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("SPEED3: " + orbit.GetRelativeVel ().ToString () );
+			// GetRelativeVel seems to be OK to get the correct position
+
+			//Debug.Log ("SPEED4: " + orbit.GetRotFrameVel ( ().ToString () );
+
+
+			Debug.Log ("POSIT1: " + orbit.getPositionAtUT(Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("POSIT2: " + orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used pos
+			Debug.Log ("POSIT3: " + orbit.getTruePositionAtUT (Planetarium.GetUniversalTime ()).ToString ());
+			Debug.Log ("POSIT4: " + orbit.pos.xzy.ToString ());
+
+			Debug.Log ("FRAMEROT: " + Planetarium.FrameIsRotating ().ToString ());
+			Debug.Log ("FRAMEROT: " + Planetarium.ZupRotation.ToString ());
+			Debug.Log ("FRAMEROT: " + Planetarium.Rotation.ToString ());
+
+			Debug.Log ("Framerot: " + Planetarium.InverseRotAngle.ToString ());
+
+
 			/*
 			buffer.Add (orbit.epoch.ToString ());
 			buffer.Add (orbit.semiMajorAxis.ToString ());
@@ -111,18 +131,8 @@ namespace MissionControl  {
 
 			//Debug.Log ("SPEED1 " + orbit.getOrbitalVelocityAtUT(
 
-			Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
-			Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
-			Debug.Log ("SPEED3: " + orbit.GetRelativeVel ().ToString () );
-			// GetRelativeVel seems to be OK to get the correct position
-
-			//Debug.Log ("SPEED4: " + orbit.GetRotFrameVel ( ().ToString () );
 
 
-			Debug.Log ("POSIT1: " + orbit.getPositionAtUT(Planetarium.GetUniversalTime ()).ToString ());
-			Debug.Log ("POSIT2: " + orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used pos
-			Debug.Log ("POSIT3: " + orbit.getTruePositionAtUT (Planetarium.GetUniversalTime ()).ToString ());
-			Debug.Log ("POSIT4: " + orbit.pos.xzy.ToString ());
 			buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);
 
 			buffer.Add (vessel.missionTime.ToString ());

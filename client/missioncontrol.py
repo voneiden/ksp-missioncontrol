@@ -6,7 +6,7 @@
 """
 import pygame, sys, time, socket, logging
 import celestialdata, kepler, views, monitor
-from numpy import array, degrees, radians
+from numpy import array, degrees, radians, cos, sin, dot
 
 FONT = None
 
@@ -30,7 +30,9 @@ class System(object):
         self.UT = 0
         self.temp = []
         self.active_vessel = None
-
+        self.frame_rotating = None
+        self.frame_rotation = None
+        
         
         #['c8b4cfeb-d7e8-4364-805f-703470710b3a', 'add4a8ae-187c-4ed6-b263-8a5353366ffe', 'db99cf0d-5436-47f2-9183-1a860e08beb3', '91fd5018-61a9-4c68-a1b2-0dda247c5c61']
         f = open("celestial.txt","w")
@@ -42,8 +44,14 @@ class System(object):
         tok = data.split('\t')
         header = tok[0] # Object type
         
+        # Planetarium data
+        if header == "P":
+            self.UT = float(tok[1]) # Universal time
+            self.frame_rotating = int(tok[2]) # Is frame rotating at the moment? 
+            self.frame_rotation = radians(float(tok[3])) # Current frame rotation
+        
         # Object type (V)essel
-        if header == "V":
+        elif header == "V":
             vessel_state   = tok[1] # Status (flying, etc.)
             vessel_PID     = tok[2] # Unique ID
             universal_time = tok[3] # Game time
@@ -101,7 +109,7 @@ class System(object):
             """
             # Parse position and velocity if we are sub-orbital or orbital
             # TODO: What about docked ships?
-            if vessel_state == "SO" or vessel_state == "O":
+            if vessel_state == "SO" or vessel_state == "O" or True:
                 rv = vessel_rv.split(':') 
                 print "vessel position update",rv
                 trv = [float(self.UT), array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
@@ -110,6 +118,15 @@ class System(object):
                     # TEMP: debugging..
                     #self.vessels[vPID].lon = vLon
                     #self.vessels[vPID].lat = vLat
+                    r = trv[1]
+                    print "Frame rotation: ",degrees(self.frame_rotation)
+                    print "R1: ",r
+                    r2 = self.RotateZ(r,self.frame_rotation)
+                    print "R2: ",r2
+                    pr = self.celestials["Kerbin"].angular_velocity * (self.UT) # + self.celestials["Kerbin"].planet_rotation_adjustment 
+                    print "Planet rotation: ",degrees(pr)
+                    r3 = self.RotateZ(r,pr)
+                    print "R3: ",r3
                     
                     
                     self.vessels[vessel_PID].update(state=vessel_state, trv=trv)
@@ -121,13 +138,20 @@ class System(object):
                     
                     print "Game lon:",longitude
                     print "Sim  lon:",rasc
-                    print "Diff:",float(longitude)%360 - rasc%360
+                    print "Diff 360:",float(longitude)%360 - rasc%360
+                    print "Diff",abs((float(longitude)-rasc))
                     
                     self.celestials["Kerbin"].planet_rotation_adjustment = radians((float(longitude) - rasc)%360)
                     
+                    if self.celestials["Kerbin"].tmp_debug:
+                        print "Change:",degrees(self.celestials["Kerbin"].planet_rotation_adjustment - self.celestials["Kerbin"].tmp_debug),self.celestials["Kerbin"].planet_rotation_adjustment - self.celestials["Kerbin"].tmp_debug
+                    self.celestials["Kerbin"].tmp_debug = self.celestials["Kerbin"].planet_rotation_adjustment
+                    
+                    print "ADJUSTMENT:",self.celestials["Kerbin"].planet_rotation_adjustment,degrees(self.celestials["Kerbin"].planet_rotation_adjustment)
+                    
                     self.active_vessel = self.vessels[vessel_PID]
                 else:
-                    self.vessels[vessel_PID] = celestialdata.Vessel(self.celestials["Kerbin"], vessel_PID, state=vessel_state, trv=trv)
+                    self.vessels[vessel_PID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_PID, state=vessel_state, trv=trv)
                     
             else:
                 coordinates=(float(longitude),float(latitude))
@@ -136,7 +160,7 @@ class System(object):
                     self.vessels[vessel_PID].update(state=vessel_state, coordinates=coordinates)
                     self.active_vessel = self.vessels[vessel_PID]
                 else:
-                    self.vessels[vessel_PID] = celestialdata.Vessel(self.celestials["Kerbin"], vessel_PID, state=vessel_state, coordinates=coordinates)
+                    self.vessels[vessel_PID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_PID, state=vessel_state, coordinates=coordinates)
             
             self.display.monitor.viewGroundTrack.draw()
             # TODO: Stash the vessel for now, load it after Eeloo has been received
@@ -168,7 +192,7 @@ class System(object):
             print "rotation angle:",rot_angle
             # Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
-                self.celestials[name] = celestialdata.Sun(mu=float(mu),radius=float(radius))
+                self.celestials[name] = celestialdata.Sun(self,mu=float(mu),radius=float(radius))
             else:
                 if atm == "None":
                     atm = False
@@ -178,7 +202,7 @@ class System(object):
                 # Parse orbit and generate it
                 rv = rv.split(':')
                 trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
-                self.celestials[name] = celestialdata.Planet(self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm, rotation=(float(angular_velocity), float(initial_rotation)))
+                self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm, rotation=(float(angular_velocity), float(initial_rotation)))
                 
                 # Eeloo is the last planet, so render the viewplot
                 if name == "Eeloo":
@@ -191,7 +215,10 @@ class System(object):
             else:
                 logging.error("Active vessel suggested by server was not found in local vessel list")
             
-            
+    def RotateZ(self,vector,angle):
+        ''' For debugging purposes '''
+        rot_matrix = array([[cos(angle), sin(angle), 0], [-sin(angle), cos(angle), 0], [0, 0, 1]])
+        return dot(vector,rot_matrix)
 
 class Display:
     ''' The display class handles events, window resizing and maintains correct aspect ratio '''

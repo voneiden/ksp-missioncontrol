@@ -227,7 +227,9 @@ class Orbit:
                 
         return (c2,c3)
                 
-    
+    def RotateZ(self,vector,angle):
+        rot_matrix = array([[cos(angle), sin(angle), 0], [-sin(angle), cos(angle), 0], [0, 0, 1]])
+        return dot(vector,rot_matrix)
     
     def getGround(self,t):
         ''' 
@@ -248,7 +250,7 @@ class Orbit:
         #          0.000290888208665722
         #theta =  -0.0002908882086657216 * t #- 1.5707963267948966
         # 22.0827470297 degree diff
-        theta = -self.parent.angular_velocity * t  + self.parent.planet_rotation_adjustment #radians( 64.9449644128)#- self.parent.initial_rotation
+        theta = -self.parent.angular_velocity * (t) + self.parent.system.frame_rotation - self.parent.initial_rotation #+ self.parent.planet_rotation_adjustment #radians( 64.9449644128)#- self.parent.initial_rotation
         
         #print "rotation with time:",degrees(self.parent.angular_velocity * t)%360
         #print "+90"

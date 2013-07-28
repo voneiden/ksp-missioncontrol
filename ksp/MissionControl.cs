@@ -116,6 +116,18 @@ namespace MissionControl  {
 			}
 
 			Vessel ActiveVessel = FlightGlobals.ActiveVessel;
+			double UT = Planetarium.GetUniversalTime ();
+			bool frame_rotating = Planetarium.FrameIsRotating ();
+			double frame_angle = Planetarium.InverseRotAngle;
+			string rotating;
+			if (frame_rotating) {
+				rotating = "1";
+			}
+			else {
+				rotating = "0";
+			}
+
+			server.SendAll ("P\t" + UT.ToString () + "\t" + rotating + "\t" + frame_angle.ToString ());
 			server.SendAll (utils.getStateLine (ActiveVessel));
 		}
 
