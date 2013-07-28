@@ -58,6 +58,8 @@ class Celestial(object):
             self.angular_velocity = kwargs["rotation"][0]
             self.initial_rotation = radians(kwargs["rotation"][1])
             
+        if "radius" in kwargs:
+            self.radius = kwargs["radius"]
         
         
 class Sun(Celestial):

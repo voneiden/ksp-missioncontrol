@@ -355,7 +355,11 @@ class GroundTrack(Canvas):
                     lp = [np[0],np[1]]
                 i -= 30
                 np = vessel.orbit.getGround(self.monitor.system.UT + i*step)
-                if i == -30:
+                if not lp:
+                    continue
+                if np[2]:
+                    np = None
+                    lp = None
                     continue
                 # TODO: this is just for showcasing
                # print "###",i,np,"<",lp

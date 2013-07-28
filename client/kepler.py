@@ -97,8 +97,11 @@ class Orbit:
         self.v0l = norm(self.v0)
         
         # Auxilary variable xi
+        print "r0l",self.r0l
+        print "mu",self.mu
+        print "v0l",self.v0l
         self.xi = self.v0l**2.0 / 2.0 - self.mu / self.r0l 
-        logging.debug("xi %f"%self.xi)
+        print("xi %f"%self.xi)
         
         if self.xi == 0:
             self.a = inf
@@ -138,9 +141,12 @@ class Orbit:
         # (1) Delta-t
         dt = t - self.t0
         
+        if dt == 0:
+            return [self.r0,self.v0]
         
-        logging.debug("Semi-major: %f"%self.a)
-        logging.debug("alpha: %f"%self.alpha)
+        print("Semi-major: %f"%self.a)
+        print("alpha: %f"%self.alpha)
+        print("mu: %f"%self.mu)
         
         # (2) Create the initial X variable guess for
         #  2a) Elliptic or circular orbit
@@ -156,7 +162,21 @@ class Orbit:
         
         #  2c) Hyperbolic orbit
         elif self.alpha < -1e-20:
-            X0 = sign(dt) * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sign(dt) * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)))
+            sdt = sign(dt)
+            if sdt == 0:
+                sdt = 1
+            print "dt",dt
+            print "a",self.a
+            var1 =  sdt * sqrt(-self.a)
+            var2 = -2*self.mu*self.alpha*dt
+            var3 = self.rvdot * sdt * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)
+            print "var1",var1
+            print "var2",var2
+            print "var3",var3
+            print "rvdot",self.rvdot
+            print "r0l",self.r0l
+            
+            X0 = sdt * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sdt * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)))
     
         else:
             logging.error("Error, ALPHA")
@@ -290,11 +310,19 @@ class Orbit:
         logging.info("Test right ascension 2b:" + str((trasc2+degrees(theta))%360))
         logging.info("Test right ascension 2c:" + str((trasc2-degrees(theta))%360))
         """
-        return [rasc,declination]
+        rl = norm(r)
+        if rl < self.parent.radius:
+            below_radius = True
+        else:
+            below_radius = False
+        return [rasc,declination,below_radius]
         
     def getPeriod(self):
         ''' 
         Gets the period of orbit.
         Note! Currently works only on e<1 orbits!
         '''
-        return PI2*sqrt(self.a**3/self.mu)
+        if self.a > 0:
+            return PI2*sqrt(self.a**3/self.mu)
+        else:
+            return 0

@@ -134,7 +134,7 @@ class System(object):
                     
                     
                     self.celestials["Kerbin"].planet_rotation_adjustment = 0
-                    rasc,dec = self.vessels[vessel_PID].orbit.getGround(self.UT)
+                    rasc,dec,below_radius = self.vessels[vessel_PID].orbit.getGround(self.UT)
                     
                     print "Game lon:",longitude
                     print "Sim  lon:",rasc
@@ -178,14 +178,16 @@ class System(object):
             name = tok[1]
             ref = tok[2]
             rv = tok[3]
-            mu = tok[4]
-            radius = tok[5]
-            SoI = tok[6]
+            mu = float(tok[4])
+            radius = float(tok[5])
+            SoI = float(tok[6])
             atm = tok[7]
             
-            angular_velocity = tok[8]
-            initial_rotation = tok[9]
+            angular_velocity = float(tok[8])
+            initial_rotation = float(tok[9])
             rot_angle = tok[10]
+            
+            rotation = [angular_velocity,initial_rotation]
             print "name:",name
             print "vang1",angular_velocity
             print "initr",initial_rotation
@@ -202,7 +204,7 @@ class System(object):
                 # Parse orbit and generate it
                 rv = rv.split(':')
                 trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
-                self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=float(mu),radius=float(radius),SoI=float(SoI),trv=trv,atm=atm, rotation=(float(angular_velocity), float(initial_rotation)))
+                self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=mu,radius=radius,SoI=SoI,trv=trv,atm=atm, rotation=rotation)
                 
                 # Eeloo is the last planet, so render the viewplot
                 if name == "Eeloo":
