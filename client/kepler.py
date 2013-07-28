@@ -156,7 +156,7 @@ class Orbit:
         
         #  2c) Hyperbolic orbit
         elif self.alpha < -1e-20:
-            X0 = sign(dt) * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sign(dt) * sqrt(-self.mu * self.a) * (1- self.r0 * self.alpha)))
+            X0 = sign(dt) * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sign(dt) * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)))
     
         else:
             logging.error("Error, ALPHA")
