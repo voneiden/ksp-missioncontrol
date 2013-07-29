@@ -235,8 +235,10 @@ class Display:
         global FONT
         FONT = self.font
         
-        self.window = None
+        self.window = pygame.display.set_mode((1024,768),
+                                              pygame.RESIZABLE)
         
+   
         info = pygame.display.Info()
         aspect = round(float(info.current_w) / float(info.current_h),2)
         print "Current aspect ratio",aspect
@@ -309,10 +311,30 @@ class Display:
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     postprocess_clicks.append(event)
                 
-                # In case of window resize, calculate new window requirements to maintain 4:3 aspect ratio
+                # In case of window resize, check for the best aspect ratio
                 elif event.type == pygame.VIDEORESIZE:
                     self.window = pygame.display.set_mode(event.size, pygame.RESIZABLE)
-                    self.monitor.transform()
+                    
+                    aspect = round(float(event.size[0]) / float(event.size[1]),2)
+                    dasp43   = abs(aspect - 1.33)
+                    dasp169  = abs(aspect - 1.78)
+                    dasp1610 = abs(aspect - 1.6)
+                    
+                    choices = {dasp43:monitor.Monitor43, dasp169:monitor.Monitor169, dasp1610:monitor.Monitor1610}
+                    keys = choices.keys()
+                    keys.sort()
+                    best_monitor = choices[keys[0]]
+                    print "Best monitor aspect:",keys[0],best_monitor
+                    # If optimum is not current monitor aspect ratio, change it
+                    if not isinstance(self.monitor,best_monitor):
+                        
+                        # TODO: Transfer some data between the views..
+                        self.monitor = best_monitor(self)
+                        self.monitor.setupViews()
+                        self.monitor.transform()
+                    
+                    else:                    
+                        self.monitor.transform()
                           
                 
                 

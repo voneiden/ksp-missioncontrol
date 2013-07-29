@@ -27,9 +27,9 @@ class Monitor(object):
 
         self.scaledResolution = resolution
         self.scaledSurface = pygame.Surface(resolution)
-
-        self.display.window = pygame.display.set_mode(resolution,
-                                              pygame.RESIZABLE)
+        print "Setting resolution",resolution
+        #self.display.window = pygame.display.set_mode(resolution,
+        #                                      pygame.RESIZABLE)
 
         self.views = {}
 
@@ -43,7 +43,7 @@ class Monitor(object):
         pass
 
     def fill(self):
-        self.virtualSurface.fill(255,255,255)
+        self.virtualSurface.fill((255,255,255))
 
     def transform(self):
         ''' Calculates window stretching to maintain aspect ratio '''
@@ -103,10 +103,11 @@ class Monitor43(Monitor):
 
     This monitor defines a view where there's a thin top menu bar, two top small views and one big bottom view.
     '''
-    def __init(self,display):
+    def __init__(self,display):
         Monitor.__init__(self,display,(1024,768))
 
     def setupViews(self):
+        # overview style
         self.viewTopMenu = views.HorizontalMenu(self, (1024,28), pygame.Rect((0,0),(1024,28)))
         self.viewPlot = views.Plot(self, (512,370), pygame.Rect((0,28),(512,370)))
         self.viewData = views.MainMenu(self, (512,370), pygame.Rect((512,28),(512,370)))
@@ -129,19 +130,44 @@ class Monitor169(Monitor):
     16:9 HIGH DEFINITION (with pixels!!)
     Virtual resolution is 1280 x 720 (WXGA, 921 kilopixels) or SWVGA ?!?! (1000x562, 562 kilopixels)
     '''
-    def __init(self,display):
+    def __init__(self,display):
         Monitor.__init__(self,display,(1280,720))
 
     def setupViews(self):
-        pass
+        self.viewMenubar = views.VerticalMenu(self, (80,720), pygame.Rect((0,0),(80,720)))
+        self.viewPlot = views.Plot(self, (600,360), pygame.Rect((80,0),(600,360)))
+        self.viewData = views.MainMenu(self, (600,360), pygame.Rect((680,0),(600,360)))
+        self.viewGroundTrack = views.GroundTrack(self, (1200,360), pygame.Rect((80,360),(1200,360)))
+
+        self.views["overview"] = [self.viewMenubar,
+                                  self.viewPlot,
+                                  self.viewData,
+                                  self.viewGroundTrack]
+    def fill(self):
+        self.virtualSurface.fill((255,255,255))
+        for view in self.views["overview"]:
+            self.virtualSurface.blit(view,view.position)
 
 class Monitor1610(Monitor):
     '''
     16:10 Older LCD
     Virtual resolution is 1280 x 800 (WXGA, 1 megapixel) or 1000x625, 625 kilopixels
     '''
-    def __init(self,display):
+    def __init__(self,display):
         Monitor.__init__(self,display,(1280,800))
 
     def setupViews(self):
-        pass
+        self.viewMenubar = views.VerticalMenu(self, (80,800), pygame.Rect((0,0),(80,800)))
+        self.viewPlot = views.Plot(self, (600,400), pygame.Rect((80,0),(600,400)))
+        self.viewData = views.MainMenu(self, (600,400), pygame.Rect((680,0),(600,400)))
+        self.viewGroundTrack = views.GroundTrack(self, (1200,400), pygame.Rect((80,400),(1200,400)))
+
+        self.views["overview"] = [self.viewMenubar,
+                                  self.viewPlot,
+                                  self.viewData,
+                                  self.viewGroundTrack]
+                                  
+    def fill(self):
+        self.virtualSurface.fill((255,255,255))
+        for view in self.views["overview"]:
+            self.virtualSurface.blit(view,view.position)

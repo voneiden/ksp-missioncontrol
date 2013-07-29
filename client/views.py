@@ -483,7 +483,16 @@ class HorizontalMenu(Canvas):
         self.fill((0,255,0))
 
 
-
+class VerticalMenu(Canvas):
+    '''
+    Horizontal top menu for changing view modes and gods know what
+    '''
+    def __init__(self,monitor,resolution,position):
+        Canvas.__init__(self,monitor,resolution,position)
+        self.draw()
+        
+    def draw(self):
+        self.fill((0,255,0))
 
 
 
