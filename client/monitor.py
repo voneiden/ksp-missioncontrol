@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """ "THE BEER-WARE LICENSE" (Revision 42):
- * Matti Eiden <snaipperi@gmail.com> wrote this file. As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.
+ * Matti Eiden <snaipperi@gmail.com> wrote this file. As long as you retain 
+ * this notice you can do whatever you want with this stuff. If we meet some 
+ * day, and you think this stuff is worth it, you can buy me a beer in return.
 
-This file contains the virtual monitor class, which handles layouts and scaling of the image. If
-you want to add a new layout, this is probably what you want.
+This file contains the virtual monitor class, which handles layouts and 
+scaling of the image.
 """
 import pygame, views
 import logging
@@ -19,6 +19,7 @@ class Monitor(object):
     scaled surface to create that sweet pixely look.
     '''
     def __init__(self,display,resolution=(1024,768)):
+        ''' Initialize a virtual monitor for display and resolution '''
         self.display = display
         self.system = display.system
 
@@ -27,11 +28,10 @@ class Monitor(object):
 
         self.scaledResolution = resolution
         self.scaledSurface = pygame.Surface(resolution)
-        print "Setting resolution",resolution
-        #self.display.window = pygame.display.set_mode(resolution,
-        #                                      pygame.RESIZABLE)
-
-        self.views = {}
+        
+        # TODO active view mode
+        self.views = {}    # Holds different viewmodes.
+        self.settings = {} # Holds runtime settings for views
 
         self.aspect = float(resolution[0]) / float(resolution[1])
 
@@ -39,14 +39,15 @@ class Monitor(object):
         self.setupViews()
 
     def setupViews(self):
-        ''' This function setups the views used by this monitor'''
+        ''' Override this function to setups the views used by this monitor'''
         pass
 
     def fill(self):
+        ''' Override this function to draw on the monitor surface '''
         self.virtualSurface.fill((255,255,255))
 
     def transform(self):
-        ''' Calculates window stretching to maintain aspect ratio '''
+        ''' Calculates window stretching to maintain fixed aspect ratio '''
         sw = float(self.display.window.get_width())
         sh = float(self.display.window.get_height())
 
@@ -75,26 +76,18 @@ class Monitor(object):
 
 
     def getView(self,rpos):
-        ''' Find out which view is under the relative position
-        If you want to make a custom layout, you probably want to edit here
-
-        TODO: Make this more flexible for easy theming
+        ''' 
+        Find out which view is under the relative position
         '''
+        # TODO active view mode
+        
         position = pygame.Rect((rpos[0],rpos[1]),(1,1))
         for view in self.views["overview"]:
             if view.position.contains(position):
                 return (view, (rpos[0] - view.position.x, rpos[1] - view.position.y))
         return False
 
-        """
-        x,y = rpos
-        if x < 400 and y < 300:
-            return (self.viewPlot,(x,y))
-        elif x >= 400 and y < 300:
-            return (self.viewData,(x-400,y))
-        else:
-            return (self.viewGroundTrack,(x,y-300))
-        """
+
 
 class Monitor43(Monitor):
     '''

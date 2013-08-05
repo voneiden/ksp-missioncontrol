@@ -1,45 +1,55 @@
 # -*- coding: utf-8 -*-
 """ "THE BEER-WARE LICENSE" (Revision 42):
- * Matti Eiden <snaipperi@gmail.com> wrote this file. As long as you retain this notice you
- * can do whatever you want with this stuff. If we meet some day, and you think
- * this stuff is worth it, you can buy me a beer in return.
+ * Matti Eiden <snaipperi@gmail.com> wrote this file. As long as you retain 
+ * this notice you can do whatever you want with this stuff. If we meet some 
+ * day, and you think this stuff is worth it, you can buy me a beer in return.
 """
-import pygame, logging
+import pygame
 
 FONT = None
 class Element(object):
-    def __init__(self,surface,shape,text,cText=(0,255,0),cBackground=(0,0,0),cHilight=(0,50,0),cFocus=(0,150,0)):
+    ''' 
+    Element is the base object for interactive objects for views
+    It requires a surface to render on, shape (rect), text and colors.
+    
+    color_text - color of text
+    color_background
+    '''
+    def __init__(self, surface, shape, text, color_text=(0,255,0),
+                 color_background=(0,0,0), color_hilight=(0,50,0), 
+                 color_focus=(0,150,0)):
+                     
         self.surface = surface     
         self.shape = shape
         self.text = text
         
         # Define colors
-        self.cText = cText
-        self.cBackground = cBackground        
-        self.cHilight = cHilight
-        self.cFocus = cFocus
+        self.color_text = color_text
+        self.color_background = color_background        
+        self.color_hilight = color_hilight
+        self.color_focus = color_focus
         
         # Ticker is used to count frames when under focus. Do stuff
         # like automatic defocus or animation or.. you know.
         self.ticker = 0
         
-        self.bHilight = False
-        self.bFocus = False
+        self.has_hilight = False
+        self.has_focus = False
         self.render()
         
     def render(self):
         """ Override """
-        if self.bFocus:
-            bg = self.cFocus
-        elif self.bHilight:
-            bg = self.cHilight
+        if self.has_focus:
+            bg = self.color_focus
+        elif self.has_hilight:
+            bg = self.color_hilight
         else:
-            bg = self.cBackground
+            bg = self.color_background
             
-        pygame.draw.rect(self.surface,bg,self.shape)
-        pygame.draw.rect(self.surface,self.cText,self.shape,1)
-        txt = FONT.render(self.text,False,self.cText)
-        self.surface.blit(txt,(self.shape[0]+2,self.shape[1]+2))
+        pygame.draw.rect(self.surface, bg, self.shape)
+        pygame.draw.rect(self.surface, self.color_text, self.shape,1)
+        txt = FONT.render(self.text, False, self.color_text)
+        self.surface.blit(txt,(self.shape[0]+2, self.shape[1]+2))
         
     def click(self):
         """ Override """
@@ -59,25 +69,25 @@ class Element(object):
     
     def focus(self):
         """ Override """
-        self.bFocus = True
+        self.has_focus = True
         print "Focused"
         self.render()
     
     def defocus(self):
         """ Override """
-        self.bFocus = False
+        self.has_focus = False
         self.surface.focusElement = None
         print "Defocused"
         self.render()
     
     def hilight(self):
         """ Override """
-        self.bHilight = True
+        self.has_hilight = True
         self.render()
     
     def dehilight(self):
         """ Override """
-        self.bHilight = False
+        self.has_hilight = False
         self.render()
         
     def tick(self):
@@ -87,29 +97,37 @@ class Element(object):
 class Button(Element):
     ''' Button object for easy clickin' '''
     
-    def __init__(self,surface,shape,text,cText=(0,255,0),cBackground=(0,0,0),cActive=(0,50,0),cClick=(0,150,0)):
-        Element.__init__(self,surface,shape,text,cText,cBackground,cActive,cClick)
+    def __init__(self, surface, shape, text, color_text=(0,255,0),
+                 color_background=(0,0,0), color_hilight=(0,50,0), 
+                 color_focus=(0,150,0)):
+                     
+        Element.__init__(self, surface, shape, text,color_text,
+                         color_background, color_hilight, color_focus)
         
     def click(self):
         pass
     
     def tick(self):
         self.ticker += 1
-        print "Ticking",self.ticker,self.bFocus
+        print "Ticking",self.ticker,self.has_focus
         if self.ticker >= 3:
             self.defocus()
             self.surface.focusElement = None
             self.ticker = 0
             
 class Input(Element):
-    ''' Input object for typing stuff? '''
+    ''' Input object for typing stuff '''
     
-    def __init__(self,surface,shape,text,cBackground=(0,0,0),cActive=(0,50,0),cText=(0,255,0),cClick=(0,150,0)):
+    def __init__(self, surface, shape, text, color_background=(0,0,0),
+                 color_hilight=(0,50,0), color_text=(0,255,0), 
+                 color_focus=(0,150,0)):
+                     
         self.cursor = False
         self.key = None
         self.keyTicker = 0
         
-        Element.__init__(self,surface,shape,text,cText,cBackground,cActive,cClick)
+        Element.__init__(self, surface, shape, text, color_text, 
+                         color_background, color_hilight, color_focus)
         
     def defocus(self):
         self.cursor = None
@@ -117,22 +135,22 @@ class Input(Element):
         Element.defocus(self)
         
     def render(self):        
-        if self.bFocus:
-            bg = self.cFocus
-        elif self.bHilight:
-            bg = self.cHilight
+        if self.has_focus:
+            bg = self.color_focus
+        elif self.has_hilight:
+            bg = self.color_hilight
         else:
-            bg = self.cBackground
+            bg = self.color_background
             
-        pygame.draw.rect(self.surface,bg,self.shape)
-        pygame.draw.rect(self.surface,self.cText,self.shape,1)
+        pygame.draw.rect(self.surface, bg, self.shape)
+        pygame.draw.rect(self.surface, self.color_text, self.shape,1)
         
         if self.cursor:
             s = self.text + '_'
         else:
             s = self.text
             
-        txt = FONT.render(s,False,self.cText)
+        txt = FONT.render(s, False, self.color_text)
         self.surface.blit(txt,(self.shape[0]+2,self.shape[1]+2))    
     
     def tick(self):
