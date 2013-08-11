@@ -47,7 +47,7 @@ class System(object):
         
         #['c8b4cfeb-d7e8-4364-805f-703470710b3a', 'add4a8ae-187c-4ed6-b263-8a5353366ffe', 'db99cf0d-5436-47f2-9183-1a860e08beb3', '91fd5018-61a9-4c68-a1b2-0dda247c5c61']
         
-        f = open("celestial.txt","r")
+        f = open("celestials.txt","r")
         for line in f.readlines():
             self.parse(line.strip())
         f.close()
@@ -231,7 +231,7 @@ class System(object):
                 #if name == "Eeloo":
                 #    self.display.monitor.viewPlot.draw()
                 
-                self.celestial_data.append(data)
+            self.celestial_data.append(data)
                 
         # Active vessel information
         elif header == "AV": #TODO: NOT implemented in the plugin yet?
