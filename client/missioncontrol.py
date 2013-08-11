@@ -4,8 +4,18 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
 """
-import pygame, sys, time, socket, logging
-import celestialdata, kepler, views, monitor
+
+import celestialdata
+import elements
+import kepler
+import logging
+import monitor
+import pygame
+import socket
+import sys
+import time
+import views
+
 from numpy import array, degrees, radians, cos, sin, dot
 
 FONT = None
@@ -33,10 +43,16 @@ class System(object):
         self.frame_rotating = None
         self.frame_rotation = None
         
+        self.celestial_data = [] # Used for saving fresh celestial data updates
         
         #['c8b4cfeb-d7e8-4364-805f-703470710b3a', 'add4a8ae-187c-4ed6-b263-8a5353366ffe', 'db99cf0d-5436-47f2-9183-1a860e08beb3', '91fd5018-61a9-4c68-a1b2-0dda247c5c61']
-        f = open("celestial.txt","w")
+        
+        f = open("celestial.txt","r")
+        for line in f.readlines():
+            self.parse(line.strip())
         f.close()
+        
+        
 
     def parse(self,data):
         ''' Parse incoming TCP data '''
@@ -163,7 +179,12 @@ class System(object):
                     self.vessels[vessel_PID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_PID, state=vessel_state, coordinates=coordinates)
             
             self.display.monitor.viewGroundTrack.draw()
-            # TODO: Stash the vessel for now, load it after Eeloo has been received
+            if self.active_vessel:
+                self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
+                self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
+                
+                self.display.monitor.viewPlot.draw()
+                # TODO: Stash the vessel for now, load it after Eeloo has been received
             #self.temp.append((vPID,trv))
             
         
@@ -171,9 +192,7 @@ class System(object):
         elif header == "C":
 
             # DEBUG: saving celestial stuff into a text file
-            f = open("celestial.txt","a")
-            f.write(data + "\n")
-            f.close()
+            
             
             name = tok[1]
             ref = tok[2]
@@ -192,9 +211,11 @@ class System(object):
             print "vang1",angular_velocity
             print "initr",initial_rotation
             print "rotation angle:",rot_angle
+            print "SOI",SoI
             # Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
-                self.celestials[name] = celestialdata.Sun(self,mu=float(mu),radius=float(radius))
+                self.celestials[name] = celestialdata.Sun(self,mu=float(mu),radius=float(radius),SoI=SoI)
+                self.celestial_data = []    
             else:
                 if atm == "None":
                     atm = False
@@ -207,15 +228,30 @@ class System(object):
                 self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=mu,radius=radius,SoI=SoI,trv=trv,atm=atm, rotation=rotation)
                 
                 # Eeloo is the last planet, so render the viewplot
-                if name == "Eeloo":
-                    self.display.monitor.viewPlot.draw()
- 
+                #if name == "Eeloo":
+                #    self.display.monitor.viewPlot.draw()
+                
+                self.celestial_data.append(data)
+                
         # Active vessel information
-        elif header == "AV":
+        elif header == "AV": #TODO: NOT implemented in the plugin yet?
             if tok[1] in self.vessels:
                 self.active_vessel = self.vessels[tok[1]]
+                print "ACTIVE VESSEL SET"*30
             else:
                 logging.error("Active vessel suggested by server was not found in local vessel list")
+                
+        elif header == "SYNCOK":
+            f = open("celestials.txt",'w')
+            f.write("\n".join(self.celestial_data))
+            f.close()
+            
+            # Testing
+            
+            #self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
+            #self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
+            
+            self.display.monitor.viewPlot.draw()
             
     def RotateZ(self,vector,angle):
         ''' For debugging purposes '''
@@ -232,6 +268,8 @@ class Display:
         
         self.font = pygame.font.Font("unispace.ttf",12)
         views.FONT = self.font
+        elements.FONT = self.font
+        
         global FONT
         FONT = self.font
         
@@ -325,13 +363,14 @@ class Display:
                     keys.sort()
                     best_monitor = choices[keys[0]]
                     print "Best monitor aspect:",keys[0],best_monitor
+                    
                     # If optimum is not current monitor aspect ratio, change it
                     if not isinstance(self.monitor,best_monitor):
-                        
-                        # TODO: Transfer some data between the views..
-                        self.monitor = best_monitor(self)
-                        self.monitor.setupViews()
-                        self.monitor.transform()
+                        settings = self.monitor.settings # Backup settings
+                        self.monitor = best_monitor(self)# Initialize new monitor
+                        self.monitor.settings = settings # Restore settings
+                        self.monitor.setupViews()        # setup the default views
+                        self.monitor.transform()         # calculate new transforms
                     
                     else:                    
                         self.monitor.transform()

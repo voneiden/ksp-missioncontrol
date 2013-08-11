@@ -17,6 +17,8 @@ class Celestial(object):
         self.parent = parent
         self.name = name
         
+        self.children = [] # Does not contain vessels at least yet
+        
         self.orbit = None
         self.state = None
         self.coordinates = None
@@ -60,6 +62,9 @@ class Celestial(object):
             
         if "radius" in kwargs:
             self.radius = kwargs["radius"]
+            
+        if "SoI" in kwargs:
+            self.SoI = kwargs["SoI"]
         
         
 class Sun(Celestial):
@@ -69,6 +74,8 @@ class Sun(Celestial):
 class Planet(Celestial):
     def __init__(self,system,parent,name,**kwargs):
         Celestial.__init__(self,system,parent,name,**kwargs)
+        self.parent.children.append(self)
+        
 
 class Vessel(Celestial):
     def __init__(self,system,parent,name,**kwargs):

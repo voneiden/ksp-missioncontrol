@@ -31,6 +31,7 @@ class Monitor(object):
         
         # TODO active view mode
         self.views = {}    # Holds different viewmodes.
+        
         self.settings = {} # Holds runtime settings for views
 
         self.aspect = float(resolution[0]) / float(resolution[1])
@@ -105,7 +106,11 @@ class Monitor43(Monitor):
         self.viewPlot = views.Plot(self, (512,370), pygame.Rect((0,28),(512,370)))
         self.viewData = views.MainMenu(self, (512,370), pygame.Rect((512,28),(512,370)))
         self.viewGroundTrack = views.GroundTrack(self, (1024,370), pygame.Rect((0,398),(1024,370)))
+        
+        self.viewMainMenu = views.MainMenu(self, (1024,768), pygame.Rect((0,0),(1024,768)))
 
+        self.views["mainmenu"] = [self.viewMainMenu]
+        
         self.views["overview"] = [self.viewTopMenu,
                                   self.viewPlot,
                                   self.viewData,

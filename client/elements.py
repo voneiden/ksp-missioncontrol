@@ -5,6 +5,7 @@
  * day, and you think this stuff is worth it, you can buy me a beer in return.
 """
 import pygame
+FONT = None
 
 class BoxElement(object):
     ''' 
@@ -100,7 +101,7 @@ class Button(BoxElement):
                  color_background=(0,0,0), color_hilight=(0,50,0), 
                  color_focus=(0,150,0)):
                      
-        Element.__init__(self, surface, shape, text,color_text,
+        BoxElement.__init__(self, surface, shape, text,color_text,
                          color_background, color_hilight, color_focus)
         
     def click(self):
@@ -125,13 +126,13 @@ class Input(BoxElement):
         self.key = None
         self.keyTicker = 0
         
-        Element.__init__(self, surface, shape, text, color_text, 
+        BoxElement.__init__(self, surface, shape, text, color_text, 
                          color_background, color_hilight, color_focus)
         
     def defocus(self):
         self.cursor = None
         self.key = None
-        Element.defocus(self)
+        BoxElement.defocus(self)
         
     def render(self):        
         if self.has_focus:

@@ -37,6 +37,8 @@ class Orbit:
         Based on Vallado, calculates an orbit from orbital elements
         Not ready to be used yet!
         '''
+        
+        """
         if not isinstance(vec_r,array) or isinstance(vec_v,array):
             raise AttributeError("Needs array")
         
@@ -70,7 +72,8 @@ class Orbit:
         i = arccos(vec_h[2] / nrm_h)
         if vec_n[1] < 0:
             i = PI2 - i
-    
+        """
+        
     def recalculateFromTRV(self,trv):
         ''' 
         Based on Vallado. This function calculates orbit parameters from given
@@ -95,6 +98,13 @@ class Orbit:
         # Normalized position and velocity vectors
         self.r0l = norm(self.r0)
         self.v0l = norm(self.v0)
+        
+        # Eccentricity vector
+        #self.ecc = ((self.v0l**2 - self.mu / self.r0l)*self.r0 - (self.r0.dot(self.r0))*self.v0 ) / self.mu
+        #self.ecc_l = norm(self.ecc)
+        
+        
+        #self.eccl = norm(self.e)
         
         # Auxilary variable xi
         print "r0l",self.r0l
@@ -122,8 +132,24 @@ class Orbit:
         self.h = cross(self.r0,self.v0)
         self.hl = norm(self.h)
         
-        # Umm.. p is not period
+        # p is the semi-parameter
         self.p = self.hl**2 / self.mu
+
+        self.e = sqrt(1 - self.p / self.a)        
+        
+        # Apses
+        if self.a:
+            self.periapsis = (1 - self.e) * self.a
+            self.apoapsis = (1 + self.e) * self.a
+        else:
+            self.periapsis = self.hl**2 / self.mu
+            self.apoapsis = nan
+        
+        print "Semi-major",self.a
+        print "Eccentricity",self.e
+        print "Apoapsis",self.apoapsis
+        print "Periapsis",self.periapsis
+        
         
         # Dot product of position and velocity        
         self.rvdot = self.r0.dot(self.v0)
@@ -144,9 +170,9 @@ class Orbit:
         if dt == 0:
             return [self.r0,self.v0]
         
-        print("Semi-major: %f"%self.a)
-        print("alpha: %f"%self.alpha)
-        print("mu: %f"%self.mu)
+        #print("Semi-major: %f"%self.a)
+        #print("alpha: %f"%self.alpha)
+        #print("mu: %f"%self.mu)
         
         # (2) Create the initial X variable guess for
         #  2a) Elliptic or circular orbit

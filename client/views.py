@@ -4,11 +4,13 @@
  * this notice you can do whatever you want with this stuff. If we meet some 
  * day, and you think this stuff is worth it, you can buy me a beer in return.
 """
+import celestialdata
 import kepler
 import pygame
 from elements import Button, Input
 
-from numpy import array
+from numpy import array, cross, arccos
+from numpy.linalg import norm
 
 FONT = None
             
@@ -242,10 +244,45 @@ class GroundTrack(Canvas):
             return
 
 class Plot(Canvas):
+    SHIP_PROJECTION_MODE = "plotter_ship_projection_mode" # Defines projection for the view. Either REF or SHP
+    REFERENCE_BODY = "plotter_reference_body" # Reference body
+    TARGET_VESSEL = "plotter_target_vessel"
+    PLOT_VESSELS = "plotter_plot_ships" # List of ships to plot (non-active)
+    PLOT_CHILDREN = "plotter_plot_children" # Plot children objects (moons etc)
+    
+    PLOT_COLORS = {
+                    "Sun":[pygame.Color("yellow"),4],
+                    "Moho":[pygame.Color("brown"),1],
+                    "Eve":[pygame.Color("purple"),2],
+                    "Kerbin":[pygame.Color("blue"),2],
+                    "Duna":[pygame.Color("orange"),2],
+                    "Dres":[pygame.Color("gray"),2],
+                    "Jool":[pygame.Color("green"),3],
+                    "Eeloo":[pygame.Color("cyan"),2],
+                    "Mun":[pygame.Color("grey"),0],
+                    "Minmus":[pygame.Color("cyan"),0]}
+    
+
     def __init__(self, monitor, resolution, position):
         Canvas.__init__(self, monitor, resolution, position)
-        self.ship_projection = False
 
+        # Define default settings
+        
+        if not self.SHIP_PROJECTION_MODE in self.monitor.settings:
+            self.monitor.settings[self.SHIP_PROJECTION_MODE] = False
+            
+        if not self.REFERENCE_BODY in self.monitor.settings:
+            self.monitor.settings[self.REFERENCE_BODY] = self.monitor.system.celestials["Sun"]
+            
+        if not self.TARGET_VESSEL in self.monitor.settings:
+            self.monitor.settings[self.TARGET_VESSEL] = self.system.active_vessel
+            
+        if not self.PLOT_VESSELS in self.monitor.settings:
+            self.monitor.settings[self.PLOT_VESSELS] = []
+          
+        if not self.PLOT_CHILDREN in self.monitor.settings:
+            self.monitor.settings[self.PLOT_CHILDREN] = True
+            
         
         self.draw()
     
@@ -257,77 +294,153 @@ class Plot(Canvas):
     def draw(self):
         print "Redraw"
         self.fill([0,0,0])
-
-        if self.ship_projection:
+        
+        if not self.monitor.settings[self.REFERENCE_BODY]:
+            return
+            
+        target_vessel = self.monitor.settings[self.TARGET_VESSEL]
+        reference_body = self.monitor.settings[self.REFERENCE_BODY]
+        # First determine everything we need to plot
+        
+        plot = []
+        
+        plot.append(reference_body)
+        
+        if self.monitor.settings[self.PLOT_CHILDREN]:
+            for child in reference_body.children:
+                plot.append(child)
+                
+        if target_vessel and target_vessel.parent == reference_body:
+            plot.append(target_vessel)
+            
+        for vessel in self.monitor.settings[self.PLOT_VESSELS]:
+            if vessel != target_vessel and vessel.parent == reference_body:
+                plot.append(vessel)
+                
+        print "Plotting the following:",plot
+        
+        # Then determine if we need to rotate plots
+        
+        if target_vessel and self.monitor.settings[self.SHIP_PROJECTION_MODE]:
+               
             # Calculate rotation axis
-            vessel = self.system.active_vessel
             frame_up = array([0, 0, 1])
             
             r,v = vessel.get(self.monitor.system.UT)
 
             orbit_up = cross(r,v)
             
-            rotation_axis = cross(orbit_up, up)
+            rotation_axis = cross(orbit_up, frame_up)
             rotation_axis_u = rotation_axis / norm(rotation_axis)
             
-            angle = arccos(orbit_up.dot(up))
+            angle = arccos(orbit_up.dot(frame_up))
 
             rotation_matrix = kepler.RotationMatrix(rotation_axis_u, angle)
             
-        # Draw sun
+        else:
+            rotation_matrix = False
+            
         
-        pygame.draw.circle(self,[255,255,0],self.cc([0,0]),4)
+        # Determine the furthest apoapsis
+        max_distance = 0
+        for celestial in plot:
+            if celestial == reference_body:
+                max_distance = celestial.radius
+            else:
+                if celestial.orbit.apoapsis > celestial.parent.SoI:
+                    max_distance = celestial.parent.SoI
+                else:
+                    if celestial.orbit.apoapsis > max_distance:
+                        max_distance = celestial.orbit.apoapsis
+                        print "Max distance set for",celestial.name,celestial.orbit.apoapsis
+        # Determine scale factor
         
-        for celestial in self.monitor.system.celestials.values():
-            if celestial.parent == self.monitor.system.celestials["Sun"]:
-                print "Drawing",celestial.name
-                if celestial.name == "Kerbin":
-                    color = pygame.Color("blue")
-                    radius = 2
-                elif celestial.name == "Moho":
-                    color = pygame.Color("brown")
-                    radius = 1
-                elif celestial.name == "Eve":
-                    color = pygame.Color("purple")
-                    radius = 2
-                elif celestial.name == "Duna":
-                    color = pygame.Color("orange")
-                    radius = 2
-                elif celestial.name == "Dres":
-                    color = pygame.Color("gray")
-                    radius = 2
-                elif celestial.name == "Jool":
+        if self.resolution [0] < self.resolution[1]:
+            max_virtual_distance = self.resolution[0] / 2.0
+        else:
+            max_virtual_distance = self.resolution[1] / 2.0
+            
+        scale_factor = max_virtual_distance / max_distance
+        print "scale factor:",scale_factor
+        # Render
+        # TODO solar plot requires custom radius scaling..
+        if reference_body.name == "Sun":
+            for celestial in plot:
+                if celestial == reference_body:
+                    color = self.PLOT_COLORS[celestial.name][0]
+                    radius = self.PLOT_COLORS[celestial.name][1]
+                    pygame.draw.circle(self, color, self.cc([0,0]), radius)
+                
+                elif isinstance(celestial, celestialdata.Planet):
+                    color = self.PLOT_COLORS[celestial.name][0]
+                    radius = self.PLOT_COLORS[celestial.name][1]
+                    self.draw_celestial(celestial,color,radius, scale_factor)
+                    
+                elif celestial == self.TARGET_VESSEL:
                     color = pygame.Color("green")
-                    radius = 3
-                elif celestial.name == "Eeloo":
-                    color = pygame.Color("cyan")
-                    radius = 2
+                    radius = 1
+                    self.draw_celestial(celestial,color,radius, scale_factor)
                     
                 else:
-                    color = [255,255,255]
+                    color = pygame.Color("yellow")
+                    radius = 1
+                    self.draw_celestial(celestial,color,radius, scale_factor)
+        else:
+            for celestial in plot:
+                if celestial == reference_body:
+                    print "PLOTTING REF BODY"
+                    color = self.PLOT_COLORS[celestial.name][0]
+                    radius = int(celestial.radius * scale_factor)
+                    pygame.draw.circle(self, color, self.cc([0,0]), radius)
+                
+                elif isinstance(celestial, celestialdata.Planet):
+                    print "PLOTTING PLANET"
+                    color = self.PLOT_COLORS[celestial.name][0]
+                    radius = int(celestial.radius * scale_factor)
+                    self.draw_celestial(celestial, color, radius, scale_factor)
+                    
+                elif celestial == target_vessel:
+                    print "PLOTTING TARGET VESSEL"
+                    color = pygame.Color("green")
                     radius = 2
+                    self.draw_celestial(celestial, color, radius, scale_factor)
                     
-                rv = celestial.orbit.get(0)
-                r = rv[0]
-                x = int(r[0] / 5e8)
-                y = int(r[1] / 5e8)
-
-                print "DRAWING AT",x,y
-                pygame.draw.circle(self,color,self.cc([x,y]),radius)
-                
-                # Draw orbit
-                
-                period = celestial.orbit.getPeriod()
-                step = period / 40
-                points = []
-                for i in xrange(40):
-     
-                    np = celestial.orbit.get(i*step)[0]
-                    nx = int(np[0] / 5e8)
-                    ny = int(np[1] / 5e8)
-                    points.append(self.cc([nx,ny]))
-                    
-                pygame.draw.lines(self,color,True,points)
+                else:
+                    print "ELSE DRAWING"
+                    print celestial
+                    print celestial.name
+                    print self.TARGET_
+                    color = pygame.Color("yellow")
+                    radius = 2
+                    self.draw_celestial(celestial,color,radius, scale_factor)
+                  
+    def draw_celestial(self,celestial,color,radius, scale_factor):
+        if radius < 1:
+            radius = 1
+        else:
+            radius = int(radius)
+            
+        r,v = celestial.orbit.get(self.monitor.system.UT)
+        print r[0] * scale_factor
+        x = int(r[0] * scale_factor)
+        y = int(r[1] * scale_factor)
+    
+        print "DRAWING AT",x,y
+        pygame.draw.circle(self, color, self.cc([x,y]), radius)
+        
+        # Draw orbit
+        
+        period = celestial.orbit.getPeriod()
+        step = period / 40
+        points = []
+        for i in xrange(40):
+ 
+            np = celestial.orbit.get(i*step)[0]
+            nx = int(np[0] * scale_factor)
+            ny = int(np[1] * scale_factor)
+            points.append(self.cc([nx,ny]))
+            
+        pygame.draw.lines(self,color,True,points)
            
 class HorizontalMenu(Canvas):
     '''
@@ -352,35 +465,3 @@ class VerticalMenu(Canvas):
     def draw(self):
         self.fill((0,255,0))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-=======
-                
-        
->>>>>>> Stashed changes
