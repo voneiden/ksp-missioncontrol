@@ -451,7 +451,12 @@ class Display:
                         view[0].click(view[1])
                     
                     
-            self.system.network.recv()
+            
+            if self.system.network.socket:
+                self.system.network.recv()
+            else:
+                self.system.UT += 100000
+                self.monitor.viewPlot.draw()
             
             self.window.fill((255,0,0))
 

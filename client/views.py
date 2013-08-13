@@ -249,6 +249,7 @@ class Plot(Canvas):
     TARGET_VESSEL = "plotter_target_vessel"
     PLOT_VESSELS = "plotter_plot_ships" # List of ships to plot (non-active)
     PLOT_CHILDREN = "plotter_plot_children" # Plot children objects (moons etc)
+    ORBIT_CACHE = "plotter_orbit_cache"
     
     PLOT_COLORS = {
                     "Sun":[pygame.Color("yellow"),4],
@@ -286,13 +287,31 @@ class Plot(Canvas):
         if not self.PLOT_CHILDREN in self.monitor.settings:
             self.monitor.settings[self.PLOT_CHILDREN] = True
             
-        
+        if not self.ORBIT_CACHE in self.monitor.settings:
+            self.monitor.settings[self.ORBIT_CACHE] = {}
+            self.precalculate_orbits()
+            
         self.draw()
     
-    def cc(self,pos):
-        pos[0] += self.resolution[0]/2.0
-        pos[1] += self.resolution[1]/2.0
-        return [int(pos[0]),int(pos[1])]
+    def cc(self, px, py):
+        px += self.resolution[0]/2.0
+        py += self.resolution[1]/2.0
+        return [int(px), int(py)]
+        
+    def precalculate_orbits(self):
+        for celestial in self.monitor.system.celestials.values():
+            if celestial.name == "Sun":
+                continue
+            else:
+                period = celestial.orbit.getPeriod()
+                step = period / 40
+                points = []
+                
+                for i in xrange(40):
+                    points.append(celestial.orbit.get(i*step)[0])
+                    
+                self.monitor.settings[self.ORBIT_CACHE][celestial.name] = points
+                
         
     def draw(self):
         print "Redraw"
@@ -374,7 +393,7 @@ class Plot(Canvas):
                 if celestial == reference_body:
                     color = self.PLOT_COLORS[celestial.name][0]
                     radius = self.PLOT_COLORS[celestial.name][1]
-                    pygame.draw.circle(self, color, self.cc([0,0]), radius)
+                    pygame.draw.circle(self, color, self.cc(0, 0), radius)
                 
                 elif isinstance(celestial, celestialdata.Planet):
                     color = self.PLOT_COLORS[celestial.name][0]
@@ -396,7 +415,7 @@ class Plot(Canvas):
                     print "PLOTTING REF BODY"
                     color = self.PLOT_COLORS[celestial.name][0]
                     radius = int(celestial.radius * scale_factor)
-                    pygame.draw.circle(self, color, self.cc([0,0]), radius)
+                    pygame.draw.circle(self, color, self.cc(0, 0), radius)
                 
                 elif isinstance(celestial, celestialdata.Planet):
                     print "PLOTTING PLANET"
@@ -431,20 +450,21 @@ class Plot(Canvas):
         y = int(r[1] * scale_factor)
     
         print "DRAWING AT",x,y
-        pygame.draw.circle(self, color, self.cc([x,y]), radius)
+        pygame.draw.circle(self, color, self.cc(x, y), radius)
         
-        # Draw orbit
-        
-        period = celestial.orbit.getPeriod()
-        step = period / 40
+        # Draw orbit from cache
         points = []
-        for i in xrange(40):
- 
-            np = celestial.orbit.get(i*step)[0]
-            nx = int(np[0] * scale_factor)
-            ny = int(np[1] * scale_factor)
-            points.append(self.cc([nx,ny]))
+        if celestial.name in self.monitor.settings[self.ORBIT_CACHE]:
+            for point in self.monitor.settings[self.ORBIT_CACHE][celestial.name]:
+                points.append(self.cc(point[0]*scale_factor, point[1]*scale_factor))
+        else:
+            period = celestial.orbit.getPeriod()
+            step = period / 40
             
+            for i in xrange(40):
+                point = celestial.orbit.get(i*step)[0]
+                points.append(self.cc(point[0]*scale_factor, point[1]*scale_factor))
+        
         pygame.draw.lines(self,color,True,points)
            
 class HorizontalMenu(Canvas):
