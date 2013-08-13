@@ -272,7 +272,10 @@ class Plot(Canvas):
             self.monitor.settings[self.SHIP_PROJECTION_MODE] = False
             
         if not self.REFERENCE_BODY in self.monitor.settings:
-            self.monitor.settings[self.REFERENCE_BODY] = self.monitor.system.celestials["Sun"]
+            if "Sun" in self.monitor.system.celestials:
+                self.monitor.settings[self.REFERENCE_BODY] = self.monitor.system.celestials["Sun"]
+            else:
+                self.monitor.settings[self.REFERENCE_BODY] = None
             
         if not self.TARGET_VESSEL in self.monitor.settings:
             self.monitor.settings[self.TARGET_VESSEL] = self.system.active_vessel
@@ -296,6 +299,8 @@ class Plot(Canvas):
         self.fill([0,0,0])
         
         if not self.monitor.settings[self.REFERENCE_BODY]:
+            error = FONT.render("NO REF",False,(255,255,255))
+            self.blit(error, self.cc([-10,-5]))
             return
             
         target_vessel = self.monitor.settings[self.TARGET_VESSEL]
