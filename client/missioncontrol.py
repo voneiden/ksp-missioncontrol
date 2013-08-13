@@ -128,7 +128,20 @@ class System(object):
             if vessel_state == "SO" or vessel_state == "O" or True:
                 rv = vessel_rv.split(':') 
                 print "vessel position update",rv
-                trv = [float(self.UT), array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
+                
+                # Unity 3D uses a left handed cartesian coordinate system. 
+                # I prefer to use a right handed system. The coordinates that
+                # are received from the game are in format Y, X, Z, where Z is 
+                # height.
+                # They are swapped here to match X, Y, Z
+                
+                trv = [self.UT ,array([float(rv[1]),   #rX
+                                       float(rv[0]),   #rY
+                                       float(rv[2])]), #rZ
+                                array([float(rv[4]),   #vX
+                                       float(rv[3]),   #vY
+                                       float(rv[5])])] #vZ
+                                       
                 if vessel_PID in self.vessels:
                     
                     # TEMP: debugging..
@@ -224,7 +237,22 @@ class System(object):
                     
                 # Parse orbit and generate it
                 rv = rv.split(':')
-                trv = [0.0,array([float(rv[0]), float(rv[1]), float(rv[2])]), array([float(rv[3]), float(rv[4]), float(rv[5])])]
+                
+                # Unity 3D uses a left handed cartesian coordinate system. 
+                # I prefer to use a right handed system. The coordinates that
+                # are received from the game are in format Y, X, Z, where Z is 
+                # height.
+                # They are swapped here to match X, Y, Z
+                # Also, planet objects are delivered only once at UT = 0
+                # because their orbital elements are fixed.
+                
+                trv = [0.0 ,array([float(rv[1]), 
+                                   float(rv[0]), 
+                                   float(rv[2])]), 
+                            array([float(rv[4]), 
+                                   float(rv[3]), 
+                                   float(rv[5])])]
+                                   
                 self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=mu,radius=radius,SoI=SoI,trv=trv,atm=atm, rotation=rotation)
                 
                 # Eeloo is the last planet, so render the viewplot
