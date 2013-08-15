@@ -486,7 +486,9 @@ class Network:
         
     def connect(self,ip):
         # TODO: IP should include port
-        
+        if self.socket:
+            self.socket.close()
+            
         print "Connecting to",ip
         self.socket = socket.socket()
         try:
