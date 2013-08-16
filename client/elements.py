@@ -23,6 +23,13 @@ class BoxElement(object):
         self.shape = shape
         self.text = text
         
+        
+        # TODO, generate button size automatically
+        # Enlarge button if shape is too small
+        textsize = FONT.size(self.text)
+        if textsize[0] > self.shape.width:
+            self.shape.inflate_ip(textsize[0]+5, self.shape.height)
+            
         # Define colors
         self.color_text = color_text
         self.color_background = color_background        

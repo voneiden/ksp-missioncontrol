@@ -30,9 +30,9 @@ class Monitor(object):
         self.scaledSurface = pygame.Surface(resolution)
         
         # TODO active view mode
-        self.views = {}    # Holds different viewmodes.
+        self.scenes = {}    # Holds different viewmodes.
         
-        self.settings = {"monitor_view":"mainmenu"} # Holds runtime settings for views
+        self.settings = {"monitor_scene":"mainmenu"} # Holds runtime settings for views
 
         self.aspect = float(resolution[0]) / float(resolution[1])
 
@@ -83,7 +83,7 @@ class Monitor(object):
         # TODO active view mode
         
         position = pygame.Rect((rpos[0],rpos[1]),(1,1))
-        for view in self.views["overview"]:
+        for view in self.scenes[self.settings["monitor_scene"]]:
             if view.position.contains(position):
                 return (view, (rpos[0] - view.position.x, rpos[1] - view.position.y))
         return False
@@ -107,11 +107,15 @@ class Monitor43(Monitor):
         self.viewData = views.MainMenu(self, (512,370), pygame.Rect((512,28),(512,370)))
         self.viewGroundTrack = views.GroundTrack(self, (1024,370), pygame.Rect((0,398),(1024,370)))
         
-        self.viewMainMenu = views.MainMenu(self, (1024,768), pygame.Rect((0,0),(1024,768)))
-        #self.viewMainMenuGroundTrack = views.GroundTrack(self, (1024))
-        self.views["mainmenu"] = [self.viewMainMenu]
         
-        self.views["overview"] = [self.viewTopMenu,
+        self.view_mm_logo = views.MainMenuLogo(self, (1024, 200), pygame.Rect((0, 0), (1024, 200)))
+        self.view_mm     = views.MainMenu(self, (512, 568), pygame.Rect((512, 200),(512, 568)))
+        self.view_mm_plotter = views.Plot(self, (512,568), pygame.Rect((0, 200),(512,568)))
+
+
+        self.scenes["mainmenu"] = [self.view_mm_logo, self.view_mm_plotter, self.view_mm]
+        
+        self.scenes["overview"] = [self.viewTopMenu,
                                   self.viewPlot,
                                   self.viewData,
                                   self.viewGroundTrack]
@@ -119,7 +123,7 @@ class Monitor43(Monitor):
 
     def fill(self):
         self.virtualSurface.fill((255,255,255))
-        for view in self.views["overview"]:
+        for view in self.scenes[self.settings["monitor_scene"]]:
             self.virtualSurface.blit(view,view.position)
 
 
@@ -137,13 +141,13 @@ class Monitor169(Monitor):
         self.viewData = views.MainMenu(self, (600,360), pygame.Rect((680,0),(600,360)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,360), pygame.Rect((80,360),(1200,360)))
 
-        self.views["overview"] = [self.viewMenubar,
+        self.scenes["overview"] = [self.viewMenubar,
                                   self.viewPlot,
                                   self.viewData,
                                   self.viewGroundTrack]
     def fill(self):
         self.virtualSurface.fill((255,255,255))
-        for view in self.views["overview"]:
+        for view in self.scenes[self.settings["monitor_scene"]]:
             self.virtualSurface.blit(view,view.position)
 
 class Monitor1610(Monitor):
@@ -160,12 +164,12 @@ class Monitor1610(Monitor):
         self.viewData = views.MainMenu(self, (600,400), pygame.Rect((680,0),(600,400)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,400), pygame.Rect((80,400),(1200,400)))
 
-        self.views["overview"] = [self.viewMenubar,
+        self.scenes["overview"] = [self.viewMenubar,
                                   self.viewPlot,
                                   self.viewData,
                                   self.viewGroundTrack]
                                   
     def fill(self):
         self.virtualSurface.fill((255,255,255))
-        for view in self.views["overview"]:
+        for view in self.scenes[self.settings["monitor_scene"]]:
             self.virtualSurface.blit(view,view.position)

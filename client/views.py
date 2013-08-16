@@ -98,7 +98,7 @@ class MainMenu(Canvas):
         self.elements.append(self.btn_connect)
         self.btn_connect.click = self.doConnect
         
-        self.inp_ip = Input(self,pygame.Rect(70,25,100,20),"192.168.1.13")
+        self.inp_ip = Input(self,pygame.Rect(70,25,200,20),"192.168.1.13")
         self.elements.append(self.inp_ip)
         
         
@@ -126,8 +126,7 @@ class MainMenu(Canvas):
         if self.monitor.system.network.socket:
             self.monitor.system.network.socket.send("FULLSYNC;")
     
-    
-        
+            
 
 class GroundTrack(Canvas):
     def __init__(self, monitor, resolution, position):
@@ -490,3 +489,21 @@ class VerticalMenu(Canvas):
     def draw(self):
         self.fill((0,255,0))
 
+
+class MainMenuLogo(Canvas):
+    def __init__(self,monitor,resolution,position):
+        Canvas.__init__(self,monitor,resolution,position)
+        self.logofont = pygame.font.Font("unispace.ttf",56)
+        self.logotext1 = self.logofont.render("KERBAL", False, [0, 0, 255])
+        self.logotext2 = self.logofont.render("MISSION CONTROL", False, [0, 0, 255])
+        
+        self.logopos1 = [int(self.resolution[0]/2 - self.logotext1.get_width()/2), 10]
+        self.logopos2 = [int(self.resolution[0]/2 - self.logotext2.get_width()/2), 60]
+        
+        self.draw()
+        
+    def draw(self):
+        self.fill((0,0,0))
+        self.blit(self.logotext1, self.logopos1)
+        self.blit(self.logotext2, self.logopos2)
+        

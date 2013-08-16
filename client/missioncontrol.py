@@ -426,7 +426,7 @@ class Display:
                 elif event.type == pygame.QUIT:
                     sys.exit()
             # TODO, more flexilibty for custom canvas layout
-            for view in self.monitor.views['overview']:
+            for view in self.monitor.scenes[self.monitor.settings["monitor_scene"]]:
                 if view.focusElement:
                     view.focusElement.tick()
             
@@ -456,7 +456,7 @@ class Display:
                 self.system.network.recv()
             else:
                 self.system.UT += 100000
-                self.monitor.viewPlot.draw()
+                self.monitor.view_mm_plotter.draw()
             
             self.window.fill((255,0,0))
 
