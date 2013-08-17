@@ -4,7 +4,7 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
 """
-from numpy import array, cross, inf, pi, arccos
+from numpy import array, cross, inf, pi, arccos, radians
 from numpy.linalg import norm
 
 import kepler
@@ -12,16 +12,43 @@ import kepler
 PI2 = 2*pi
 #Define constants
 class Celestial(object):
-    def __init__(self,parent,name,**kwargs):
+    def __init__(self,system,parent,name,**kwargs):
+        print "INIT PLANET"
+        print name
+        self.system = system
         self.parent = parent
         self.name = name
         
+        self.children = [] # Does not contain vessels at least yet
+        
+        self.orbit = None
+        self.state = None
+        self.coordinates = None
+        self.planet_rotation_adjustment = 0
+        self.tmp_debug = 0
+        
+        self.update(**kwargs)
+        
+    
+
+    def update(self,**kwargs):
+        if "state" in kwargs:
+            self.state = kwargs["state"]
+            
+        # If time position and velocity are defined, create an orbit
         if "trv" in kwargs and self.parent:
             self.orbit = kepler.Orbit(self.parent,**kwargs)
-        #elif "elements" in kwargs:
-        #    pass
+            self.coordinates = None
+        
+        # If the object has no parent, it's probably the sun
         elif not self.parent:
             self.orbit = None
+            
+        # If coordinates are defined, lets use them instead of orbit
+        elif "coordinates" in kwargs:
+            self.coordinates = kwargs["coordinates"]
+            self.orbit = None
+            
         else:
             raise AttributeError
             
@@ -30,22 +57,41 @@ class Celestial(object):
             self.mu = kwargs["mu"]
         else:
             self.mu = None
-    
-
-        
+            
+        if "rotation" in kwargs:
+            self.angular_velocity = kwargs["rotation"][0]
+            self.initial_rotation = radians(kwargs["rotation"][1])
+            
+        if "radius" in kwargs:
+            self.radius = kwargs["radius"]
+            
+        if "SoI" in kwargs:
+            self.SoI = kwargs["SoI"]
         
         
 class Sun(Celestial):
-    def __init__(self,**kwargs):
-        Celestial.__init__(self,None,"Sun",**kwargs)
+    def __init__(self,system,**kwargs):
+        Celestial.__init__(self,system,None,"Sun",**kwargs)
         
 class Planet(Celestial):
-    def __init__(self,parent,name,**kwargs):
-        Celestial.__init__(self,parent,name,**kwargs)
+    def __init__(self,system,parent,name,**kwargs):
+        Celestial.__init__(self,system,parent,name,**kwargs)
+        self.parent.children.append(self)
+        
 
 class Vessel(Celestial):
-    def __init__(self,parent,name,**kwargs):
-        Celestial.__init__(self,parent,name,**kwargs)
+    def __init__(self, system, parent, UID, name, **kwargs):
+        Celestial.__init__(self, system, parent, name, **kwargs)
+        self.UID = UID
+        
+        self.altimeter = 0.0
+        self.altitude_terrain    = 0.0
+        self.altitude_surface    = 0.0
+        self.mission_time        = 0.0
+        self.geeforce            = 0.0
+        self.orbital_velocity    = 0.0
+        self.surface_velocity    = 0.0
+        self.vertical_velocity   = 0.0
         
         '''
 Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)

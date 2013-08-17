@@ -43,9 +43,23 @@ namespace MissionControl  {
 		MCUtils utils = new MCUtils ();
 		Server server;
 		public bool RMConn = false;
+		public List<Vessel> all_vessels = new List<Vessel>();
+		public Vessel active_vessel = null;
+
 		public void Awake ()
 		{
+			// Cancel all old invokes..
 			CancelInvoke ();
+
+			// Do a full sync
+			FullSync ();
+
+			// Add all vessels to the vessel list
+			foreach (Vessel vessel in FlightGlobals.Vessels) {
+				if (!all_vessels.Contains (vessel)) {
+					all_vessels.Add (vessel);
+				}
+			}
 			InvokeRepeating ("CheckRemote",1.0F,1.0F);
 
 
@@ -53,7 +67,6 @@ namespace MissionControl  {
 
 			server = gameObject.AddComponent <Server>();
 			server.MC = this;
-			string buffer = "";
 		}
 
 		public void OnDisable()
@@ -87,9 +100,39 @@ namespace MissionControl  {
 				}
 			}
 			*/
+
+			// Check for new vessels..
+			foreach (Vessel vessel in FlightGlobals.Vessels) {
+				if (!all_vessels.Contains (vessel)) {
+					all_vessels.Add (vessel);
+					server.SendAll (utils.getStateLine (vessel));
+				}
+			}
+
+			// Check for changed active vessel
+			if (active_vessel != FlightGlobals.ActiveVessel) {
+				active_vessel = FlightGlobals.ActiveVessel;
+				server.SendAll("AV\t" + active_vessel.id.ToString ());
+			}
+
 			Vessel ActiveVessel = FlightGlobals.ActiveVessel;
+			double UT = Planetarium.GetUniversalTime ();
+			bool frame_rotating = Planetarium.FrameIsRotating ();
+			double frame_angle = Planetarium.InverseRotAngle;
+			string rotating;
+			if (frame_rotating) {
+				rotating = "1";
+			}
+			else {
+				rotating = "0";
+			}
+
+			server.SendAll ("P\t" + UT.ToString () + "\t" + rotating + "\t" + frame_angle.ToString ());
 			server.SendAll (utils.getStateLine (ActiveVessel));
 		}
+
+
+
 		public void ProcessIncoming(string data) {
 			Debug.Log ("Received message:" + data);
 			string[] requests = data.Split (';');
@@ -121,6 +164,10 @@ namespace MissionControl  {
 			foreach (Vessel vessel in FlightGlobals.Vessels) {
 				buffer.Add (utils.getStateLine (vessel));
 			}
+
+			// This doesn't work
+			//active_vessel = FlightGlobals.ActiveVessel;
+			//buffer.Add ("AV\t" + active_vessel.id.ToString ());
 
 			buffer.Add ("SYNCOK");
 			Debug.Log ("SYNC MSG:" + buffer.ToString ());

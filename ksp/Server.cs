@@ -39,18 +39,61 @@ public class Server : MonoBehaviour {
  
 	public void Send(int socketIndex, string data)
 	{
-		Debug.Log ("Sending to client " + socketIndex.ToString ());
+		//Debug.Log ("Sending to client " + socketIndex.ToString ());
 		Socket client = m_Connections [socketIndex] as Socket;
 		byte[] byteData = System.Text.Encoding.ASCII.GetBytes (data +  ";");
-		client.Send (byteData);
+		//client.Send (byteData);
+		try
+		{
+			client.Send(byteData);		
+		}
+		catch (SocketException e) {
+			if(debug)
+			{
+				Debug.Log("Socket Exception " + e.NativeErrorCode + " " + e.Message);
+			}
+			if(e.NativeErrorCode.Equals(10054) || e.NativeErrorCode.Equals(10058))
+			{
+				Debug.Log("Did Close");
+				client.Close();
+				theServer.m_ByteBuffer.RemoveAt(m_Connections.IndexOf(client));
+				theServer.m_Connections.Remove(client);
+			}
+			else if(debug) 
+			{
+				Debug.Log("Unhandled Socket Exception During Writing!");
+			}
+		} 
 	}
 
 	public void SendAll(string data)
 	{
 		byte[] byteData = System.Text.Encoding.ASCII.GetBytes (data +  ";");
-		Debug.Log ("Sending to all clients");
+		//Debug.Log ("Sending to all clients");
 		foreach (Socket socket in m_Connections) {
-			socket.Send (byteData);
+			//socket.Send (byteData);
+			try
+			{
+				if(socket.Connected==false) continue; 			
+				socket.Send(byteData);		
+			}
+			catch (SocketException e) {
+				if(debug)
+				{
+					Debug.Log("Socket Exception " + e.NativeErrorCode + " " + e.Message);
+				}
+				if(e.NativeErrorCode.Equals(10054) || e.NativeErrorCode.Equals(10058))
+				{
+					Debug.Log("Did Close");
+					socket.Close();
+					theServer.m_ByteBuffer.RemoveAt(m_Connections.IndexOf(socket));
+					theServer.m_Connections.Remove(socket);
+				}
+				else if(debug) 
+				{
+					Debug.Log("Unhandled Socket Exception During Writing!");
+				}
+			} 
 		}
 	}
     void Init(){
