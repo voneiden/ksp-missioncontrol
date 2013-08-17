@@ -227,7 +227,7 @@ class Orbit:
             logging.debug("c3: %f"%c3)
             
             r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
-
+            
             Xold = Xnew
             Xnew = Xold + (sqrt(self.mu)*dt - Xold**3 * c3 - self.rvdot / sqrt(self.mu) * Xold**2 * c2 - self.r0l * Xold * (1 - psi * c3)) / r
             
@@ -241,13 +241,12 @@ class Orbit:
         g = dt - Xnew**3 / sqrt(self.mu) * c3
         gd = 1 - Xnew**2/r * c2
         fd = sqrt(self.mu) / (r*self.r0l) * Xnew * (psi * c3 - 1)
-
+        
         logging.debug("f: %f"%f)
         logging.debug("g: %f"%g)
         logging.debug("fd: %f"%fd)
         logging.debug("gd: %f"%gd)
         
-        # 
         R = f * self.r0 + g * self.v0 
         V = fd * self.r0 + gd * self.v0 
         
