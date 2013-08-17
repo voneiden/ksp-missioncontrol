@@ -225,6 +225,7 @@ class System(object):
             rot_angle = tok[10]
             
             rotation = [angular_velocity,initial_rotation]
+            print "Parsing celestial"
             print "name:",name
             print "vang1",angular_velocity
             print "initr",initial_rotation

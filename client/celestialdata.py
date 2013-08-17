@@ -13,6 +13,8 @@ PI2 = 2*pi
 #Define constants
 class Celestial(object):
     def __init__(self,system,parent,name,**kwargs):
+        print "INIT PLANET"
+        print name
         self.system = system
         self.parent = parent
         self.name = name

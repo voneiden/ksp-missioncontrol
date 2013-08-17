@@ -8,6 +8,7 @@ from numpy import sin, sinh, arcsin, cos, cosh, arccos, tan, arctan , pi, nan
 from numpy import sign, sqrt, cross, log, array, dot, degrees, radians, inf
 from numpy.linalg import norm
 import logging
+import math # For debugging sqrt
 
 PI2 = pi * 2
 
@@ -21,10 +22,13 @@ class Orbit:
         '''
         self.parent = parent
         self.mu = parent.mu
-        
-        if "elements" in kwargs:
+        print "parent",self.parent
+        if not self.parent:
+            pass
+        elif "elements" in kwargs:
             self.recalculateFromElements(kwargs["elements"])
         elif "trv" in kwargs:
+            print "recalc"
             self.recalculateFromTRV(kwargs["trv"])
         else:
             raise AttributeError
@@ -134,8 +138,10 @@ class Orbit:
         
         # p is the semi-parameter
         self.p = self.hl**2 / self.mu
-
-        self.e = sqrt(1 - self.p / self.a)        
+        
+        print "p",self.p
+        print "a",self.a
+        self.e = math.sqrt(1 - self.p / self.a)        
         
         # Apses
         if self.a:

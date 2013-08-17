@@ -313,7 +313,7 @@ class Plot(Canvas):
                 
         
     def draw(self):
-        print "Redraw"
+        #print "Redraw"
         self.fill([0,0,0])
         
         if not self.monitor.settings[self.REFERENCE_BODY]:
@@ -340,7 +340,7 @@ class Plot(Canvas):
             if vessel != target_vessel and vessel.parent == reference_body:
                 plot.append(vessel)
                 
-        print "Plotting the following:",plot
+        #print "Plotting the following:",plot
         
         # Then determine if we need to rotate plots
         
@@ -365,6 +365,7 @@ class Plot(Canvas):
             
         
         # Determine the furthest apoapsis
+        # TODO: No need to recalculate this every time
         max_distance = 0
         for celestial in plot:
             if celestial == reference_body:
@@ -375,7 +376,7 @@ class Plot(Canvas):
                 else:
                     if celestial.orbit.apoapsis > max_distance:
                         max_distance = celestial.orbit.apoapsis
-                        print "Max distance set for",celestial.name,celestial.orbit.apoapsis
+                        #print "Max distance set for",celestial.name,celestial.orbit.apoapsis
         # Determine scale factor
         
         if self.resolution [0] < self.resolution[1]:
@@ -384,7 +385,7 @@ class Plot(Canvas):
             max_virtual_distance = self.resolution[1] / 2.0
             
         scale_factor = max_virtual_distance / max_distance
-        print "scale factor:",scale_factor
+        #print "scale factor:",scale_factor
         # Render
         # TODO solar plot requires custom radius scaling..
         if reference_body.name == "Sun":
@@ -444,11 +445,11 @@ class Plot(Canvas):
             radius = int(radius)
             
         r,v = celestial.orbit.get(self.monitor.system.UT)
-        print r[0] * scale_factor
+        #print r[0] * scale_factor
         x = int(r[0] * scale_factor)
         y = int(r[1] * scale_factor)
     
-        print "DRAWING AT",x,y
+        #print "DRAWING AT",x,y
         pygame.draw.circle(self, color, self.cc(x, y), radius)
         
         # Draw orbit from cache
@@ -494,8 +495,8 @@ class MainMenuLogo(Canvas):
     def __init__(self,monitor,resolution,position):
         Canvas.__init__(self,monitor,resolution,position)
         self.logofont = pygame.font.Font("unispace.ttf",56)
-        self.logotext1 = self.logofont.render("KERBAL", False, [0, 0, 255])
-        self.logotext2 = self.logofont.render("MISSION CONTROL", False, [0, 0, 255])
+        self.logotext1 = self.logofont.render("KERBAL", False, [0, 255, 0])
+        self.logotext2 = self.logofont.render("MISSION CONTROL", False, [0, 255, 0])
         
         self.logopos1 = [int(self.resolution[0]/2 - self.logotext1.get_width()/2), 10]
         self.logopos2 = [int(self.resolution[0]/2 - self.logotext2.get_width()/2), 60]
