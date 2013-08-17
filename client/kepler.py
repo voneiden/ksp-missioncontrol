@@ -326,3 +326,32 @@ class Orbit:
             return PI2*sqrt(self.a**3/self.mu)
         else:
             return 0
+
+def RotationMatrix(axis, angle):
+    # We are not going to check if the axis is a unit vector.
+    # Whats going on here?
+    # http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+    
+    cos_angle = cos(angle)
+    cos_angle_one = 1 - cos_angle
+    sin_angle = sin(angle)
+    x = axis[0]
+    y = axis[1]
+    z = axis[2]
+    
+    ri1 = cos_angle + x**2 * cos_angle_one
+    ri2 = x * y * cos_angle_one - z * sin_angle
+    ri3 = x * z * cos_angle_one + y * sin_angle
+
+    rj1 = y * x * cos_angle_one + z * sin_angle
+    rj2 = cos_angle + y**2 * cos_angle_one
+    rj3 = y * z * cos_angle_one - x * sin_angle
+
+    rk1 = z * x * cos_angle_one - y * sin_angle
+    rk2 = z * y * cos_angle_one + x * sin_angle
+    rk3 = cos_angle + z**2 * cos_angle_one
+
+    return array([[ri1, ri2, ri3], [rj1, rj2, rj3], [rk1, rk2, rk3]])
+    
+
+    

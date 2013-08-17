@@ -261,8 +261,11 @@ class Plot(Canvas):
             # Calculate rotation axis
             vessel = self.system.active_vessel
             r,v = vessel.get(self.monitor.system.UT)
-            up = cross(r,v)
-            rotation_axis = cross(up,array(
+            rotation_axis = cross(r, array([0,0,1]))
+            
+            #up = cross(r,v)
+            #rotation_axis = cross(up,array([0,0,1]))
+            
             
         # Draw sun
         
@@ -318,7 +321,6 @@ class Plot(Canvas):
                     points.append(self.cc([nx,ny]))
                     
                 pygame.draw.lines(self,color,True,points)
-<<<<<<< Updated upstream
            
 class HorizontalMenu(Canvas):
     '''
