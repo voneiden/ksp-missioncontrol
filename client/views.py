@@ -4,6 +4,7 @@
  * this notice you can do whatever you want with this stuff. If we meet some 
  * day, and you think this stuff is worth it, you can buy me a beer in return.
 """
+import kepler
 import pygame
 from elements import Button, Input
 
@@ -260,12 +261,18 @@ class Plot(Canvas):
         if self.ship_projection:
             # Calculate rotation axis
             vessel = self.system.active_vessel
+            frame_up = array([0, 0, 1])
+            
             r,v = vessel.get(self.monitor.system.UT)
-            rotation_axis = cross(r, array([0,0,1]))
+
+            orbit_up = cross(r,v)
             
-            #up = cross(r,v)
-            #rotation_axis = cross(up,array([0,0,1]))
+            rotation_axis = cross(orbit_up, up)
+            rotation_axis_u = rotation_axis / norm(rotation_axis)
             
+            angle = arccos(orbit_up.dot(up))
+
+            rotation_matrix = kepler.RotationMatrix(rotation_axis_u, angle)
             
         # Draw sun
         
