@@ -147,13 +147,17 @@ class FlightLogger(Canvas):
         if self.monitor.system.active_vessel:
             vessel = self.monitor.system.active_vessel
             
-            name = FONT.render(vessel.name)
-        if self.monitor.system.network.socket:
-            cstr1 = FONT.render("Connected: Yes",False,(255,255,255))
-        else:
-            cstr1 = FONT.render("Connected: No",False,(255,255,255))
-        self.blit(cstr1,(5,5))
-        
+            name = FONT.render(vessel.name, False, (0, 255, 0))
+            self.blit(name, (5, 5))
+            
+            surface_velocity = FONT.render("Surface velocity: %i"%(vessel.surface_velocity), False, (0, 255, 0))
+            self.blit(surface_velocity, (5, 20))
+            
+            vertical_velocity = FONT.render("Vertical velocity: %i"%(vessel.vertical_velocity), False, (0, 255, 0))
+            self.blit(vertical_velocity, (5, 35))
+            
+
+            
         for element in self.elements:
             element.render()
         
@@ -206,10 +210,12 @@ class GroundTrack(Canvas):
         
         #for vessel in self.monitor.system.vessels.values():
         vessel = self.system.active_vessel
-        print "DRAW",vessel
-        if vessel:
-            print "or",vessel.orbit
         
+        if vessel:
+            print "orbit",vessel.orbit
+            print "DRAW",vessel,vessel.name
+        else:
+            return
         
         if vessel and vessel.orbit:
             lonlat = vessel.orbit.getGround(self.monitor.system.UT)

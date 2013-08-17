@@ -17,6 +17,7 @@ import time
 import views
 
 from numpy import array, degrees, radians, cos, sin, dot
+from numpy.linalg import norm
 
 FONT = None
 
@@ -125,9 +126,15 @@ class System(object):
                     #self.vessels[vPID].lon = vLon
                     #self.vessels[vPID].lat = vLat
                     #TODO: CLEAN HERE
+                    print "trv velocity",norm(trv[2])
+                    print "orb velocity",orbital_velocity
+                    print "sur velocity",surface_velocity
+         
                     
-                    r = trv[1]
                     print "Frame rotation: ",degrees(self.frame_rotation)
+                    print "Time rotation:",degrees(self.celestials["Kerbin"].angular_velocity * (self.UT))%360, self.celestials["Kerbin"].angular_velocity 
+                    print "Init rotation",degrees(self.celestials["Kerbin"].initial_rotation)
+                    """
                     print "R1: ",r
                     r2 = self.RotateZ(r,self.frame_rotation)
                     print "R2: ",r2
@@ -135,8 +142,13 @@ class System(object):
                     print "Planet rotation: ",degrees(pr)
                     r3 = self.RotateZ(r,pr)
                     print "R3: ",r3
+                    """
                     
+                    trv[1] = self.RotateZ(trv[1], -self.frame_rotation)
+                    trv[2] = self.RotateZ(trv[2], -self.frame_rotation)
                     
+                    print "Rotatedd trv",trv
+                    print "Eccentricity",self.vessels[vessel_UID].orbit.e
                     self.vessels[vessel_UID].update(state=vessel_state, trv=trv)
                     
                     
@@ -183,12 +195,14 @@ class System(object):
                 else:
                     self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, coordinates=coordinates)
             
-            self.display.monitor.viewGroundTrack.draw()
+            
             if self.active_vessel:
                 self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
                 self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
                 
+                self.display.monitor.viewGroundTrack.draw()
                 self.display.monitor.viewPlot.draw()
+                self.display.monitor.viewData.draw()
                 # TODO: Stash the vessel for now, load it after Eeloo has been received
             #self.temp.append((vPID,trv))
             
@@ -441,6 +455,8 @@ class Display:
                     
             
             if self.system.network.socket:
+                if self.monitor.settings["monitor_scene"] == "mainmenu":
+                    self.monitor.settings["monitor_scene"] = "overview"
                 self.system.network.recv()
             else:
                 self.system.UT += 100000
@@ -509,8 +525,9 @@ class Network:
                             tok.pop()
                     for t in tok:
                         self.system.parse(t)
+
             self.socket.setblocking(True)
-        
+
                 
                 
         

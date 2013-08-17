@@ -104,7 +104,7 @@ class Monitor43(Monitor):
         # overview style
         self.viewTopMenu = views.HorizontalMenu(self, (1024,28), pygame.Rect((0,0),(1024,28)))
         self.viewPlot = views.Plotter(self, (512,370), pygame.Rect((0,28),(512,370)))
-        self.viewData = views.MainMenu(self, (512,370), pygame.Rect((512,28),(512,370)))
+        self.viewData = views.FlightLogger(self, (512,370), pygame.Rect((512,28),(512,370)))
         self.viewGroundTrack = views.GroundTrack(self, (1024,370), pygame.Rect((0,398),(1024,370)))
         
         
@@ -138,7 +138,7 @@ class Monitor169(Monitor):
     def setupViews(self):
         self.viewMenubar = views.VerticalMenu(self, (80,720), pygame.Rect((0,0),(80,720)))
         self.viewPlot = views.Plotter(self, (600,360), pygame.Rect((80,0),(600,360)))
-        self.viewData = views.MainMenu(self, (600,360), pygame.Rect((680,0),(600,360)))
+        self.viewData = views.FlightLogger(self, (600,360), pygame.Rect((680,0),(600,360)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,360), pygame.Rect((80,360),(1200,360)))
 
         self.scenes["overview"] = [self.viewMenubar,

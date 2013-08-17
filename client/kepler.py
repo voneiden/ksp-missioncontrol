@@ -141,7 +141,7 @@ class Orbit:
         
         print "p",self.p
         print "a",self.a
-        if self.p - self.a < 1e-5:
+        if abs(self.p - self.a) < 1e-5:
             self.e = 0
         else: # Hyperbolic orbits will cause error here still
             print self.p - self.a
@@ -186,31 +186,34 @@ class Orbit:
         
         # (2) Create the initial X variable guess for
         #  2a) Elliptic or circular orbit
-        if self.alpha > 1e-20:
+        if self.e < 1:
             X0 = sqrt(self.mu) * dt * self.alpha
         
         #  2b) Parabolic orbit
-        elif abs(self.alpha) < 1e-20:
-            self.s = arctan((1)/(3*sqrt(self.mu / self.p**3)*dt)) / 2.0
+        elif self.e == 1:
+            self.s = arctan((1.0)/(3*sqrt(self.mu / self.p**3)*dt)) / 2.0 % pi
+            #s2 = 0.5 * arctan((1.0) / (3 * dt * sqrt(self.mu / self.p**3)))
+            print "s",self.s
             self.w = arctan(tan(self.s)**(1.0/3.0))
+            print "w",self.w
             X0 = sqrt(self.p) * 2 * (cos(2*self.w)/sin(2*self.w))
-            logging.debug("s: %f"%self.s)
+            print "parabolic X0"
         
         #  2c) Hyperbolic orbit
-        elif self.alpha < -1e-20:
+        elif self.e > 1:
             sdt = sign(dt)
             if sdt == 0:
                 sdt = 1
             print "dt",dt
             print "a",self.a
-            var1 =  sdt * sqrt(-self.a)
-            var2 = -2*self.mu*self.alpha*dt
-            var3 = self.rvdot * sdt * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)
-            print "var1",var1
-            print "var2",var2
-            print "var3",var3
-            print "rvdot",self.rvdot
-            print "r0l",self.r0l
+            #var1 =  sdt * sqrt(-self.a)
+            #var2 = -2*self.mu*self.alpha*dt
+            #var3 = self.rvdot * sdt * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)
+            #print "var1",var1
+            #print "var2",var2
+            #print "var3",var3
+            #print "rvdot",self.rvdot
+            #print "r0l",self.r0l
             
             X0 = sdt * sqrt(-self.a) * log((-2*self.mu*self.alpha*dt) / (self.rvdot * sdt * sqrt(-self.mu * self.a) * (1- self.r0l * self.alpha)))
     
@@ -218,18 +221,22 @@ class Orbit:
             logging.error("Error, ALPHA")
             raise AttributeError
         
-        logging.debug("X0: %f"%X0)
+        #logging.debug("X0: %f"%X0)
         Xnew = X0
         
         # (3) Loop until we get an accurate (tolerance 1e-6) value for X
+        # The loop can hang especially on near-parabolic orbits. 
+        # Changing the time a little (microsecond or so) can help achieve stable results
+        maxiter = 100
+        i = 0
+        #print "X0",X0
+        xnews = []
+        #print "alpha",self.alpha
         while True:
             psi = Xnew**2 * self.alpha
             c2,c3 = self.FindC2C3(psi)
             
-            logging.debug("psi: %f"%psi)
-            logging.debug("c2: %f"%c2)
-            logging.debug("c3: %f"%c3)
-            
+
             r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
             
             Xold = Xnew
@@ -237,8 +244,29 @@ class Orbit:
             
             if abs(Xnew - Xold) < 1e-6:
                 break
-        
-        logging.debug("X optimized at %f"%Xnew)
+            xnews.append(Xnew)
+            i += 1
+            if i > maxiter:
+                return self.get(t+0.000001)
+                """
+                print "Maximum iterations reached, dumping orbit at t",t
+                
+                for line in xnews:
+                    print "xnew:",line
+                    
+                import pickle
+                f = open("dump.pickle",'w')
+                parent = self.parent
+                self.parent = None
+                pickle.dump(self,f)
+                f.close()
+                self.parent = parent
+                raise RuntimeError("Unable to converge")
+                """
+        #for line in xnews:
+        #    print "xnew:",line
+        #print "XN",Xnew
+        #logging.debug("X optimized at %f"%Xnew)
         
         # (4) Calculate universal functions f, g and f-dot and g-dot
         f = 1 - Xnew**2/self.r0l * c2
@@ -246,19 +274,8 @@ class Orbit:
         gd = 1 - Xnew**2/r * c2
         fd = sqrt(self.mu) / (r*self.r0l) * Xnew * (psi * c3 - 1)
         
-        logging.debug("f: %f"%f)
-        logging.debug("g: %f"%g)
-        logging.debug("fd: %f"%fd)
-        logging.debug("gd: %f"%gd)
-        
         R = f * self.r0 + g * self.v0 
         V = fd * self.r0 + gd * self.v0 
-        
-        logging.debug( "r: %f"%r)
-        logging.debug( "r0l: %f"%self.r0l)
-        logging.debug( "Position: %s"%str(R))
-        logging.debug( "Velocity: %s"%str(V))
-        logging.debug( "Check: %f"%(f*gd-fd*g))
         
         return [R,V]
             
@@ -301,11 +318,10 @@ class Orbit:
         
         # (2) Calculate theta (planet rotation)
         # -0.00029.. Kerbins angular velocity rad(/s)
-        #  1.57079.. 90 degrees, initial t=0 rotation (depends on map?)
-        #          0.000290888208665722
-        #theta =  -0.0002908882086657216 * t #- 1.5707963267948966
-        # 22.0827470297 degree diff
-        theta = -self.parent.angular_velocity * (t) + self.parent.system.frame_rotation - self.parent.initial_rotation #+ self.parent.planet_rotation_adjustment #radians( 64.9449644128)#- self.parent.initial_rotation
+        
+        theta = self.parent.angular_velocity * (t) #- self.parent.initial_rotation #+ self.parent.planet_rotation_adjustment #radians( 64.9449644128)#- self.parent.initial_rotation
+        # Moving self.parent.system.frame_rotation to system parsing
+        
         
         #print "rotation with time:",degrees(self.parent.angular_velocity * t)%360
         #print "+90"
@@ -321,9 +337,9 @@ class Orbit:
         
         # (5) Solve right ascension (longitude)
         if ur[1] > 0:
-            rasc = degrees(arccos(ur[0] / cos(declination)))
+            rasc = -degrees(arccos(ur[0] / cos(declination)))
         elif ur[1] <= 0:
-            rasc = -degrees(arccos(ur[0]/ cos(declination)))
+            rasc = degrees(arccos(ur[0]/ cos(declination)))
         
         # (6) Data to degrees, NOTE the order of return
         declination = degrees(declination)
