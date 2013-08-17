@@ -24,7 +24,7 @@ def GetPositionAtT(float t, float t0, np.ndarray[DTYPE_t, ndim=1] r0,
     cdef float dt = t - t0
     
     if dt == 0:
-        return [r0,v0]
+        return r0, v0
         
     
     # Elliptic orbit
