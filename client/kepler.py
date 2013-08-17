@@ -141,7 +141,11 @@ class Orbit:
         
         print "p",self.p
         print "a",self.a
-        self.e = math.sqrt(1 - self.p / self.a)        
+        if self.p - self.a < 1e-5:
+            self.e = 0
+        else: # Hyperbolic orbits will cause error here still
+            print self.p - self.a
+            self.e = math.sqrt(1 - self.p / self.a)        
         
         # Apses
         if self.a:
