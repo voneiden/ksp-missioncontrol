@@ -80,9 +80,18 @@ class Planet(Celestial):
         
 
 class Vessel(Celestial):
-    def __init__(self,system,parent,name,**kwargs):
-        Celestial.__init__(self,system,parent,name,**kwargs)
+    def __init__(self, system, parent, UID, name, **kwargs):
+        Celestial.__init__(self, system, parent, name, **kwargs)
+        self.UID = UID
         
+        self.altimeter = 0.0
+        self.altitude_terrain    = 0.0
+        self.altitude_surface    = 0.0
+        self.mission_time        = 0.0
+        self.geeforce            = 0.0
+        self.orbital_velocity    = 0.0
+        self.surface_velocity    = 0.0
+        self.vertical_velocity   = 0.0
         
         '''
 Kerbol = Sun("Kerbol",mu=1.1723328e18,radius=261600000)

@@ -74,60 +74,32 @@ class System(object):
         # Object type (V)essel
         elif header == "V":
             vessel_state   = tok[1] # Status (flying, etc.)
-            vessel_PID     = tok[2] # Unique ID
-            universal_time = tok[3] # Game time
-            reference_body = tok[4] # Reference body (what body is vessel orbiting?)
-            longitude      = tok[5]
-            latitude       = tok[6]
-            vessel_rv      = tok[7]
+            vessel_UID     = tok[2] # Unique ID
+            vessel_name    = tok[3]
+            universal_time = float(tok[4]) # Game time
+            reference_body = tok[5] # Reference body (what body is vessel orbiting?)
+            longitude      = float(tok[6])
+            latitude       = float(tok[7])
+            vessel_rv      = tok[8]
+           
+            orbital_elements = tok[9]
+            mission_time = float(tok[10])
             
-            self.UT = float(universal_time)
-            """
-            vRV = tok[4]
-            vMT = tok[5]     # Mission time
-            vAcc =  tok[6]   # Acceleration magnitude
-            vAlt = tok[7]    # Altitude
-            vAnM = tok[8]    # Angular momentum
-            vAnV = tok[9]    # Angular velocity
-            vAtm = tok[10]    # Atmosphere density
-            vGF  = tok[11]   # Gee force
-            vGFi = tok[12]   # Geefore immediate
-            vRAlt = tok[13]  # Height from surface (altitude?)
-            vRAlt2 = tok[14] # Height from terrain (radar altimeter)
-            vHor = tok[15]   # Horizontal surface spee d
-            vLat = tok[16]   # Latitude
-            vLon = tok[17]   # Longitude
+            atmosphere_density  = float(tok[11])
+            geeforce            = float(tok[12])
+            orbital_velocity    = float(tok[13])
+            surface_velocity    = float(tok[14])
+            vertical_velocity   = float(tok[15])
+            static_pressure     = float(tok [16])
+            dynamic_pressure    = float(tok[17])
+            temperature         = float(tok[18])
             
-            logging.info("vlat: %s"%str(vLat))
-            logging.info("vlon: %s"%str(vLon))
+            altimeter           = float(tok[19])
+            altitude_surface    = float(tok[20])
+            altitude_terrain    = float(tok[21])
             
-            vOVel = tok[18]  # Orbital velocity
-            vPQSAlt = tok[19]# PQS altitude ?
-            vRBVel = tok[20] # RB velocity?
-            vSPAcc = tok[21] # Specific accceleration
-            vSVel = tok[22]  # Surface velocity (horizontal?)
-            vSPrs = tok[23]  # Static pressure
-            vTAlt = tok[24]  # Terrain altitude
-            vVVel = tok[25]  # Vertical speed
-            vDPrs = tok[26]  # Dynamic pressure (atm)
-            vSPrs2 = tok[27] # Static pressure (atm)
-            vTemp = tok[28]  # Temperature
             
-            # If ship status (L)anded, (S)plashed, (P)relaunch or (F)lying
-            if vStatus == "L" or vStatus == "S" or vStatus == "P" or vStatus == "F":
-                vRef = tok[29]
-                
-            # Else (O)rbital, (S-)ub(-O)rbital or (E)scaping
-            else:
-                vRef = tok[29]
-                vOEph = tok[30]
-                vOSma = tok[31]
-                VOEcc = tok[32]
-                VOInc = tok[33]
-                VOLAN = tok[34]
-                VOAoP = tok[35]
-                VOM0 = tok[36]
-            """
+            
             # Parse position and velocity if we are sub-orbital or orbital
             # TODO: What about docked ships?
             if vessel_state == "SO" or vessel_state == "O" or True:
@@ -147,11 +119,13 @@ class System(object):
                                        float(rv[3]),   #vY
                                        float(rv[5])])] #vZ
                                        
-                if vessel_PID in self.vessels:
+                if vessel_UID in self.vessels:
                     
                     # TEMP: debugging..
                     #self.vessels[vPID].lon = vLon
                     #self.vessels[vPID].lat = vLat
+                    #TODO: CLEAN HERE
+                    
                     r = trv[1]
                     print "Frame rotation: ",degrees(self.frame_rotation)
                     print "R1: ",r
@@ -163,12 +137,12 @@ class System(object):
                     print "R3: ",r3
                     
                     
-                    self.vessels[vessel_PID].update(state=vessel_state, trv=trv)
+                    self.vessels[vessel_UID].update(state=vessel_state, trv=trv)
                     
                     
                     
                     self.celestials["Kerbin"].planet_rotation_adjustment = 0
-                    rasc,dec,below_radius = self.vessels[vessel_PID].orbit.getGround(self.UT)
+                    rasc,dec,below_radius = self.vessels[vessel_UID].orbit.getGround(self.UT)
                     
                     print "Game lon:",longitude
                     print "Sim  lon:",rasc
@@ -183,18 +157,31 @@ class System(object):
                     
                     print "ADJUSTMENT:",self.celestials["Kerbin"].planet_rotation_adjustment,degrees(self.celestials["Kerbin"].planet_rotation_adjustment)
                     
-                    self.active_vessel = self.vessels[vessel_PID]
+                    self.active_vessel = self.vessels[vessel_UID]
                 else:
-                    self.vessels[vessel_PID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_PID, state=vessel_state, trv=trv)
+                    self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, trv=trv)
+                
+                
+                vessel = self.vessels[vessel_UID]
+                
+                vessel.altimeter = altimeter
+                vessel.altitude_terrain = altitude_terrain
+                vessel.altitude_surface = altitude_surface
+                vessel.mission_time = mission_time
+                vessel.geeforce            = geeforce
+                vessel.orbital_velocity    = orbital_velocity
+                vessel.surface_velocity    = surface_velocity
+                vessel.vertical_velocity   = vertical_velocity
+                
                     
             else:
                 coordinates=(float(longitude),float(latitude))
                 print "coordinates:",coordinates
-                if vessel_PID in self.vessels:
-                    self.vessels[vessel_PID].update(state=vessel_state, coordinates=coordinates)
-                    self.active_vessel = self.vessels[vessel_PID]
+                if vessel_UID in self.vessels:
+                    self.vessels[vessel_UID].update(state=vessel_state, coordinates=coordinates)
+                    self.active_vessel = self.vessels[vessel_UID]
                 else:
-                    self.vessels[vessel_PID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_PID, state=vessel_state, coordinates=coordinates)
+                    self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, coordinates=coordinates)
             
             self.display.monitor.viewGroundTrack.draw()
             if self.active_vessel:

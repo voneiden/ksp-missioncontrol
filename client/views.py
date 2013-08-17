@@ -126,6 +126,46 @@ class MainMenu(Canvas):
         if self.monitor.system.network.socket:
             self.monitor.system.network.socket.send("FULLSYNC;")
     
+    
+class FlightLogger(Canvas):
+    def __init__(self, monitor, resolution, position):
+        Canvas.__init__(self, monitor, resolution, position)
+        
+        #self.btn_connect = Button(self,pygame.Rect(5,25,60,20),"Connect")
+        #self.elements.append(self.btn_connect)
+        #self.btn_connect.click = self.doConnect
+        
+        #self.inp_ip = Input(self,pygame.Rect(70,25,200,20),"192.168.1.13")
+        #self.elements.append(self.inp_ip)
+        
+        
+        
+        self.draw()
+        
+    def draw(self):
+        self.fill((0,0,0))
+        if self.monitor.system.active_vessel:
+            vessel = self.monitor.system.active_vessel
+            
+            name = FONT.render(vessel.name)
+        if self.monitor.system.network.socket:
+            cstr1 = FONT.render("Connected: Yes",False,(255,255,255))
+        else:
+            cstr1 = FONT.render("Connected: No",False,(255,255,255))
+        self.blit(cstr1,(5,5))
+        
+        for element in self.elements:
+            element.render()
+        
+        
+        
+    def doConnect(self):
+        ip = self.inp_ip.text 
+        self.monitor.system.network.connect(ip)
+        self.draw()
+        if self.monitor.system.network.socket:
+            self.monitor.system.network.socket.send("FULLSYNC;")
+    
             
 
 class GroundTrack(Canvas):
@@ -242,7 +282,7 @@ class GroundTrack(Canvas):
         else:
             return
 
-class Plot(Canvas):
+class Plotter(Canvas):
     SHIP_PROJECTION_MODE = "plotter_ship_projection_mode" # Defines projection for the view. Either REF or SHP
     REFERENCE_BODY = "plotter_reference_body" # Reference body
     TARGET_VESSEL = "plotter_target_vessel"

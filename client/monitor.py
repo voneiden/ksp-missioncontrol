@@ -103,14 +103,14 @@ class Monitor43(Monitor):
     def setupViews(self):
         # overview style
         self.viewTopMenu = views.HorizontalMenu(self, (1024,28), pygame.Rect((0,0),(1024,28)))
-        self.viewPlot = views.Plot(self, (512,370), pygame.Rect((0,28),(512,370)))
+        self.viewPlot = views.Plotter(self, (512,370), pygame.Rect((0,28),(512,370)))
         self.viewData = views.MainMenu(self, (512,370), pygame.Rect((512,28),(512,370)))
         self.viewGroundTrack = views.GroundTrack(self, (1024,370), pygame.Rect((0,398),(1024,370)))
         
         
         self.view_mm_logo = views.MainMenuLogo(self, (1024, 200), pygame.Rect((0, 0), (1024, 200)))
         self.view_mm     = views.MainMenu(self, (512, 568), pygame.Rect((512, 200),(512, 568)))
-        self.view_mm_plotter = views.Plot(self, (512,568), pygame.Rect((0, 200),(512,568)))
+        self.view_mm_plotter = views.Plotter(self, (512,568), pygame.Rect((0, 200),(512,568)))
 
 
         self.scenes["mainmenu"] = [self.view_mm_logo, self.view_mm_plotter, self.view_mm]
@@ -137,7 +137,7 @@ class Monitor169(Monitor):
 
     def setupViews(self):
         self.viewMenubar = views.VerticalMenu(self, (80,720), pygame.Rect((0,0),(80,720)))
-        self.viewPlot = views.Plot(self, (600,360), pygame.Rect((80,0),(600,360)))
+        self.viewPlot = views.Plotter(self, (600,360), pygame.Rect((80,0),(600,360)))
         self.viewData = views.MainMenu(self, (600,360), pygame.Rect((680,0),(600,360)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,360), pygame.Rect((80,360),(1200,360)))
 
@@ -160,7 +160,7 @@ class Monitor1610(Monitor):
 
     def setupViews(self):
         self.viewMenubar = views.VerticalMenu(self, (80,800), pygame.Rect((0,0),(80,800)))
-        self.viewPlot = views.Plot(self, (600,400), pygame.Rect((80,0),(600,400)))
+        self.viewPlot = views.Plotter(self, (600,400), pygame.Rect((80,0),(600,400)))
         self.viewData = views.MainMenu(self, (600,400), pygame.Rect((680,0),(600,400)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,400), pygame.Rect((80,400),(1200,400)))
 
