@@ -364,7 +364,7 @@ class Plotter(Canvas):
         
         if not self.monitor.settings[self.REFERENCE_BODY]:
             error = FONT.render("NO REF",False,(255,255,255))
-            self.blit(error, self.cc([-10,-5]))
+            self.blit(error, self.cc(-10,-5))
             return
             
         target_vessel = self.monitor.settings[self.TARGET_VESSEL]

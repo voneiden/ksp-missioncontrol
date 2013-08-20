@@ -10,6 +10,11 @@ The network protocol needs still standardization. Perhaps it can be used by othe
 
 Contributors are welcome!
 
+!!! NOTE NOTE NOTE NOTE NOTE !!!
+=================================
+v0.21 release changed the network protocol to use JSON strings separated by newlines (\n).
+v0.21 release changed coordinate system transformation to plugin side. Frame rotation must still be done on client side.
+
 Dependencies
 ============
 

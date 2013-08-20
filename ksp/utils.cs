@@ -14,62 +14,64 @@ namespace MissionControl  {
 			//string referenceBody = FlightGlobals.Bodies.IndexOf (orbit.referenceBody).ToString ();
 			string referenceBody = orbit.referenceBody.GetName ();
 
-			List<string> buffer = new List<string>();
-			buffer.Add ("V"); // # 0
+			//List<string> buffer = new List<string>();
+			json buffer = new json ();
+			buffer.Add ("type", "vessel");
 
 			if (vessel.situation == Vessel.Situations.LANDED) {
-				buffer.Add ("L");
+				buffer.Add ("state", "landed");
 			} 
 			else if (vessel.situation == Vessel.Situations.SPLASHED) {
-				buffer.Add ("S");
+				buffer.Add ("state", "splashed");
 			} 
 			else if (vessel.situation == Vessel.Situations.PRELAUNCH) {
-				buffer.Add ("P");
+				buffer.Add ("state", "prelaunch");
 			} 
 			else if (vessel.situation == Vessel.Situations.FLYING) {
-				buffer.Add ("F");
+				buffer.Add ("state", "flying");
 			}
 			else if (vessel.situation == Vessel.Situations.ORBITING) {
-				buffer.Add ("O");
+				buffer.Add ("state", "orbiting");
 			} 
 			else if (vessel.situation == Vessel.Situations.DOCKED) {
-				buffer.Add ("D");
+				buffer.Add ("state", "docked");
 			} 
 			else if (vessel.situation == Vessel.Situations.SUB_ORBITAL) {
-				buffer.Add ("SO");
+				buffer.Add ("state", "suborbital");
 			} 
 			else if (vessel.situation == Vessel.Situations.ESCAPING) {
-				buffer.Add ("E");
+				buffer.Add ("state", "escaping");
 			} 
 
 			else {
 				Debug.Log ("Unknown vessel situation");
-				return "X";
+				buffer.Add ("state", "unknown");
 			} // # 1
 
-			buffer.Add (vessel.id.ToString ()); // # 2
-			buffer.Add (vessel.vesselName); // # 3
-			buffer.Add (Planetarium.GetUniversalTime ().ToString ()); // # 4
-			buffer.Add (referenceBody); // # 5
+			buffer.Add ("uid", vessel.id.ToString ());
+			buffer.Add ("name", vessel.vesselName); // # 3
+			buffer.Add ("ut", Planetarium.GetUniversalTime ()); // # 4
+			buffer.Add ("ref", referenceBody); // # 5
 
-			buffer.Add (vessel.longitude.ToString ()); // # 6
-			buffer.Add (vessel.latitude.ToString ()); // # 7
+			buffer.Add ("lon", vessel.longitude); // # 6
+			buffer.Add ("lat", vessel.latitude); // # 7
 			// Why was this zero?
 			Vector3d r = orbit.getRelativePositionAtUT (Planetarium.GetUniversalTime ());
 			Vector3d v = orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ());
 
 			//Vector3d r = orbit.pos.xzy;
 			//Vector3d v = orbit.vel.xzy;
+			List<double> RV = new List<double> ();
 
-			String rx = r.x.ToString (); // X in pygame?
-			String ry = r.y.ToString (); // Z in pygame?
-			String rz = r.z.ToString (); // Y in pygame?
+			RV.Add(r.y); // X in pygame?
+			RV.Add(r.x); // Z in pygame?
+	       	RV.Add(r.z); // Y in pygame?
 
-			String vx = v.x.ToString ();
-			String vy = v.y.ToString ();
-			String vz = v.z.ToString ();
+	       	RV.Add(v.y);
+	       	RV.Add(v.x);
+	       	RV.Add(v.z);
 
-			buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);	// # 8
+			buffer.Add ("rv", RV);	// # 8
 
 			//Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
 			//Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
@@ -93,47 +95,38 @@ namespace MissionControl  {
 
 
 			//buffer.Add (orbit.epoch.ToString ());
-			buffer.Add (orbit.semiMajorAxis.ToString () + ":" +
-				orbit.eccentricity.ToString () + ":" +
-				orbit.inclination.ToString () + ":" +
-				orbit.LAN.ToString () + ":" +
-				orbit.argumentOfPeriapsis.ToString ()); // # 9
+			List<double> elements = new List<double> ();
+
+			elements.Add (orbit.semiMajorAxis);
+			elements.Add (orbit.eccentricity);
+			elements.Add (orbit.inclination);
+			elements.Add (orbit.LAN);
+			elements.Add (orbit.argumentOfPeriapsis); // # 9
+
 			//buffer.Add (orbit.meanAnomalyAtEpoch.ToString ());
 
+			buffer.Add ("elements", elements);
 
-			buffer.AddRange(getFlightData (vessel));
-
-	
-			return string.Join ("\t",buffer.ToArray ());
-			
-		}
-
-		public List<string> getFlightData (Vessel vessel)
-		{
-			List<string> buffer = new List<string>();
-
-
-
-			buffer.Add (vessel.missionTime.ToString ()); // # 10
-			buffer.Add (vessel.atmDensity.ToString ()); // # 11
-			buffer.Add (vessel.geeForce.ToString ()); // # 12
-			buffer.Add (vessel.obt_velocity.magnitude.ToString ()); // # 13
-			buffer.Add (vessel.srf_velocity.magnitude.ToString ()); // # 14
-			buffer.Add (vessel.verticalSpeed.ToString ());   // # 15
-			buffer.Add (vessel.staticPressure.ToString ()); // # 16
+			buffer.Add ("mt", vessel.missionTime); // # 10
+			buffer.Add ("atm_density", vessel.atmDensity); // # 11
+			buffer.Add ("geeforce", vessel.geeForce); // # 12
+			buffer.Add ("obt_v", vessel.obt_velocity.magnitude); // # 13
+			buffer.Add ("srf_v", vessel.srf_velocity.magnitude); // # 14
+			buffer.Add ("vrt_v", vessel.verticalSpeed);   // # 15
+			buffer.Add ("pressure_s", vessel.staticPressure); // # 16
 
 			if (vessel.Parts.Count () > 0) {
 				Part part = vessel.Parts [0];
-				buffer.Add (part.dynamicPressureAtm.ToString ()); // # 17
-				buffer.Add (part.temperature.ToString ()); // #  18
+				buffer.Add ("pressure_d", part.dynamicPressureAtm); // # 17
+				buffer.Add ("temperature", part.temperature); // #  18
 			} else {
-				buffer.Add ("0");
-				buffer.Add ("0");
+				buffer.Add ("pressure_d", 0);
+				buffer.Add ("temperature", 0);
 			}
 
-			buffer.Add (vessel.altitude.ToString ()); // # 19
-			buffer.Add (vessel.heightFromSurface.ToString ()); // # 20
-			buffer.Add (vessel.heightFromTerrain.ToString ()); // # 21
+			buffer.Add ("alt", vessel.altitude); // # 19
+			buffer.Add ("alt_srf", vessel.heightFromSurface); // # 20
+			buffer.Add ("alt_ter", vessel.heightFromTerrain); // # 21
 
 			//buffer.Add (vessel.acceleration.magnitude.ToString ());
 			//buffer.Add (vessel.angularMomentum.magnitude.ToString ());
@@ -145,51 +138,57 @@ namespace MissionControl  {
 			//buffer.Add (vessel.specificAcceleration.ToString ());
 			//buffer.Add (vessel.terrainAltitude.ToString ());
 
-			return buffer;
+	
+			return buffer.dumps();
+			
 		}
+		
 		public string getCelestialState(CelestialBody celestial) 
 		{
 			Debug.Log ("Collecting: " + celestial.GetName ());
-			List<string> buffer = new List<string>();
-			buffer.Add ("C");
-			buffer.Add (celestial.GetName ());
+			json buffer = new json ();
+			buffer.Add ("type", "celestial");
 
+			buffer.Add ("name", celestial.GetName ());
+			buffer.Add ("ref", celestial.referenceBody.GetName ());
 			if (celestial.orbitDriver != null) {
 				Orbit orbit = celestial.GetOrbit ();
 
 				Vector3d r = orbit.getRelativePositionAtUT (0);
 				Vector3d v = orbit.getOrbitalVelocityAtUT (0);
 
-				String rx = r.x.ToString ();
-				String ry = r.y.ToString ();
-				String rz = r.z.ToString ();
+				List<double> RV = new List<double> ();
 
-				String vx = v.x.ToString ();
-				String vy = v.y.ToString ();
-				String vz = v.z.ToString ();
-;
-				buffer.Add (celestial.referenceBody.GetName ());
-				buffer.Add (rx + ":" + ry + ":" + rz + ":" + vx + ":" + vy + ":" + vz);
-			} else {
-				buffer.Add ("None");
-				buffer.Add ("None");
-			}
+				// Swap coordinate system
+				RV.Add(r.y); 
+				RV.Add(r.x); 
+				RV.Add(r.z); 
+
+				RV.Add(v.y);
+				RV.Add(v.x);
+				RV.Add(v.z);
+
+				buffer.Add ("rv", RV);	
+
+			} 
 	
-			buffer.Add (celestial.gravParameter.ToString ());
-			buffer.Add (celestial.Radius.ToString ());
-			buffer.Add (celestial.sphereOfInfluence.ToString ());
+			buffer.Add ("mu", celestial.gravParameter);
+			buffer.Add ("radius", celestial.Radius);
+			buffer.Add ("soi", celestial.sphereOfInfluence);
+
 			if (celestial.atmosphere == true) {
-				buffer.Add (celestial.maxAtmosphereAltitude.ToString ());
+				buffer.Add ("alt_atm", celestial.maxAtmosphereAltitude);
 			} else {
-				buffer.Add ("None");
+				buffer.Add ("alt_atm", 0);
 			}
 
 			// Angular velocity data
-			buffer.Add (celestial.zUpAngularVelocity.magnitude.ToString ());
+			buffer.Add ("ang_v", celestial.zUpAngularVelocity.magnitude);
 
-			buffer.Add (celestial.initialRotation.ToString ());
-			buffer.Add (celestial.rotationAngle.ToString ());
-			return string.Join ("\t",buffer.ToArray ());
+			buffer.Add ("initial_rotation", celestial.initialRotation);
+			buffer.Add ("rotation_angle", celestial.rotationAngle);
+
+			return buffer.dumps ();
 		}
 	}
 }
