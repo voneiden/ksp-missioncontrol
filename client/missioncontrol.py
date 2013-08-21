@@ -141,12 +141,10 @@ class System(object):
                 self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
                 self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
                 
-                self.display.monitor.viewGroundTrack.draw()
-                self.display.monitor.viewPlot.draw()
-                self.display.monitor.viewData.draw()
-            return
-            # Parse position and velocity if we are sub-orbital or orbital
-            # TODO: What about docked ships?
+                #self.display.monitor.viewGroundTrack.draw()
+                #self.display.monitor.viewPlot.draw()
+                #self.display.monitor.viewData.draw()
+            
         
         # Object type (C)elestial body
         elif t == "celestial":
@@ -206,7 +204,8 @@ class System(object):
 
 class Display:
     ''' The display class handles events, window resizing and maintains correct aspect ratio '''
-    def __init__(self,system,width=1024,height=768):
+    def __init__(self,system):
+        
         pygame.init()
         
         self.system = system
@@ -219,46 +218,30 @@ class Display:
         global FONT
         FONT = self.font
         
-        self.window = pygame.display.set_mode((1024,768),
-                                              pygame.RESIZABLE)
-        
-   
-        info = pygame.display.Info()
-        aspect = round(float(info.current_w) / float(info.current_h),2)
+        display_info = pygame.display.Info()
+        aspect = round(float(display_info.current_w) / float(display_info.current_h),2)
+        print "Resolution",display_info.current_w,display_info.current_h
         print "Current aspect ratio",aspect
-        if aspect == 1.33:
-            self.monitor = monitor.Monitor43(self)
             
         # Support for 16:9 monitors
-        #elif aspect == 1.78:
-        #    self.monitor = monitor.Monitor169(self)
+        if aspect == 1.78:
+            self.window = pygame.display.set_mode((1280,720),
+                                              pygame.RESIZABLE)
+            self.monitor = monitor.Monitor169(self)
             
             
         # Support for 16:10 monitors
-        #elif aspect == 1.6:
-        #    self.monitor = monitor.Monitor1610(self)
+        elif aspect == 1.6:
+            self.window = pygame.display.set_mode((1280,800),
+                                              pygame.RESIZABLE)
+            self.monitor = monitor.Monitor1610(self)
             
         # Default to 4:3
         else:
+            self.window = pygame.display.set_mode((1024,768),
+                                              pygame.RESIZABLE)
             self.monitor = monitor.Monitor43(self)
-            
-        
-        
 
-        
-       
-        # The monitor is always 800x600, 4:3. Consider it a virtual monitor.
-        # 1.12 monitor has been updated to 1024x768 4:3, or other widescreen formats
-        
-        '''
-        self.monitor = pygame.Surface((self.basewidth,self.baseheight))
-        self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
-        
-        self.viewGroundTrack = views.GroundTrack(self,(800,300))
-        self.viewPlot = views.Plot(self,(400,300))
-        self.viewData = views.MainMenu(self,(400,300))
-        '''
-        
         self.focus = None
         
         self.lastTick = time.time()
@@ -278,6 +261,7 @@ class Display:
         
         Probably it doesn't.
         '''
+        self.ticker = 0
         
         while True:
             self.monitor.fill()
@@ -308,7 +292,8 @@ class Display:
                     keys = choices.keys()
                     keys.sort()
                     best_monitor = choices[keys[0]]
-                    print "Best monitor aspect:",keys[0],best_monitor
+                    
+                    print "Best monitor aspect res",event.size,":",keys[0],best_monitor
                     
                     # If optimum is not current monitor aspect ratio, change it
                     if not isinstance(self.monitor,best_monitor):
@@ -320,10 +305,6 @@ class Display:
                     
                     else:                    
                         self.monitor.transform()
-                          
-                
-                
-                
                     
                 elif event.type == pygame.KEYDOWN:
                     if self.focus.focusElement:
@@ -363,12 +344,20 @@ class Display:
                     if view:
                         view[0].click(view[1])
                     
-                    
+            scene = self.monitor.settings["monitor_scene"]
             
             if self.system.network.socket:
-                if self.monitor.settings["monitor_scene"] == "mainmenu":
-                    self.monitor.settings["monitor_scene"] = "overview"
+                if scene == "mainmenu":
+                    scene = "overview"
+                    
                 self.system.network.recv()
+                
+                if not self.ticker % self.monitor.settings["update_ticks"]:
+                    if scene == "overview":
+                        self.monitor.viewGroundTrack.draw()
+                        self.monitor.viewPlotter.draw()
+                        self.monitor.viewData.draw()
+                    
             else:
                 self.system.UT += 100000
                 self.monitor.view_mm_plotter.draw()
@@ -382,16 +371,17 @@ class Display:
             self.window.blit(self.monitor.scaledSurface, (self.monitor.transformBlankWidth, self.monitor.transformBlankHeight))
             
             pygame.display.flip()
-            #print self.window.get_size()
+            
             
             newtick = time.time() 
             sleep = 0.05-(newtick-self.lastTick)
-            #print "fps:",1/(newtick-self.lastTick)
+            print "SLeep",sleep
             if sleep>0:    
                 time.sleep(sleep)
             else:
                 print "Warning: lagging"
             self.lastTick = time.time()
+            self.ticker += 1
     
 class Network:
     def __init__(self,system):
