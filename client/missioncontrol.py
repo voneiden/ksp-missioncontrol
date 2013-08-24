@@ -91,11 +91,9 @@ class System(object):
         
         # Planetarium data
         if t == "update":
-            print "UPDATE"*100
             self.UT = msg["ut"] # Universal time
             self.frame_rotating = msg["rotating"] # Is frame rotating at the moment? 
             self.frame_rotation = radians(msg["frame_angle"]) # Current frame rotation
-            print self.frame_rotation
         
         # Object type (V)essel
         elif t == "vessel":
@@ -348,7 +346,7 @@ class Display:
             
             if self.system.network.socket:
                 if scene == "mainmenu":
-                    scene = "overview"
+                    self.monitor.settings["monitor_scene"] = "overview"
                     
                 self.system.network.recv()
                 
@@ -375,7 +373,7 @@ class Display:
             
             newtick = time.time() 
             sleep = 0.05-(newtick-self.lastTick)
-            print "SLeep",sleep
+            #print "SLeep",sleep
             if sleep>0:    
                 time.sleep(sleep)
             else:
