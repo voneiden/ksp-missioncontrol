@@ -196,7 +196,7 @@ class System(object):
                     self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, coordinates=coordinates)
             
             
-            if self.active_vessel:
+            if self.active_vessel and self.display:
                 self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
                 self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
                 
