@@ -46,6 +46,7 @@
     <Compile Include="MissionControl.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="utils.cs" />
+    <Compile Include="json.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

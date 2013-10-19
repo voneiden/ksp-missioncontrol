@@ -126,10 +126,18 @@ namespace MissionControl  {
 			else {
 				rotating = "0";
 			}
+			json buffer = new json ();
+			buffer.Add ("type", "update");
+			buffer.Add ("ut", UT);
+			buffer.Add ("rotating", rotating);
+			buffer.Add ("frame_angle", frame_angle);
 
-			server.SendAll ("P\t" + UT.ToString () + "\t" + rotating + "\t" + frame_angle.ToString ());
+
+			server.SendAll (buffer.dumps());
 			server.SendAll (utils.getStateLine (ActiveVessel));
 		}
+
+
 
 
 
@@ -169,9 +177,9 @@ namespace MissionControl  {
 			//active_vessel = FlightGlobals.ActiveVessel;
 			//buffer.Add ("AV\t" + active_vessel.id.ToString ());
 
-			buffer.Add ("SYNCOK");
+			buffer.Add ("{\"type\":\"fullsync_ok\"}");
 			Debug.Log ("SYNC MSG:" + buffer.ToString ());
-			return string.Join (";",buffer.ToArray ());
+			return string.Join ("\n",buffer.ToArray ());
 		}
 	}
 }

@@ -29,10 +29,11 @@ class Monitor(object):
         self.scaledResolution = resolution
         self.scaledSurface = pygame.Surface(resolution)
         
-        # TODO active view mode
-        self.scenes = {}    # Holds different viewmodes.
+        # Holds different scenes, which are groups of views.
+        self.scenes = {}    
         
-        self.settings = {"monitor_scene":"mainmenu"} # Holds runtime settings for views
+        # Holds runtime settings for views
+        self.settings = {"monitor_scene":"mainmenu", "update_ticks":20} 
 
         self.aspect = float(resolution[0]) / float(resolution[1])
 
@@ -103,20 +104,20 @@ class Monitor43(Monitor):
     def setupViews(self):
         # overview style
         self.viewTopMenu = views.HorizontalMenu(self, (1024,28), pygame.Rect((0,0),(1024,28)))
-        self.viewPlot = views.Plotter(self, (512,370), pygame.Rect((0,28),(512,370)))
+        self.viewPlotter = views.Plotter(self, (512,370), pygame.Rect((0,28),(512,370)))
         self.viewData = views.FlightLogger(self, (512,370), pygame.Rect((512,28),(512,370)))
         self.viewGroundTrack = views.GroundTrack(self, (1024,370), pygame.Rect((0,398),(1024,370)))
         
         
         self.view_mm_logo = views.MainMenuLogo(self, (1024, 200), pygame.Rect((0, 0), (1024, 200)))
         self.view_mm     = views.MainMenu(self, (512, 568), pygame.Rect((512, 200),(512, 568)))
-        self.view_mm_plotter = views.Plotter(self, (512,568), pygame.Rect((0, 200),(512,568)))
+        self.view_mm_plotter = views.Plotter(self, (512,568), pygame.Rect((0, 200),(512, 568)))
 
 
         self.scenes["mainmenu"] = [self.view_mm_logo, self.view_mm_plotter, self.view_mm]
         
         self.scenes["overview"] = [self.viewTopMenu,
-                                  self.viewPlot,
+                                  self.viewPlotter,
                                   self.viewData,
                                   self.viewGroundTrack]
 
@@ -137,12 +138,19 @@ class Monitor169(Monitor):
 
     def setupViews(self):
         self.viewMenubar = views.VerticalMenu(self, (80,720), pygame.Rect((0,0),(80,720)))
-        self.viewPlot = views.Plotter(self, (600,360), pygame.Rect((80,0),(600,360)))
+        self.viewPlotter = views.Plotter(self, (600,360), pygame.Rect((80,0),(600,360)))
         self.viewData = views.FlightLogger(self, (600,360), pygame.Rect((680,0),(600,360)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,360), pygame.Rect((80,360),(1200,360)))
+        
+        self.view_mm_logo = views.MainMenuLogo(self, (1280, 200), pygame.Rect((0, 0), (1280, 200)))
+        self.view_mm     = views.MainMenu(self, (640, 520), pygame.Rect((640, 200),(640, 520)))
+        self.view_mm_plotter = views.Plotter(self, (640,520), pygame.Rect((0, 200),(640, 520)))
+
+
+        self.scenes["mainmenu"] = [self.view_mm_logo, self.view_mm_plotter, self.view_mm]
 
         self.scenes["overview"] = [self.viewMenubar,
-                                  self.viewPlot,
+                                  self.viewPlotter,
                                   self.viewData,
                                   self.viewGroundTrack]
     def fill(self):
@@ -160,12 +168,19 @@ class Monitor1610(Monitor):
 
     def setupViews(self):
         self.viewMenubar = views.VerticalMenu(self, (80,800), pygame.Rect((0,0),(80,800)))
-        self.viewPlot = views.Plotter(self, (600,400), pygame.Rect((80,0),(600,400)))
+        self.viewPlotter = views.Plotter(self, (600,400), pygame.Rect((80,0),(600,400)))
         self.viewData = views.MainMenu(self, (600,400), pygame.Rect((680,0),(600,400)))
         self.viewGroundTrack = views.GroundTrack(self, (1200,400), pygame.Rect((80,400),(1200,400)))
+        
+        self.view_mm_logo = views.MainMenuLogo(self, (1280, 200), pygame.Rect((0, 0), (1280, 200)))
+        self.view_mm     = views.MainMenu(self, (640, 600), pygame.Rect((640, 200),(640, 600)))
+        self.view_mm_plotter = views.Plotter(self, (640, 600), pygame.Rect((0, 200),(640,600)))
+
+
+        self.scenes["mainmenu"] = [self.view_mm_logo, self.view_mm_plotter, self.view_mm]
 
         self.scenes["overview"] = [self.viewMenubar,
-                                  self.viewPlot,
+                                  self.viewPlotter,
                                   self.viewData,
                                   self.viewGroundTrack]
                                   

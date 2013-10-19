@@ -10,6 +10,11 @@ The network protocol needs still standardization. Perhaps it can be used by othe
 
 Contributors are welcome!
 
+!!! NOTE NOTE NOTE NOTE NOTE !!!
+=================================
+v0.21 release changed the network protocol to use JSON strings separated by newlines (\n).
+v0.21 release changed coordinate system transformation to plugin side. Frame rotation must still be done on client side.
+
 Dependencies
 ============
 
@@ -24,3 +29,15 @@ Plugin: RemoteTech
 * Python 2.7 64-bit (Python 3 experimental)
 * pygame 64-bit http://www.lfd.uci.edu/~gohlke/pythonlibs/#pygame
 * numpy 64-bit http://www.lfd.uci.edu/~gohlke/pythonlibs/#numpy
+
+
+Version History
+===============
+
+v0.2 (released 17.8.2013) (experimental demo)
+- Expanding the core features.
+- Still not very useful. Displays variable orbit plot, ground track and some flight data
+
+v0.1 (experimental demo)
+
+- Displays ground track and solar system

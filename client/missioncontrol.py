@@ -7,6 +7,7 @@
 
 import celestialdata
 import elements
+import json
 import kepler
 import logging
 import monitor
@@ -41,8 +42,8 @@ class System(object):
         self.UT = 0
         self.temp = []
         self.active_vessel = None
-        self.frame_rotating = None
-        self.frame_rotation = None
+        self.frame_rotating = 0
+        self.frame_rotation = 0
         
         self.celestial_data = [] # Used for saving fresh celestial data updates
         
@@ -61,169 +62,110 @@ class System(object):
         
 
     def parse(self,data):
-        ''' Parse incoming TCP data '''
+        ''' 
+        Parse incoming TCP data
+        The data should consist of a single valid json string'''
+        # TODO: tempfix
+        
+        if data == "SYNCOK":
+            f = open("celestials.txt",'w')
+            f.write("\n".join(self.celestial_data))
+            f.close()
+            return
+            
+        try:
+            msg = json.loads(data, parse_int=float)
+        except ValueError:
+            print "Parser failed to read data: No JSON object could be decoded"
+            print data
+            return
 
-        tok = data.split('\t')
-        header = tok[0] # Object type
+        try:
+            t = msg["type"]
+        except KeyError:
+            print "Parser failed to parse data: JSON object lacks packet type"
+            return
+            
+        
+        
         
         # Planetarium data
-        if header == "P":
-            self.UT = float(tok[1]) # Universal time
-            self.frame_rotating = int(tok[2]) # Is frame rotating at the moment? 
-            self.frame_rotation = radians(float(tok[3])) # Current frame rotation
+        if t == "update":
+            self.UT = msg["ut"] # Universal time
+            self.frame_rotating = msg["rotating"] # Is frame rotating at the moment? 
+            self.frame_rotation = radians(msg["frame_angle"]) # Current frame rotation
         
         # Object type (V)essel
-        elif header == "V":
-            vessel_state   = tok[1] # Status (flying, etc.)
-            vessel_UID     = tok[2] # Unique ID
-            vessel_name    = tok[3]
-            universal_time = float(tok[4]) # Game time
-            reference_body = tok[5] # Reference body (what body is vessel orbiting?)
-            longitude      = float(tok[6])
-            latitude       = float(tok[7])
-            vessel_rv      = tok[8]
-           
-            orbital_elements = tok[9]
-            mission_time = float(tok[10])
+        elif t == "vessel":
+            uid = msg["uid"]
+            ref = msg["ref"]
+            name = msg["name"]
+            state = msg["state"]
+            ut = msg["ut"]
+            rv = msg["rv"]
+            r = array(rv[0:3])
+            v = array(rv[3:6])
+
+            trv = [ut, r, v]
+
             
-            atmosphere_density  = float(tok[11])
-            geeforce            = float(tok[12])
-            orbital_velocity    = float(tok[13])
-            surface_velocity    = float(tok[14])
-            vertical_velocity   = float(tok[15])
-            static_pressure     = float(tok [16])
-            dynamic_pressure    = float(tok[17])
-            temperature         = float(tok[18])
+                        
+            print "Vessel data received"
             
-            altimeter           = float(tok[19])
-            altitude_surface    = float(tok[20])
-            altitude_terrain    = float(tok[21])
-            
-            
-            
-            # Parse position and velocity if we are sub-orbital or orbital
-            # TODO: What about docked ships?
-            if vessel_state == "SO" or vessel_state == "O" or True:
-                rv = vessel_rv.split(':') 
-                print "vessel position update",rv
+            print "Adjusting frame rotation"
+            trv[1] = self.RotateZ(trv[1], -self.frame_rotation)
+            trv[2] = self.RotateZ(trv[2], -self.frame_rotation)
+                    
+            if uid in self.vessels:
+                vessel = self.vessels[uid]
+                vessel.update(state=state, trv=trv)
+                self.active_vessel = vessel #TODO: This could be done better
                 
-                # Unity 3D uses a left handed cartesian coordinate system. 
-                # I prefer to use a right handed system. The coordinates that
-                # are received from the game are in format Y, X, Z, where Z is 
-                # height.
-                # They are swapped here to match X, Y, Z
-                
-                trv = [self.UT ,array([float(rv[1]),   #rX
-                                       float(rv[0]),   #rY
-                                       float(rv[2])]), #rZ
-                                array([float(rv[4]),   #vX
-                                       float(rv[3]),   #vY
-                                       float(rv[5])])] #vZ
-                                       
-                if vessel_UID in self.vessels:
-                    
-                    # TEMP: debugging..
-                    #self.vessels[vPID].lon = vLon
-                    #self.vessels[vPID].lat = vLat
-                    #TODO: CLEAN HERE
-                    print "trv velocity",norm(trv[2])
-                    print "orb velocity",orbital_velocity
-                    print "sur velocity",surface_velocity
-         
-                    
-                    print "Frame rotation: ",degrees(self.frame_rotation)
-                    print "Time rotation:",degrees(self.celestials["Kerbin"].angular_velocity * (self.UT))%360, self.celestials["Kerbin"].angular_velocity 
-                    print "Init rotation",degrees(self.celestials["Kerbin"].initial_rotation)
-                    """
-                    print "R1: ",r
-                    r2 = self.RotateZ(r,self.frame_rotation)
-                    print "R2: ",r2
-                    pr = self.celestials["Kerbin"].angular_velocity * (self.UT) # + self.celestials["Kerbin"].planet_rotation_adjustment 
-                    print "Planet rotation: ",degrees(pr)
-                    r3 = self.RotateZ(r,pr)
-                    print "R3: ",r3
-                    """
-                    
-                    trv[1] = self.RotateZ(trv[1], -self.frame_rotation)
-                    trv[2] = self.RotateZ(trv[2], -self.frame_rotation)
-                    
-                    print "Rotatedd trv",trv
-                    print "Eccentricity",self.vessels[vessel_UID].orbit.e
-                    self.vessels[vessel_UID].update(state=vessel_state, trv=trv)
-                    
-                    
-                    
-                    self.celestials["Kerbin"].planet_rotation_adjustment = 0
-                    rasc,dec,below_radius = self.vessels[vessel_UID].orbit.getGround(self.UT)
-                    
-                    print "Game lon:",longitude
-                    print "Sim  lon:",rasc
-                    print "Diff 360:",float(longitude)%360 - rasc%360
-                    print "Diff",abs((float(longitude)-rasc))
-                    
-                    self.celestials["Kerbin"].planet_rotation_adjustment = radians((float(longitude) - rasc)%360)
-                    
-                    if self.celestials["Kerbin"].tmp_debug:
-                        print "Change:",degrees(self.celestials["Kerbin"].planet_rotation_adjustment - self.celestials["Kerbin"].tmp_debug),self.celestials["Kerbin"].planet_rotation_adjustment - self.celestials["Kerbin"].tmp_debug
-                    self.celestials["Kerbin"].tmp_debug = self.celestials["Kerbin"].planet_rotation_adjustment
-                    
-                    print "ADJUSTMENT:",self.celestials["Kerbin"].planet_rotation_adjustment,degrees(self.celestials["Kerbin"].planet_rotation_adjustment)
-                    
-                    self.active_vessel = self.vessels[vessel_UID]
-                else:
-                    self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, trv=trv)
-                
-                
-                vessel = self.vessels[vessel_UID]
-                
-                vessel.altimeter = altimeter
-                vessel.altitude_terrain = altitude_terrain
-                vessel.altitude_surface = altitude_surface
-                vessel.mission_time = mission_time
-                vessel.geeforce            = geeforce
-                vessel.orbital_velocity    = orbital_velocity
-                vessel.surface_velocity    = surface_velocity
-                vessel.vertical_velocity   = vertical_velocity
-                
-                    
             else:
-                coordinates=(float(longitude),float(latitude))
-                print "coordinates:",coordinates
-                if vessel_UID in self.vessels:
-                    self.vessels[vessel_UID].update(state=vessel_state, coordinates=coordinates)
-                    self.active_vessel = self.vessels[vessel_UID]
-                else:
-                    self.vessels[vessel_UID] = celestialdata.Vessel(self,self.celestials["Kerbin"], vessel_UID, vessel_name, state=vessel_state, coordinates=coordinates)
+                vessel = celestialdata.Vessel(self,self.celestials["Kerbin"], uid, name, state=state, trv=trv)
+                self.vessels[uid] = vessel
             
+            
+            vessel.altimeter = msg["alt"]
+            vessel.altitude_terrain = msg["alt_ter"]
+            vessel.altitude_surface = msg["alt_srf"]
+            vessel.mission_time = msg["mt"]
+            vessel.geeforce            = msg["geeforce"]
+            vessel.orbital_velocity    = msg["obt_v"]
+            vessel.surface_velocity    = msg["srf_v"]
+            vessel.vertical_velocity   = msg["vrt_v"]
             
             if self.active_vessel and self.display:
                 self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
                 self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
                 
-                self.display.monitor.viewGroundTrack.draw()
-                self.display.monitor.viewPlot.draw()
-                self.display.monitor.viewData.draw()
-                # TODO: Stash the vessel for now, load it after Eeloo has been received
-            #self.temp.append((vPID,trv))
+                #self.display.monitor.viewGroundTrack.draw()
+                #self.display.monitor.viewPlot.draw()
+                #self.display.monitor.viewData.draw()
             
         
         # Object type (C)elestial body
-        elif header == "C":
+        elif t == "celestial":
 
             # DEBUG: saving celestial stuff into a text file
             
             
-            name = tok[1]
-            ref = tok[2]
-            rv = tok[3]
-            mu = float(tok[4])
-            radius = float(tok[5])
-            SoI = float(tok[6])
-            atm = tok[7]
+            name = msg["name"]
+            ref = msg["ref"]
+            if "rv" in msg:
+                rv = msg["rv"]
+                
+            else:
+                rv = None
+                
+            mu = msg["mu"]
+            radius = msg["radius"]
+            SoI = msg["soi"]
+            atm = msg["alt_atm"]
             
-            angular_velocity = float(tok[8])
-            initial_rotation = float(tok[9])
-            rot_angle = tok[10]
+            angular_velocity = msg["ang_v"]
+            initial_rotation = msg["initial_rotation"]
+            rot_angle = msg["rotation_angle"]
             
             rotation = [angular_velocity,initial_rotation]
             print "Parsing celestial"
@@ -232,6 +174,7 @@ class System(object):
             print "initr",initial_rotation
             print "rotation angle:",rot_angle
             print "SOI",SoI
+            print "mU",type(mu)
             # Sun is a special case, since it doesn't have coordinates. CENTER OF THE UNIVERSE!
             if name == "Sun":
                 self.celestials[name] = celestialdata.Sun(self,mu=float(mu),radius=float(radius),SoI=SoI)
@@ -241,52 +184,16 @@ class System(object):
                     atm = False
                 else:
                     atm = float(atm)
-                    
-                # Parse orbit and generate it
-                rv = rv.split(':')
                 
-                # Unity 3D uses a left handed cartesian coordinate system. 
-                # I prefer to use a right handed system. The coordinates that
-                # are received from the game are in format Y, X, Z, where Z is 
-                # height.
-                # They are swapped here to match X, Y, Z
-                # Also, planet objects are delivered only once at UT = 0
-                # because their orbital elements are fixed.
-                
-                trv = [0.0 ,array([float(rv[1]), 
-                                   float(rv[0]), 
-                                   float(rv[2])]), 
-                            array([float(rv[4]), 
-                                   float(rv[3]), 
-                                   float(rv[5])])]
-                                   
+                r = array(rv[0:3]) # Position
+                v = array(rv[3:6]) # Velocity
+            
+                trv = [0.0, r, v]
+                print "Init with trv",trv
                 self.celestials[name] = celestialdata.Planet(self,self.celestials[ref],name,mu=mu,radius=radius,SoI=SoI,trv=trv,atm=atm, rotation=rotation)
-                
-                # Eeloo is the last planet, so render the viewplot
-                #if name == "Eeloo":
-                #    self.display.monitor.viewPlot.draw()
                 
             self.celestial_data.append(data)
                 
-        # Active vessel information
-        elif header == "AV": #TODO: NOT implemented in the plugin yet?
-            if tok[1] in self.vessels:
-                self.active_vessel = self.vessels[tok[1]]
-                print "ACTIVE VESSEL SET"*30
-            else:
-                logging.error("Active vessel suggested by server was not found in local vessel list")
-                
-        elif header == "SYNCOK":
-            f = open("celestials.txt",'w')
-            f.write("\n".join(self.celestial_data))
-            f.close()
-            
-            # Testing
-            
-            #self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
-            #self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
-            
-            self.display.monitor.viewPlot.draw()
             
     def RotateZ(self,vector,angle):
         ''' For debugging purposes '''
@@ -295,7 +202,8 @@ class System(object):
 
 class Display:
     ''' The display class handles events, window resizing and maintains correct aspect ratio '''
-    def __init__(self,system,width=1024,height=768):
+    def __init__(self,system):
+        
         pygame.init()
         
         self.system = system
@@ -308,46 +216,30 @@ class Display:
         global FONT
         FONT = self.font
         
-        self.window = pygame.display.set_mode((1024,768),
-                                              pygame.RESIZABLE)
-        
-   
-        info = pygame.display.Info()
-        aspect = round(float(info.current_w) / float(info.current_h),2)
+        display_info = pygame.display.Info()
+        aspect = round(float(display_info.current_w) / float(display_info.current_h),2)
+        print "Resolution",display_info.current_w,display_info.current_h
         print "Current aspect ratio",aspect
-        if aspect == 1.33:
-            self.monitor = monitor.Monitor43(self)
             
         # Support for 16:9 monitors
-        #elif aspect == 1.78:
-        #    self.monitor = monitor.Monitor169(self)
+        if aspect == 1.78:
+            self.window = pygame.display.set_mode((1280,720),
+                                              pygame.RESIZABLE)
+            self.monitor = monitor.Monitor169(self)
             
             
         # Support for 16:10 monitors
-        #elif aspect == 1.6:
-        #    self.monitor = monitor.Monitor1610(self)
+        elif aspect == 1.6:
+            self.window = pygame.display.set_mode((1280,800),
+                                              pygame.RESIZABLE)
+            self.monitor = monitor.Monitor1610(self)
             
         # Default to 4:3
         else:
+            self.window = pygame.display.set_mode((1024,768),
+                                              pygame.RESIZABLE)
             self.monitor = monitor.Monitor43(self)
-            
-        
-        
 
-        
-       
-        # The monitor is always 800x600, 4:3. Consider it a virtual monitor.
-        # 1.12 monitor has been updated to 1024x768 4:3, or other widescreen formats
-        
-        '''
-        self.monitor = pygame.Surface((self.basewidth,self.baseheight))
-        self.scaledmonitor = pygame.Surface((self.basewidth, self.baseheight))
-        
-        self.viewGroundTrack = views.GroundTrack(self,(800,300))
-        self.viewPlot = views.Plot(self,(400,300))
-        self.viewData = views.MainMenu(self,(400,300))
-        '''
-        
         self.focus = None
         
         self.lastTick = time.time()
@@ -367,6 +259,7 @@ class Display:
         
         Probably it doesn't.
         '''
+        self.ticker = 0
         
         while True:
             self.monitor.fill()
@@ -397,7 +290,8 @@ class Display:
                     keys = choices.keys()
                     keys.sort()
                     best_monitor = choices[keys[0]]
-                    print "Best monitor aspect:",keys[0],best_monitor
+                    
+                    print "Best monitor aspect res",event.size,":",keys[0],best_monitor
                     
                     # If optimum is not current monitor aspect ratio, change it
                     if not isinstance(self.monitor,best_monitor):
@@ -409,10 +303,6 @@ class Display:
                     
                     else:                    
                         self.monitor.transform()
-                          
-                
-                
-                
                     
                 elif event.type == pygame.KEYDOWN:
                     if self.focus.focusElement:
@@ -452,12 +342,20 @@ class Display:
                     if view:
                         view[0].click(view[1])
                     
-                    
+            scene = self.monitor.settings["monitor_scene"]
             
             if self.system.network.socket:
-                if self.monitor.settings["monitor_scene"] == "mainmenu":
+                if scene == "mainmenu":
                     self.monitor.settings["monitor_scene"] = "overview"
+                    
                 self.system.network.recv()
+                
+                if not self.ticker % self.monitor.settings["update_ticks"]:
+                    if scene == "overview":
+                        self.monitor.viewGroundTrack.draw()
+                        self.monitor.viewPlotter.draw()
+                        self.monitor.viewData.draw()
+                    
             else:
                 self.system.UT += 100000
                 self.monitor.view_mm_plotter.draw()
@@ -471,16 +369,17 @@ class Display:
             self.window.blit(self.monitor.scaledSurface, (self.monitor.transformBlankWidth, self.monitor.transformBlankHeight))
             
             pygame.display.flip()
-            #print self.window.get_size()
+            
             
             newtick = time.time() 
             sleep = 0.05-(newtick-self.lastTick)
-            #print "fps:",1/(newtick-self.lastTick)
+            #print "SLeep",sleep
             if sleep>0:    
                 time.sleep(sleep)
             else:
                 print "Warning: lagging"
             self.lastTick = time.time()
+            self.ticker += 1
     
 class Network:
     def __init__(self,system):
@@ -513,7 +412,7 @@ class Network:
                 if len(buf) == 0:
                     break
                 else:
-                    tok  = (self.buffer + buf).split(';')
+                    tok  = (self.buffer + buf).split('\n')
                     self.buffer = ''
                     if len(tok) == 1:
                         self.buffer = tok[0]
