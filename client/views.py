@@ -15,15 +15,30 @@ from numpy.linalg import norm
 FONT = None
             
 class Canvas(pygame.Surface):
-    def __init__(self, monitor, resolution, position):
-        pygame.Surface.__init__(self, resolution)
+    def __init__(self, monitor, size):
+        # Position is format X0, 1, Y0, Y1
+        
+        monitor_width = monitor.virtualResolution[0]
+        monitor_height = monitor.virtualResolution[1]
+        
+        X0 = int(size[0] * monitor_width)
+        X1 = int(size[1] * monitor_width)
+        Y0 = int(size[2] * monitor_height)
+        Y1 = int(size[3] * monitor_height)
+        
+        self.resolution = (X1-X0, Y1-Y0)
+        self.position = pygame.Rect((X0, Y0), (self.resolution[0], self.resolution[1]))
+        
+        #print position,width,height
+        #print (int(position.left * width), int(position.top * height)), (int(position.width * width), int(position.height * height))
+        #position = pygame.Rect((int(position[0] * width), int(position[2] * height)), (int(position[1] * width), int(position.height * height)))
+        #self.resolution = (position.width, position.height)
+        print "Canvas resolution",self.resolution
+        pygame.Surface.__init__(self, self.resolution)
         
         self.monitor = monitor
         self.display = monitor.display
         self.system  = monitor.system
-        
-        self.resolution = resolution
-        self.position = position
         
         # This list contains all the canvas elements
         self.elements = []
@@ -91,8 +106,8 @@ class Canvas(pygame.Surface):
 
 
 class MainMenu(Canvas):
-    def __init__(self, monitor, resolution, position):
-        Canvas.__init__(self, monitor, resolution, position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
         
         self.btn_connect = Button(self,pygame.Rect(5,25,60,20),"Connect")
         self.elements.append(self.btn_connect)
@@ -128,8 +143,8 @@ class MainMenu(Canvas):
     
     
 class FlightLogger(Canvas):
-    def __init__(self, monitor, resolution, position):
-        Canvas.__init__(self, monitor, resolution, position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
         
         #self.btn_connect = Button(self,pygame.Rect(5,25,60,20),"Connect")
         #self.elements.append(self.btn_connect)
@@ -173,8 +188,8 @@ class FlightLogger(Canvas):
             
 
 class GroundTrack(Canvas):
-    def __init__(self, monitor, resolution, position):
-        Canvas.__init__(self, monitor, resolution, position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
         
         #self.map_kerbin = pygame.image.load("maps/kerbin.png")
         self.maps = {}
@@ -182,7 +197,7 @@ class GroundTrack(Canvas):
         self.map = self.maps["kerbin"]
         
         # TMP is used to render ground tracks of non-active vessels
-        self.tmp = pygame.Surface(resolution)
+        self.tmp = pygame.Surface(self.resolution)
         
         self.longitude = 180
         self.latitude  = 180
@@ -309,8 +324,8 @@ class Plotter(Canvas):
                     "Minmus":[pygame.Color("cyan"),0]}
     
 
-    def __init__(self, monitor, resolution, position):
-        Canvas.__init__(self, monitor, resolution, position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
 
         # Define default settings
         
@@ -517,8 +532,8 @@ class HorizontalMenu(Canvas):
     '''
     Horizontal top menu for changing view modes and gods know what
     '''
-    def __init__(self,monitor,resolution,position):
-        Canvas.__init__(self,monitor,resolution,position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
         self.draw()
         
     def draw(self):
@@ -529,8 +544,8 @@ class VerticalMenu(Canvas):
     '''
     Horizontal top menu for changing view modes and gods know what
     '''
-    def __init__(self,monitor,resolution,position):
-        Canvas.__init__(self,monitor,resolution,position)
+    def __init__(self, monitor, position):
+        Canvas.__init__(self, monitor, position)
         self.draw()
         
     def draw(self):
@@ -538,8 +553,8 @@ class VerticalMenu(Canvas):
 
 
 class MainMenuLogo(Canvas):
-    def __init__(self,monitor,resolution,position):
-        Canvas.__init__(self,monitor,resolution,position)
+    def __init__(self, monitor ,position):
+        Canvas.__init__(self, monitor ,position)
         self.logofont = pygame.font.Font("unispace.ttf",56)
         self.logotext1 = self.logofont.render("KERBAL", False, [0, 255, 0])
         self.logotext2 = self.logofont.render("MISSION CONTROL", False, [0, 255, 0])

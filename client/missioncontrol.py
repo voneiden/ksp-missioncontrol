@@ -60,7 +60,7 @@ class System(object):
                 f.close()
         
         
-
+    # TODO: parse should be moved to the network class
     def parse(self,data):
         ''' 
         Parse incoming TCP data
