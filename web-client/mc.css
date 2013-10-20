@@ -1,0 +1,48 @@
+body {
+ margin: 0px;
+}
+
+/* Menu element */
+#menu {
+ float:left;
+ width:10%;
+ background:green;
+ height: 100%;
+}
+
+#menu ul {
+ list-style-type: none;
+ margin-top: 0px;
+ padding-left: 0px;
+}
+#menu li {
+ text-align: right;
+ padding-top: 10px;
+ padding-right: 10px;
+ padding-bottom: 10px;
+}
+
+#menu li:hover {
+ background-color: cyan;
+}
+
+#menu-overview {
+ display: none;
+}
+/* Display element */
+#display {
+  float:right;
+  width:90%;
+  height: 100%;
+}
+
+/* Main/login display */
+#display-main {
+ text-align: center;
+ margin-top: 10%;
+}
+
+#display-main span {
+ 
+ background:lime;
+}

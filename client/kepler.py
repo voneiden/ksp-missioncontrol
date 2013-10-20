@@ -240,8 +240,9 @@ class Orbit:
             r = Xnew**2 * c2 + self.rvdot / sqrt(self.mu) * Xnew * (1 - psi * c3) + self.r0l * (1 - psi * c2)
             
             Xold = Xnew
+            print "Xold",Xold
             Xnew = Xold + (sqrt(self.mu)*dt - Xold**3 * c3 - self.rvdot / sqrt(self.mu) * Xold**2 * c2 - self.r0l * Xold * (1 - psi * c3)) / r
-            
+            print "Xnew",Xnew
             if abs(Xnew - Xold) < 1e-6:
                 break
             xnews.append(Xnew)

@@ -1,0 +1,32 @@
+<html>
+ <head>
+  <meta charset="utf-8"> 
+  <link rel="stylesheet" type="text/css" href="mc.css">
+  <link rel="stylesheet" type="text/css" href="theme-terminal.css">
+  <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+  <script type="text/javascript" src="js/jquery.min.js"></script>
+  <script type="text/javascript" src="js/paper-full.min.js"></script>
+  <script type="text/javascript" src="js/sylvester.js"></script>
+  <script type="text/javascript" src="js/physics.js"></script>
+  <script type="text/javascript" src="js/data.js"></script>
+  <script type="text/paperscript" src="ps/plotter.js" canvas="plotter"></script>
+ </head>
+ <body>
+  <div id="menu">
+   <ul>
+    <li id="menu-main">MAIN</li>
+    <li id="menu-overview">OVERVIEW</li>
+   </ul>
+  </div>
+  <div id="display">
+   <div id="display-main">
+    <h1>KSP MISSION CONTROL</h1>
+    <p>Welcome to KSP Mission Control v0.1 (131020) </p>
+    <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
+    <p>OR</p>
+    <p><input type="button" value="RUN TEST ENVIRONMENT"></p>
+    <canvas id="plotter" width="300" height="300"></canvas>
+   </div>
+  </div>
+ </body>
+</html>

@@ -1,0 +1,34 @@
+body {
+ color: lime;
+ font-family: 'Ubuntu Mono', sans-serif;
+}
+#display {
+ background: black;
+ outline:1px solid lime;
+}
+#display-main {
+ background:black;
+}
+#menu {
+ background:black;
+}
+input[type=button] {
+ background-color:green;
+ border-style:solid;
+ border-color:lime;
+ color: lime;
+}
+
+input[type=button]:hover {
+ background-color:LimeGreen ;
+}
+input[type=button]:active {
+ background-color:DarkGreen ;
+}
+
+input[type=text] {
+ background-color:green;
+ border-style:solid;
+ border-color:lime;
+ color: lime;
+}
