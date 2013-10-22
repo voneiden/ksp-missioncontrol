@@ -26,6 +26,7 @@ body {
  background-color: cyan;
 }
 
+
 #menu-overview {
  display: none;
 }
@@ -35,11 +36,41 @@ body {
   width:90%;
   height: 100%;
 }
-
+/* Plotters */
+#plotter-1 {
+ margin: 0px;
+ padding: 0px;
+}
 /* Main/login display */
 #display-main {
  text-align: center;
  margin-top: 10%;
+}
+#display-main-plotter {
+ margin: 0px;
+ padding: 0px;
+}
+/* Overview display */
+#display-overview {
+ margin-top: 10px;
+ display: none;
+}
+
+#display-overview-top-left {
+ float:left;
+ width:50%;
+ height:50%;
+ background-color:lime;
+}
+#display-overview-top-right {
+ float:right;
+ width:50%;
+ height:50%;
+ background-color:red;
+}
+
+#display-overview-bottom {
+ 
 }
 
 #display-main span {

@@ -12,6 +12,12 @@ body {
 #menu {
  background:black;
 }
+
+#menu-main { /* Use this to define the active background color, it's recorded by ui.js */
+ background-color: DarkGreen;
+}
+
+
 input[type=button] {
  background-color:green;
  border-style:solid;

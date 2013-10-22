@@ -1,10 +1,18 @@
-var Vector = globals.Vector;
-var Matrix = globals.Matrix;
-globals.project = project;
-var center = view.center;
-var camera_distance = globals.celestials.Eeloo.position.modulus()
-var camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+// Declaring some helper variables
 
+Vector = globals.Vector;
+Matrix = globals.Matrix;
+globals.project = project;
+camera_distance = globals.celestials.Eeloo.position.modulus()
+camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+
+function onResize()
+{
+    console.log("Resize!")
+    if (view.center.x > view.center.y) { view_size = view.center.y; }
+    else { view_size = view.center.x; }
+    draw_plot();
+}
 
 function calculate_rotation_matrix(rotation_vector) 
 {
@@ -38,11 +46,11 @@ function create_celestial_circle(color)
 // Create paths for all celestials
 var C = new Object(); // Celestial dots
 var T = new Object(); // Trajectory paths
-C.Sun = new Path.Circle(center, 7);
+C.Sun = new Path.Circle(view.center, 7);
 C.Sun.fillColor = "yellow"
 C.Sun.visible = false;
 
-C.Moho = new Path.Circle(center, 1);
+C.Moho = new Path.Circle(view.center, 1);
 C.Moho.fillColor = "red"
 C.Moho.visible = false;
 T.Moho = new Path({closed: true, visible: false, strokeColor: "red"});
@@ -50,7 +58,7 @@ for (var i = 0; i < 10; i++) {
     T.Moho.add(new Point(0, 0));
 }
 
-C.Eve = new Path.Circle(center, 3);
+C.Eve = new Path.Circle(view.center, 3);
 C.Eve.fillColor = "purple"
 C.Eve.visible = false;
 T.Eve = new Path({closed: true, visible: false, strokeColor: "purple"});
@@ -58,7 +66,7 @@ for (var i = 0; i < 10; i++) {
     T.Eve.add(new Point(0, 0));
 }
 
-C.Kerbin = new Path.Circle(center, 2);
+C.Kerbin = new Path.Circle(view.center, 2);
 C.Kerbin.fillColor = "SpringGreen";
 C.Kerbin.visible = false;
 T.Kerbin = new Path({closed: true, visible: false, strokeColor: "SpringGreen"});
@@ -66,7 +74,7 @@ for (var i = 0; i < 10; i++) {
     T.Kerbin.add(new Point(0, 0));
 }
 
-C.Duna = new Path.Circle(center, 2);
+C.Duna = new Path.Circle(view.center, 2);
 C.Duna.fillColor = "orange"
 C.Duna.visible = false;
 T.Duna = new Path({closed: true, visible: false, strokeColor: "orange"});
@@ -74,7 +82,7 @@ for (var i = 0; i < 10; i++) {
     T.Duna.add(new Point(0, 0));
 }
 
-C.Dres = new Path.Circle(center, 2);
+C.Dres = new Path.Circle(view.center, 2);
 C.Dres.fillColor = "grey"
 C.Dres.visible = false;
 T.Dres = new Path({closed: true, visible: false, strokeColor: "grey"});
@@ -82,7 +90,7 @@ for (var i = 0; i < 10; i++) {
     T.Dres.add(new Point(0, 0));
 }
 
-C.Jool = new Path.Circle(center, 4);
+C.Jool = new Path.Circle(view.center, 4);
 C.Jool.fillColor = "lime"
 C.Jool.visible = false;
 T.Jool = new Path({closed: true, visible: false, strokeColor: "lime"});
@@ -90,7 +98,7 @@ for (var i = 0; i < 10; i++) {
     T.Jool.add(new Point(0, 0));
 }
 
-C.Eeloo = new Path.Circle(center, 2);
+C.Eeloo = new Path.Circle(view.center, 2);
 C.Eeloo.fillColor = "cyan"
 C.Eeloo.visible = false;
 T.Eeloo = new Path({closed: true, visible: false, strokeColor: "cyan"});
@@ -158,9 +166,9 @@ function draw_plot() {
         var obj = C[keys[i]];
         if (obj.visible == true)
         {
-            var render_position = rot.multiply(globals.celestials[keys[i]].position.multiply(center.x / camera_distance));
+            var render_position = rot.multiply(globals.celestials[keys[i]].position.multiply(view_size / camera_distance));
             distances[cam_pos.distanceFrom(render_position)] = obj; // I know I'm doing a bit wrong here but it works for now
-            obj.position = new Point(render_position.e(1) + center.x, render_position.e(2) + center.y);
+            obj.position = new Point(render_position.e(1) + view.center.x, render_position.e(2) + view.center.y);
         }
     }
     
@@ -176,9 +184,9 @@ function draw_plot() {
  
                 //console.log(keys[i]);
                 //console.log(globals.celestials[keys[i]].trajectory);
-                var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(center.x / camera_distance));
+                var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(view_size / camera_distance));
                 //console.log("OK");
-                obj.segments[j].point = new Point(render_segment_position.e(1) + center.x, render_segment_position.e(2) + center.y);
+                obj.segments[j].point = new Point(render_segment_position.e(1) + view.center.x, render_segment_position.e(2) + view.center.y);
             }
             obj.smooth();
         }
@@ -293,4 +301,4 @@ function onMouseDrag(event) {
 }
 
 set_mode("solar");
-draw_plot();
+//draw_plot();

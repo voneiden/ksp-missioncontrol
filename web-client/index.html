@@ -9,7 +9,8 @@
   <script type="text/javascript" src="js/sylvester.js"></script>
   <script type="text/javascript" src="js/physics.js"></script>
   <script type="text/javascript" src="js/data.js"></script>
-  <script type="text/paperscript" src="ps/plotter.js" canvas="plotter"></script>
+  <script type="text/javascript" src="js/ui.js"></script>
+  <script type="text/paperscript" src="ps/plotter.js" canvas="plotter-1"></script>
  </head>
  <body>
   <div id="menu">
@@ -24,8 +25,19 @@
     <p>Welcome to KSP Mission Control v0.1 (131020) </p>
     <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
     <p>OR</p>
-    <p><input type="button" value="RUN TEST ENVIRONMENT"></p>
-    <canvas id="plotter" width="300" height="300"></canvas>
+    <p><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
+   </div>
+   <div id="display-main-plotter">
+     <canvas id="plotter-1" resize></canvas>
+   </div>
+   
+   <div id="display-overview">
+    <div id="display-overview-top-left">
+    </div>
+    <div id="display-overview-top-right">
+    </div>
+    <div id="display-overview-bottom">
+    </div>
    </div>
   </div>
  </body>
