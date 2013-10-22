@@ -12,6 +12,10 @@ Contributors are welcome!
 
 !!! NOTE NOTE NOTE NOTE NOTE !!!
 =================================
+Currently working on the dev branch to create a browser client. Current progress demo should be
+available at http://www.eiden.fi/ksp/ksp-missioncontrol/web-client/ (the solar system can be dragged to rotate)
+
+
 v0.21 release changed the network protocol to use JSON strings separated by newlines (\n).
 v0.21 release changed coordinate system transformation to plugin side. Frame rotation must still be done on client side.
 
