@@ -1,6 +1,10 @@
 window.globals = {};
 globals.Vector = Vector
 globals.Matrix = Matrix
+globals.mouse_left = false;
+globals.mouse_left_x = false;
+globals.mouse_left_y = false;
+
 globals.celestials = {
  "Sun": {
   "alt_atm":0,

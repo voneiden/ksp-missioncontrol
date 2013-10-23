@@ -1,8 +1,3 @@
-
-// Camera distance defaults to Eeloo TODO: make it per plot
-camera_distance = globals.celestials.Eeloo.position.modulus()
-camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-
 // Container for plotter objects
 plotters = new Object();
 
@@ -50,6 +45,10 @@ function plotter_initialize(canvas) {
     P.paper.setup(canvas);
     paper = P.paper;
     
+    
+    // Default camera setup
+    P.camera_distance = globals.celestials.Eeloo.position.modulus()
+    P.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
     // Create paths for all celestials
     // Todo simplify?
     P.C = new Object(); // Celestial dots
@@ -178,9 +177,9 @@ function plotter_draw(canvas) {
     P = plotters[canvas];
     paper = P.paper;
     
-    var rot = calculate_rotation_matrix(camera_rotation)
-    //var cam_pos = rot.multiply(Vector.create([0, 0, camera_distance]))
-    var cam_pos = Vector.create([0, 0, camera_distance]) // TODO: cam pos can be focused on other planets too!
+    var rot = calculate_rotation_matrix(P.camera_rotation)
+    //var cam_pos = rot.multiply(Vector.create([0, 0, P.camera_distance]))
+    var cam_pos = Vector.create([0, 0, P.camera_distance]) // TODO: cam pos can be focused on other planets too!
     
     // Update visible celestials
     var distances = new Object();
@@ -190,14 +189,13 @@ function plotter_draw(canvas) {
         var obj = P.C[keys[i]];
         if (obj.visible == true)
         {
-            var ratio = 222 / 113549694484.42453 ;
-            //P.view_size / camera_distance));
+            var ratio = (P.view_size / P.camera_distance);
             var render_position = rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
             /*
             console.log("Rendering "+keys[i]+" to ");
-            console.log("Ratio: "+ (P.view_size / camera_distance));
+            console.log("Ratio: "+ (P.view_size / P.camera_distance));
             console.log(P.view_size);
-            console.log(camera_distance);
+            console.log(P.camera_distance);
             console.log(render_position);
             */
             distances[cam_pos.distanceFrom(render_position)] = obj; // I know I'm doing a bit wrong here but it works for now
@@ -217,7 +215,7 @@ function plotter_draw(canvas) {
  
                 //console.log(keys[i]);
                 //console.log(globals.celestials[keys[i]].trajectory);
-                var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(P.view_size / camera_distance));
+                var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
                 //console.log("OK");
                 obj.segments[j].point = new paper.Point(render_segment_position.e(1) + paper.view.center.x, render_segment_position.e(2) + paper.view.center.y);
             }
@@ -239,7 +237,39 @@ function plotter_draw(canvas) {
     }
     paper.view.draw();
 }
+// event.button 0 left mouse
+// event.button 2 right mouse
+// event.button 1 middle mouse
 
+function onPlotterMouseDown(event) {
+    var canvas = $(this)[0].id;
+    P = plotters[canvas];
+    
+    if (event.button == 0) { 
+        globals.mouse_left = canvas;
+        globals.mouse_left_x = event.pageX;
+        globals.mouse_left_y = event.pageY;
+    }
+    console.log(event);
+}
+/*
+function onPlotterMouseUp(event) {
+    var canvas = $(this)[0].id;
+    P = plotters[canvas];
+    
+    if (event.button == 0) { P.mouse_left = false; }
+    console.log(event);
+}
+function onPlotterMouseMove(event) {
+    var canvas = $(this)[0].id;
+    P = plotters[canvas];
+    
+    if (P.mouse_left == true)
+    {
+        console.log(event);
+    }
+}
+*/
 /*
 function onKeyDown(event) {
 	// When a key is pressed, set the content of the text item:
@@ -247,35 +277,36 @@ function onKeyDown(event) {
     //globals.event = event;
     if (event.key == "right") 
     {
-        camera_rotation.setElements([camera_rotation.e(1), camera_rotation.e(2), camera_rotation.e(3) - 0.1]);
+        P.camera_rotation.setElements([P.camera_rotation.e(1), P.camera_rotation.e(2), P.camera_rotation.e(3) - 0.1]);
         draw_plot();
     }
     else if (event.key == "left") 
     {
-        camera_rotation.setElements([camera_rotation.e(1), camera_rotation.e(2), camera_rotation.e(3) + 0.1])
+        P.camera_rotation.setElements([P.camera_rotation.e(1), P.camera_rotation.e(2), P.camera_rotation.e(3) + 0.1])
         draw_plot();
     }
     else if (event.key == "up")
     { 
-        camera_rotation.setElements([camera_rotation.e(1) - 0.1, camera_rotation.e(2), camera_rotation.e(3)])
+        P.camera_rotation.setElements([P.camera_rotation.e(1) - 0.1, P.camera_rotation.e(2), P.camera_rotation.e(3)])
         draw_plot();
     }
     
     else if (event.key == "down")
     { 
-        camera_rotation.setElements([camera_rotation.e(1) + 0.1, camera_rotation.e(2), camera_rotation.e(3)])
+        P.camera_rotation.setElements([P.camera_rotation.e(1) + 0.1, P.camera_rotation.e(2), P.camera_rotation.e(3)])
         draw_plot();
     }
-    //console.log(camera_rotation.e(3))
+    //console.log(P.camera_rotation.e(3))
 }
 
 function onKeyUp(event) {
 	// When a key is released, set the content of the text item:
 	//text.content = 'The ' + event.key + ' key was released!';
 }
-function onMouseDrag(event) {
-	// Add a point to the path every time the mouse is dragged
-	camera_rotation.setElements([camera_rotation.e(1) + event.delta.y/100, camera_rotation.e(2), camera_rotation.e(3) - event.delta.x/100])
-    draw_plot();
-}
 */
+function onPlotterMouseDrag(canvas, delta_x, delta_y) {
+	// Add a point to the path every time the mouse is dragged
+    P = plotters[canvas];
+	P.camera_rotation.setElements([P.camera_rotation.e(1) + delta_y/100, P.camera_rotation.e(2), P.camera_rotation.e(3) - delta_x/100])
+    plotter_draw(canvas);
+}
