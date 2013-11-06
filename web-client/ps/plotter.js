@@ -177,6 +177,7 @@ function plotter_draw(canvas) {
     P = plotters[canvas];
     paper = P.paper;
     
+    // Todo calculate on demand
     var rot = calculate_rotation_matrix(P.camera_rotation)
     //var cam_pos = rot.multiply(Vector.create([0, 0, P.camera_distance]))
     var cam_pos = Vector.create([0, 0, P.camera_distance]) // TODO: cam pos can be focused on other planets too!
@@ -191,6 +192,7 @@ function plotter_draw(canvas) {
         {
             var ratio = (P.view_size / P.camera_distance);
             var render_position = rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
+            obj.render_position = render_position; // Save this 
             /*
             console.log("Rendering "+keys[i]+" to ");
             console.log("Ratio: "+ (P.view_size / P.camera_distance));
@@ -224,7 +226,7 @@ function plotter_draw(canvas) {
     }
 
     var keys = Object.keys(distances);
-    keys.sort();
+    keys.sort(function(a,b){return a-b});
     for (var i = 0; i < keys.length; i++)
     {
         paper.project.activeLayer.insertChild(i, distances[keys[i]]);
@@ -249,64 +251,83 @@ function onPlotterMouseDown(event) {
         globals.mouse_left = canvas;
         globals.mouse_left_x = event.pageX;
         globals.mouse_left_y = event.pageY;
+        
+        
+    }
+    
+    if (event.button == 2) {
+        globals.mouse_right = canvas;
+        globals.mouse_right_y = event.pageY;
     }
     console.log(event);
-}
-/*
-function onPlotterMouseUp(event) {
-    var canvas = $(this)[0].id;
-    P = plotters[canvas];
-    
-    if (event.button == 0) { P.mouse_left = false; }
-    console.log(event);
-}
-function onPlotterMouseMove(event) {
-    var canvas = $(this)[0].id;
-    P = plotters[canvas];
-    
-    if (P.mouse_left == true)
-    {
-        console.log(event);
-    }
-}
-*/
-/*
-function onKeyDown(event) {
-	// When a key is pressed, set the content of the text item:
-	//text.content = 'The ' + event.key + ' key was pressed!';
-    //globals.event = event;
-    if (event.key == "right") 
-    {
-        P.camera_rotation.setElements([P.camera_rotation.e(1), P.camera_rotation.e(2), P.camera_rotation.e(3) - 0.1]);
-        draw_plot();
-    }
-    else if (event.key == "left") 
-    {
-        P.camera_rotation.setElements([P.camera_rotation.e(1), P.camera_rotation.e(2), P.camera_rotation.e(3) + 0.1])
-        draw_plot();
-    }
-    else if (event.key == "up")
-    { 
-        P.camera_rotation.setElements([P.camera_rotation.e(1) - 0.1, P.camera_rotation.e(2), P.camera_rotation.e(3)])
-        draw_plot();
-    }
-    
-    else if (event.key == "down")
-    { 
-        P.camera_rotation.setElements([P.camera_rotation.e(1) + 0.1, P.camera_rotation.e(2), P.camera_rotation.e(3)])
-        draw_plot();
-    }
-    //console.log(P.camera_rotation.e(3))
 }
 
-function onKeyUp(event) {
-	// When a key is released, set the content of the text item:
-	//text.content = 'The ' + event.key + ' key was released!';
-}
-*/
-function onPlotterMouseDrag(canvas, delta_x, delta_y) {
+
+function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
 	// Add a point to the path every time the mouse is dragged
     P = plotters[canvas];
 	P.camera_rotation.setElements([P.camera_rotation.e(1) + delta_y/100, P.camera_rotation.e(2), P.camera_rotation.e(3) - delta_x/100])
     plotter_draw(canvas);
+}
+
+function onPlotterRightMouseDrag(canvas, delta_y) {
+	// Add a point to the path every time the mouse is dragged
+    P = plotters[canvas];
+	P.camera_distance = P.camera_distance + delta_y * 100000000;
+    plotter_draw(canvas);
+}
+
+function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
+    var canvas = this.id;
+    P = plotters[canvas]
+    P.camera_distance = P.camera_distance - delta_y * 10000000000;
+    plotter_draw(canvas);
+}
+
+/*
+* Handle clicks (selection)
+*/
+function onPlotterMouseMove(event)
+{
+    //console.log("Plotter click");
+    canvas = this.id;
+    P = plotters[canvas];
+    paper = P.paper;
+    
+    var keys = Object.keys(P.C);
+    var d = new Object(); // Distance object
+    var click_x = event.offsetX - P.paper.view.center.x;
+    var click_y = event.offsetY - P.paper.view.center.y;
+    var click_position = new paper.Point(click_x, click_y);
+    //console.log(click_position);
+    var rot = calculate_rotation_matrix(P.camera_rotation) // Todo this needs not to be calculated all the time
+    
+    for (var i = 0; i < keys.length; i++) // Loop through visible objects
+    {
+        if (P.C[keys[i]].visible == true)
+        {
+            var ratio = (P.view_size / P.camera_distance);
+            var render_position = P.C[keys[i]].render_position; // Precalculated by plot draw
+            //rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
+            render_position = new paper.Point(render_position.e(1), render_position.e(2))
+            //console.log(keys[i] + ": " + render_position);
+            d[click_position.getDistance(render_position)] = keys[i];
+        }
+    }
+    
+    var keys = Object.keys(d);
+    keys.sort(function(a,b){return a-b});
+    //console.log(d);
+    //console.log(keys);
+    if (keys[0] < 10)
+    {
+        P.hilight_object = d[keys[0]];
+        plotter_draw(canvas);
+    }
+    else
+    {
+        P.hilight_object = false;
+    }
+    console.log("Closest", d[keys[0]]);
+    
 }

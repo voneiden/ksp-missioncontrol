@@ -4,6 +4,9 @@ globals.Matrix = Matrix
 globals.mouse_left = false;
 globals.mouse_left_x = false;
 globals.mouse_left_y = false;
+globals.mouse_left_dragging = false;
+globals.mouse_right = false;
+globals.mouse_right_y = false;
 
 globals.celestials = {
  "Sun": {

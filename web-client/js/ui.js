@@ -19,6 +19,8 @@ function setup_ui()
     
     $( "#plotter-1" ).mousedown(onPlotterMouseDown);
     $( "#plotter-1" ).bind("contextmenu", function() { return false; });
+    $( "#plotter-1" ).mousewheel(onPlotterMouseWheel);
+    $( "#plotter-1" ).mousemove(onPlotterMouseMove)
     console.log(active_menu_background);
     console.log(inactive_menu_background);
     
@@ -31,16 +33,32 @@ function onMouseMove(event)
     {
         var delta_x = event.pageX - globals.mouse_left_x;
         var delta_y = event.pageY - globals.mouse_left_y;
-        onPlotterMouseDrag(globals.mouse_left, delta_x, delta_y);
+        onPlotterLeftMouseDrag(globals.mouse_left, delta_x, delta_y);
         globals.mouse_left_x = event.pageX;
         globals.mouse_left_y = event.pageY;
+        globals.mouse_left_dragging = true;
+    }
+    if (globals.mouse_right != false)
+    {
+        var delta_y = event.pageY - globals.mouse_right_y;
+        onPlotterRightMouseDrag(globals.mouse_right, delta_y);
+        globals.mouse_right_y = event.pageY;
     }
 }
 function onMouseUp(event)
 {
-    if (globals.mouse_left != false)
+    if (event.button == 0 && globals.mouse_left != false)
     {
+        if (globals.mouse_left_dragging == false) // Handle as click
+        {
+            onPlotterClick(globals.mouse_left, event);
+        }
         globals.mouse_left = false;
+        globals.mouse_left_dragging = false;
+    }
+    else if (event.button == 2 && globals.mouse_right != false)
+    {
+        globals.mouse_right = false;
     }
 }
 
