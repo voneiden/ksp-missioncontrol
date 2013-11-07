@@ -58,6 +58,10 @@ function determine_orbit_constants(object)
     }
     else { // TODO, deal with hyperbolics
         object.e = Math.sqrt(1 -object.p / object.a);
+        console.log("Orbit eccentricity: "+object.e + "(" + object.name + ")");
+        console.log(object.p + "/" +  object.a)
+        console.log(mu)
+        console.log(object.h_norm);
     }
     // Determine apoapsis and periapsis
     if (object.a > 0) {
@@ -132,13 +136,13 @@ function determine_rv_at_t(object, t)
     // Parabolic orbits
     else if (object.e == 1) {
         var s = Math.atan((1.0) / (3 * Math.sqrt(mu / Math.pow(object.p, 3)) * dt)) / 2.0 % Math.PI
-        var w = Math.atan(Math.Pow(Math.tan(s), 1/3))
+        var w = Math.atan(Math.pow(Math.tan(s), 1/3))
         X0 = Math.sqrt(object.p) * 2 * (Math.cos(2*w) / Math.sin(2*w))
     }
     // Hyperbolic orbits
     else {
         var sdt = sign(dt);
-        X0 = sdt * Math.sqrt(-object.a) * Math.log((-2 * mu * object.alpha * dt) / (object.rvdot * sdt * Math.sqrt(-mu * object.a) * (1 - object.position_norm * object.alpha)))
+        X0 = sdt * Math.sqrt(-object.a) * Math.log((-2 * mu * object.alpha * dt) / (object.rvdot + sdt * Math.sqrt(-mu * object.a) * (1 - object.position_norm * object.alpha)))
     }
     
     var Xnew = X0;
@@ -168,7 +172,7 @@ function determine_rv_at_t(object, t)
         console.log("Was unable to find solution");
         console.log(object.name);
         console.log(X0);
-        return;
+        return false;
     }
     
     var f = 1 - Math.pow(Xnew, 2) / object.position_norm * c2;
@@ -198,7 +202,57 @@ function create_trajectory(object)
     object.trajectory = [];
     for (var i = 0; i < steps; i++) 
     {
-        var position = determine_rv_at_t(object, i*step)[0];
-        object.trajectory.push(position)
+        // TODO test for undefined
+        var RV = determine_rv_at_t(object, i*step);
+        if (RV == false)
+        {
+            return
+        }
+        object.trajectory.push(RV[0])
     }
 }
+
+function sanity_test()
+{
+    console.log("Performing physics engine sanity test");
+    var tests  = new Array();
+    
+    tests.push({position:Vector.create([800000, 0, 0]), velocity:Vector.create([0,2500,0]), t0:0, ref:"Kerbin",name:"test_normal_orbit"});
+    tests.push({position:Vector.create([800000, 0, 0]), velocity:Vector.create([0,10000,0]), t0:0, ref:"Kerbin", name:"test_hyperbolic_orbit"});
+    tests.push({position:Vector.create([800000, 800000, 800000]), velocity:Vector.create([2000,2000,2000]), t0:0, ref:"Kerbin", name:"test_weird_orbit"});
+    
+    var i = 0;
+    while (tests.length > 0)
+    {
+        i++;
+        var object = tests.pop(0);
+        determine_orbit_constants(object);
+        console.log("Test #"+i);
+        console.log("Position    : " + object.position.e(1) + ", " + object.position.e(2) + ", " + object.position.e(3))
+        console.log("Velocity    : " + object.velocity.e(1) + ", " + object.velocity.e(2) + ", " + object.velocity.e(3))
+        console.log("t0          : "+ object.t0);
+        console.log("Eccentricity: " + object.e);
+        var RV = determine_rv_at_t(object, object.t0+0.00001);
+        if (RV == false)
+        {
+            console.log("Was unable to solve!");
+        }
+        else
+        {
+            console.log("Position    : " + RV[0].e(1) + ", " + RV[0].e(2) + ", " + RV[0].e(3))
+            console.log("Velocity    : " + RV[1].e(1) + ", " + RV[1].e(2) + ", " + RV[1].e(3))
+        }
+    }
+}
+determine_orbit_constants(globals.celestials.Moho);
+determine_orbit_constants(globals.celestials.Eve);
+determine_orbit_constants(globals.celestials.Kerbin);
+determine_orbit_constants(globals.celestials.Duna);
+determine_orbit_constants(globals.celestials.Dres);
+determine_orbit_constants(globals.celestials.Jool);
+determine_orbit_constants(globals.celestials.Eeloo);
+
+globals.determine_orbit_constants = determine_orbit_constants;
+globals.determine_rv_at_t = determine_rv_at_t;
+
+sanity_test();

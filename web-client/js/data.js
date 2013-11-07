@@ -232,14 +232,4 @@ globals.celestials = {
   "t0":0}
  }
 
-determine_orbit_constants(globals.celestials.Moho);
-determine_orbit_constants(globals.celestials.Eve);
-determine_orbit_constants(globals.celestials.Kerbin);
-determine_orbit_constants(globals.celestials.Duna);
-determine_orbit_constants(globals.celestials.Dres);
-determine_orbit_constants(globals.celestials.Jool);
-determine_orbit_constants(globals.celestials.Eeloo);
-
-globals.determine_orbit_constants = determine_orbit_constants;
-globals.determine_rv_at_t = determine_rv_at_t;
 
