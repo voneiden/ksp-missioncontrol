@@ -21,7 +21,8 @@ globals.celestials = {
   "soi":1E+99,
   "position":Vector.create([0,0,0]),
   "velocity":Vector.create([0,0,0]),
-  "t0":0},
+  "t0":0,
+  "childs":["Moho", "Eve", "Kerbin", "Duna", "Dres", "Jool", "Eeloo"]},
  "Kerbin": {
   "alt_atm":70000,
   "ang_v":0.000290888208666,
@@ -34,7 +35,8 @@ globals.celestials = {
   "rotation_angle":94.6047660319,
   "soi":84159286.4796,
   "velocity":Vector.create([-9253.36441785446, -759.736970861599, 0]),
-  "t0":0},
+  "t0":0,
+  "childs":["Mun", "Minmus"]},
  "Mun": {
   "alt_atm":0,
   "ang_v":4.52078545581e-05,
