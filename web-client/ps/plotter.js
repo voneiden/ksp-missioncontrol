@@ -113,7 +113,18 @@ function plotter_initialize(canvas) {
         P.T.Eeloo.add(new paper.Point(0, 0));
     }
 
-
+    // Create hilight marker
+    
+    P.marker_hilight = new paper.Group({visible: false});
+    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
+    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
+    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
+    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
+    var hilight_text = new paper.PointText(new paper.Point(20, 0));
+    P.marker_hilight.addChild(hilight_text);
+    P.marker_hilight.text = hilight_text;
+    P.marker_hilight.strokeColor = "lime";
+    
     var active_mode = null;
     paper.view.draw();
 }
@@ -321,11 +332,18 @@ function onPlotterMouseMove(event)
     //console.log(keys);
     if (keys[0] < 10)
     {
+        console.log("WOOT WOOT");
         P.hilight_object = d[keys[0]];
+        P.marker_hilight.visible = true;
+        P.marker_hilight.position = P.C[d[keys[0]]].position;
+        P.marker_hilight.text.content = d[keys[0]];
+        console.log(P.marker_hilight.position);
+        console.log(P.C[d[keys[0]]]);
         plotter_draw(canvas);
     }
     else
     {
+        P.marker_hilight.visible = false;
         P.hilight_object = false;
     }
     console.log("Closest", d[keys[0]]);
