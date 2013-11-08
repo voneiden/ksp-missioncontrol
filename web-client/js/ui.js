@@ -17,6 +17,12 @@ function setup_ui()
     plotter_resize("plotter-1");
     plotter_draw("plotter-1");
     
+    // Plotter 2
+    plotter_2 = $("#plotter-2");
+    plotter_initialize("plotter-2");
+    plotter_set_mode("plotter-2", "solar");
+    
+    
     $( "#plotter-1" ).mousedown(onPlotterMouseDown);
     $( "#plotter-1" ).bind("contextmenu", function() { return false; });
     $( "#plotter-1" ).mousewheel(onPlotterMouseWheel);
@@ -106,24 +112,49 @@ function onResize()
         console.log(plotter_1.parent().height());
     }
     else {
-        console.log("plotter not found");
+        console.log("plotter-1 not found");
+    }
+    
+    if ( $("#plotter-2").length != 0 )
+    {
+        var width = plotter_2.parent().width();
+        var height = plotter_2.parent().height();
+
+        plotter_resize("plotter-2", width, height);
+        plotter_draw("plotter-2");
+    }
+    else {
+        console.log("plotter-1 not found");
     }
     
 }
 function show_overview()
 {
+    // Enable overview
     active_display = $("#display-overview");
     active_menu = $("#menu-overview");
     
+    
     active_menu.show(200);
     active_menu.css("background-color", active_menu_background);
-    active_display.show(200, "swing", setup_overview);
+    
+    active_display.css("display", "inline-block");
+    setup_overview();
 }
 function setup_overview()
 {
     $("#display-overview-top-left").append(plotter_1);
     $( "#plotter-1" ).mousedown(onPlotterMouseDown);
     $( "#plotter-1" ).bind("contextmenu", function() { return false; });
+    $( "#plotter-1" ).mousewheel(onPlotterMouseWheel);
+    $( "#plotter-1" ).mousemove(onPlotterMouseMove)
+    
+    
+    $("#display-overview-top-right").append(plotter_2);
+    $( "#plotter-2" ).mousedown(onPlotterMouseDown);
+    $( "#plotter-2" ).bind("contextmenu", function() { return false; });
+    $( "#plotter-2" ).mousewheel(onPlotterMouseWheel);
+    $( "#plotter-2" ).mousemove(onPlotterMouseMove)
     
     onResize();
 }
@@ -147,11 +178,13 @@ function run_test_environment()
     globals.UT_t = new Date().getTime() / 1000;
     
     
-    
+    // Close main menu
     active_menu.hide(200);
     active_menu.css("background-color", inactive_menu_background);
     active_display.hide(200, "swing", show_overview);
     plotter_1.remove();
+    //plotter_2.css("display", "block");
+    plotter_2.remove();
     console.log("SHOW");
     console.log(active_display);
 }
