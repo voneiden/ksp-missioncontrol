@@ -8,6 +8,9 @@ globals.mouse_left_dragging = false;
 globals.mouse_right = false;
 globals.mouse_right_y = false;
 
+globals.plotters = new Array();
+globals.trackers = new Array();
+
 globals.celestials = {
  "Sun": {
   "alt_atm":0,

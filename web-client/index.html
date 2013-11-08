@@ -17,33 +17,40 @@
  </head>
  <body>
   <div id="menu">
-   <ul>
+   <ul id="ulmenu">
     <li id="menu-main">MAIN</li>
-    <li id="menu-overview">OVERVIEW</li>
    </ul>
   </div>
   <div id="display">
-   <div id="display-main">
-    <h1>KSP MISSION CONTROL</h1>
-    <p>Welcome to KSP Mission Control v0.1 (131020) </p>
-    <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
-    <p>OR</p>
-    <p><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
-   </div>
-   <div id="display-main-plotter">
-     <canvas id="plotter-1"></canvas>
-   </div>
-   
-   <div id="display-overview">
-   <!-- this area is hidden by default, add other plots etc. here -->
-   <canvas id="plotter-2"></canvas>
-    <div id="display-overview-top">
-     <div id="display-overview-top-left"></div>
-     <div id="display-overview-top-right"></div>
+   <div id="display-menu">
+    <div id="display-menu-top">
+     <h1>KSP MISSION CONTROL</h1>
+     <p>Welcome to KSP Mission Control v0.1 (131020) </p>
+     <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
+     <p>OR</p>
+     <p><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
     </div>
-    <div id="display-overview-bottom">
+    <div id="display-menu-bottom">
     </div>
-   </div>
   </div>
+  <div id="hidden" style="display:none;">
+   <!-- this area is hidden by default, add all by default invisible, dynamic location elements here-->
+   <div id="workspace1">
+    <div id="workspace1-top">
+     <div id="workspace1-top-left"></div>
+     <div id="workspace1-top-right"></div>
+    </div>
+    <div id="workspace1-bottom"></div>
+   </div>
+  
+   <div id="view1" class="view"></div>
+   <div id="view2" class="view"></div>
+   <div id="view3" class="view"></div>
+   <div id="view4" class="view"></div>
+  
+   <li id="menu-workspace1">WORKSPACE 1</li>
+  </div>
+   
+
  </body>
 </html>

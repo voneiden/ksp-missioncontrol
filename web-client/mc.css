@@ -1,7 +1,10 @@
 body {
  margin: 0px;
 }
-
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
+ 
 /* Menu element */
 #menu {
  float:left;
@@ -26,10 +29,6 @@ body {
  background-color: cyan;
 }
 
-
-#menu-overview {
- display: none;
-}
 /* Display element */
 #display {
   float:right;
@@ -47,52 +46,81 @@ body {
  padding: 0px;
 }
 /* Main/login display */
-#display-main {
- text-align: center;
- margin-top: 10%;
+#display-menu {
+
+ height: 100%;
+ width: 100%;
 }
-#display-main-plotter {
+#display-menu-top {
+ text-align: center;
  margin: 0px;
  padding: 0px;
+ height: 40%;
 }
-/* Overview display */
-#display-overview {
- display: none;
+#display-menu-top h1 {
+ padding-top: 40px;
+ margin: 0px;
+}
+#display-menu-bottom {
+ height: 60%;
+ }
+/* WORKSPACES
+ * workspace 1 provides a horizontal split view where the top slice is split in two vertical sections
+ */
+#workspace1 {
+ display: inline-block;
  height: 100%;
  width: 100%;
 
 }
 
-#display-overview-top {
-
+#workspace1-top {
  width: 100%;
  height: 50%; /* this is adjusted automatically */
 }
-#display-overview-top-left {
+#workspace1-top-left {
  float:left;
  width:50%;
  height:100%;
- background-color: blue;
+ background-color: black;
+ border:1px solid lime;
 }
-#display-overview-top-right {
+#workspace1-top-right {
  
  float:right;
  width:50%;
  height:100%;
- background-color: red;
- /*
- display: table-cell;
- width: 50%;
- height: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace1-bottom {
+ height: 50%;
+ width: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+/*
+#display-overview-top-left:hover {
+ border:1px solid lime;
+}
+#display-overview-top-right:hover {
+ border:1px solid lime;
+}
+
+#display-overview-bottom:hover {
+ border:1px solid lime;
+}
+*/
+
+/* VIEWS
+ * There are currently 4 views
  */
-}
 
-#display-overview-bottom {
-height: 50%;
-width: 100%;
-background-color: cyan;
+.view {
+ height: 100%;
+ width: 100%;
 }
-
+ 
 #display-main span {
  
  background:lime;
