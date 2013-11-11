@@ -1,18 +1,7 @@
 // Container for plotter objects
 plotters = new Object();
 
-/*
-* This function must be called if the canvas needs to be resized
-* It resizes the canvas, paper and calculates view size
-*/
-function plotter_resize(canvas, width, height)
-{
-    P = plotters[canvas];
-    paper = P.paper;
-    paper.view.setViewSize(width, height);
-    if (paper.view.center.x > paper.view.center.y) { P.view_size = paper.view.center.y; }
-    else { P.view_size = paper.view.center.x; }
-}
+
 
 /* 
 * Calculates a rotation matrix for 3D plot objects
@@ -56,77 +45,60 @@ function plotter_initialize(canvas) {
     P.C.Sun = new paper.Path.Circle(paper.view.center, 7);
     P.C.Sun.fillColor = "yellow"
     P.C.Sun.visible = false;
-
-    P.C.Moho = new paper.Path.Circle(paper.view.center, 1);
-    P.C.Moho.fillColor = "red"
-    P.C.Moho.visible = false;
-    P.T.Moho = new paper.Path({closed: true, visible: false, strokeColor: "red"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Moho.add(new paper.Point(0, 0));
-    }
-
-    P.C.Eve = new paper.Path.Circle(paper.view.center, 3);
-    P.C.Eve.fillColor = "purple"
-    P.C.Eve.visible = false;
-    P.T.Eve = new paper.Path({closed: true, visible: false, strokeColor: "purple"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Eve.add(new paper.Point(0, 0));
-    }
-
-    P.C.Kerbin = new paper.Path.Circle(paper.view.center, 2);
-    P.C.Kerbin.fillColor = "SpringGreen";
-    P.C.Kerbin.visible = false;
-    P.T.Kerbin = new paper.Path({closed: true, visible: false, strokeColor: "SpringGreen"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Kerbin.add(new paper.Point(0, 0));
-    }
-
-    P.C.Duna = new paper.Path.Circle(paper.view.center, 2);
-    P.C.Duna.fillColor = "orange"
-    P.C.Duna.visible = false;
-    P.T.Duna = new paper.Path({closed: true, visible: false, strokeColor: "orange"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Duna.add(new paper.Point(0, 0));
-    }
-
-    P.C.Dres = new paper.Path.Circle(paper.view.center, 2);
-    P.C.Dres.fillColor = "grey"
-    P.C.Dres.visible = false;
-    P.T.Dres = new paper.Path({closed: true, visible: false, strokeColor: "grey"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Dres.add(new paper.Point(0, 0));
-    }
-
-    P.C.Jool = new paper.Path.Circle(paper.view.center, 4);
-    P.C.Jool.fillColor = "lime"
-    P.C.Jool.visible = false;
-    P.T.Jool = new paper.Path({closed: true, visible: false, strokeColor: "lime"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Jool.add(new paper.Point(0, 0));
-    }
-
-    P.C.Eeloo = new paper.Path.Circle(paper.view.center, 2);
-    P.C.Eeloo.fillColor = "cyan"
-    P.C.Eeloo.visible = false;
-    P.T.Eeloo = new paper.Path({closed: true, visible: false, strokeColor: "cyan"});
-    for (var i = 0; i < 10; i++) {
-        P.T.Eeloo.add(new paper.Point(0, 0));
-    }
-
-    // Create hilight marker
     
-    P.marker_hilight = new paper.Group({visible: false});
-    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
-    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
-    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
-    P.marker_hilight.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
-    var hilight_text = new paper.PointText(new paper.Point(20, 0));
-    P.marker_hilight.addChild(hilight_text);
-    P.marker_hilight.text = hilight_text;
-    P.marker_hilight.strokeColor = "lime";
+    create_plot_celestial(P, "Sun",    7, "yellow");
+    create_plot_celestial(P, "Moho",   2, "red");
+    create_plot_celestial(P, "Eve",    4, "purple");
+    create_plot_celestial(P, "Kerbin", 3, "SpringGreen");
+    create_plot_celestial(P, "Duna",   3, "orange");
+    create_plot_celestial(P, "Dres",   2, "grey");
+    create_plot_celestial(P, "Jool",   5, "lime");
+    create_plot_celestial(P, "Eeloo",  3, "cyan");
+    
+    P.marker_hilight = create_plot_marker("yellow");
+    P.marker_focus = create_plot_marker("cyan");
+    P.marker_select = create_plot_marker("red");
     
     var active_mode = null;
     paper.view.draw();
+}
+/* Creates new celestial planet and trajectory */
+function create_plot_celestial(P, name, size, color)
+{
+    P.C[name] = new paper.Path.Circle(paper.view.center, size);
+    P.C[name].fillColor = color;
+    P.C[name].visible = false;
+    P.T[name] = new paper.Path({closed: true, visible: false, strokeColor: color});
+    for (var i = 0; i < 10; i++) {
+        P.T[name].add(new paper.Point(0, 0));
+    }
+}
+/* Creates a new marker with text */
+function create_plot_marker(color)
+{
+    var marker = new paper.Group({visible: false});
+    marker.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
+    marker.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
+    marker.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
+    marker.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
+    var text = new paper.PointText(new paper.Point(20, 0));
+    marker.addChild(text);
+    marker.text = text;
+    marker.strokeColor = "lime";
+    return marker;
+}
+
+/*
+ * This function must be called if the canvas needs to be resized
+ * It resizes the canvas, paper and calculates view size
+ */
+function plotter_resize(canvas, width, height)
+{
+    P = plotters[canvas];
+    paper = P.paper;
+    paper.view.setViewSize(width, height);
+    if (paper.view.center.x > paper.view.center.y) { P.view_size = paper.view.center.y; }
+    else { P.view_size = paper.view.center.x; }
 }
 
 /*
@@ -152,6 +124,7 @@ function plotter_set_mode(canvas, mode)
     
     if (mode == "solar") {
         active_mode = "solar";
+        // todo allow dynamic scaling
         P.C.Sun.visible = true;
         P.C.Sun.scale(14 / P.C.Sun.bounds.width)
         P.C.Moho.visible = true;

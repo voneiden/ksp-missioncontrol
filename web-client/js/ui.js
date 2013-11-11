@@ -46,11 +46,6 @@ function setup_mainmenu()
 }
 function close_mainmenu()
 {
-    // Hide the main menu items
-    //active_menu.hide(200);
-    //active_menu.css("background-color", inactive_menu_background);
-    //active_display.hide(200, "swing", close_mainmenu_2);
-    
     // Detach the main menu plotter
     $("#plotter-1").detach();
 
@@ -60,13 +55,15 @@ function close_mainmenu()
     
     // Add all the menu items
     $("#menu-workspace1").detach().appendTo("#ulmenu");
+    $("#menu-workspace2").detach().appendTo("#ulmenu");
     
-    // Fill views
+    // Fill views and enable workspace 1
     get_plotter().appendTo("#view1");
     get_plotter().appendTo("#view2");
+    get_plotter().appendTo("#view3");
+    get_plotter().appendTo("#view4");
     setup_workspace1();
     
-    // 
 }
 /* Event handlers */
 function onMouseMove(event)
@@ -116,106 +113,79 @@ function onResize()
             plotter_draw(plotter.attr("id"));                       // TODO: use object
         }
     }
-    /*
-    console.log("REEEESIZING");
-    
-    if ($("#display-main").css("display") != "none")
-    { 
-        // Scale plotter 1 to fit the page
-        var available_height = $(window).height() - 10;
-        var available_width = $(window).width();
-        var height = available_height - $("#display-main").outerHeight(true);
-        var width = available_width - $("#menu").outerWidth(true)
-        console.log("Available height:" + available_height);
-        console.log("Setting canvas height:"+ (available_height - $("#display-main").outerHeight(true)))
-        //plotter_1.attr("width", width);
-        //plotter_1.attr("height", height);
-        //plotter_1.width(width);
-        //plotter_1.height(height);
-        plotter_resize("plotter-1", width, height);
-        plotter_draw("plotter-1");
-        
-        console.log("Set plot size");
-        return;
-    }
-    
-    if ( $("#plotter-1").length != 0 )
-    {
-        var width = plotter_1.parent().width();
-        var height = plotter_1.parent().height();
-        
-        console.log("Plotter 1 width:" + width);
-        console.log("Plotter 1 height:" + height);
-        
-        //plotter_1.attr("width", width);
-        //plotter_1.attr("height", height);
-        //plotter_1.width(width);
-        //plotter_1.height(height);
-        
-        plotter_resize("plotter-1", width, height);
-        plotter_draw("plotter-1");
-        
-        console.log("OK");
-        console.log(plotter_1.parent().width());
-        console.log(plotter_1.parent().height());
-    }
-    else {
-        console.log("plotter-1 not found");
-    }
-    
-    if ( $("#plotter-2").length != 0 )
-    {
-        var width = plotter_2.parent().width();
-        var height = plotter_2.parent().height();
-
-        plotter_resize("plotter-2", width, height);
-        plotter_draw("plotter-2");
-    }
-    else {
-        console.log("plotter-1 not found");
-    }
-    */
-    
 }
 function setup_workspace1()
 {
+    if (active_display == "#workspace1") { return; }
+    close_workspace();
+    
     // Set active variables
     active_display = $("#workspace1");
     active_menu = $("#menu-workspace1");
     
-    // Detach and move stuff
+    // Detach stuff from hidden and move them
     $("#workspace1").detach().appendTo("#display");
     $("#view1").detach().appendTo("#workspace1-top-left");
     $("#view2").detach().appendTo("#workspace1-top-right");
-    $("#view3").detach().appendTo("#workspace1-top-bottom");
+    $("#view3").detach().appendTo("#workspace1-bottom");
     
     // Set active workspace menu bcolor
     active_menu.css("background-color", active_menu_background);
     
-    //active_display.css("display", "inline-block");
     // Finally scale everything to right size
     onResize();
 }
-/*
-function setup_workspace1()
+function close_workspace()
 {
-    $("#display-overview-top-left").append(plotter_1);
-    $( "#plotter-1" ).mousedown(onPlotterMouseDown);
-    $( "#plotter-1" ).bind("contextmenu", function() { return false; });
-    $( "#plotter-1" ).mousewheel(onPlotterMouseWheel);
-    $( "#plotter-1" ).mousemove(onPlotterMouseMove)
+    // Set menu color
+    active_menu.css("background-color", inactive_menu_background);
+    console.log(active_display.attr("id"))
+    // Detach views and workspace
+    if (active_display.attr("id") == "workspace1")
+    {   
+        console.log("Detaching ws1");
+        $("#view1").detach().appendTo("#hidden");
+        $("#view2").detach().appendTo("#hidden");
+        $("#view3").detach().appendTo("#hidden");
+        $("#workspace1").detach().appendTo("#hidden");
+    }
+    else if (active_display.attr("id") == "workspace2")
+    {
+        console.log("Detaching ws2");
+        $("#view1").detach().appendTo("#hidden");
+        $("#view2").detach().appendTo("#hidden");
+        $("#view3").detach().appendTo("#hidden");
+        $("#view4").detach().appendTo("#hidden");
+        $("#workspace2").detach().appendTo("#hidden");
+    }
+    else { console.log(active_display);}
+}
+function setup_workspace2()
+{   
+    if (active_display == "#workspace2") { return; }
+    close_workspace();
     
+    // Set active variables
+    active_display = $("#workspace2");
+    active_menu = $("#menu-workspace2");
     
-    $("#display-overview-top-right").append(plotter_2);
-    $( "#plotter-2" ).mousedown(onPlotterMouseDown);
-    $( "#plotter-2" ).bind("contextmenu", function() { return false; });
-    $( "#plotter-2" ).mousewheel(onPlotterMouseWheel);
-    $( "#plotter-2" ).mousemove(onPlotterMouseMove)
+    // Detach and move stuff
+    $("#workspace2").detach().appendTo("#display");
+    $("#view1").detach().appendTo("#workspace2-top-left");
+    $("#view2").detach().appendTo("#workspace2-top-right");
+    $("#view3").detach().appendTo("#workspace2-bottom-left");
+    $("#view4").detach().appendTo("#workspace2-bottom-right");
     
+    // Set active workspace menu bcolor
+    active_menu.css("background-color", active_menu_background);
+    
+    // Finally scale everything to right size
     onResize();
 }
-*/
-/* For testing purposes, no KSP connection required */
+/*Test environment, as the name implies, is for testing
+ * various features without the need to run KSP
+ * It setups a few test cases for offline testing
+ */
 function run_test_environment()
 {
     // Create a test vessel

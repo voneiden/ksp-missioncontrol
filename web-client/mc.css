@@ -76,7 +76,7 @@ body {
 
 #workspace1-top {
  width: 100%;
- height: 50%; /* this is adjusted automatically */
+ height: 50%;
 }
 #workspace1-top-left {
  float:left;
@@ -96,6 +96,55 @@ body {
 #workspace1-bottom {
  height: 50%;
  width: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+
+/* Workspace 2 provides 4 split screen */
+#workspace2 {
+ display: inline-block;
+ height: 100%;
+ width: 100%;
+
+}
+
+#workspace2-top {
+ width: 100%;
+ height: 50%; 
+}
+#workspace2-top-left {
+ float:left;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-top-right {
+ 
+ float:right;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom {
+ height: 50%;
+ width: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom-left {
+ float:left;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom-right {
+ 
+ float:right;
+ width:50%;
+ height:100%;
  background-color: black;
  border:1px solid lime;
 }
