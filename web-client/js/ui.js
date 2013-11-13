@@ -25,6 +25,30 @@ function get_plotter()
     return plotter;
 }
 
+function get_attitude()
+{
+    var attitude;
+    for (var i = globals.attitudes.length; i>0; i--)
+    {
+        plotter = globals.attitudes[i-1];
+        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
+        else { return plotter };
+    }
+    
+    // Was unable to find a plotter, create a new one!
+    var id = "attitude-" + (globals.plotters.length + 1);
+    $('<canvas id="' + id + '">').appendTo("#hidden");
+    attitude = $("#"+id);
+    attitude_initialize(id);        
+    //plotter.mousedown(onPlotterMouseDown);
+    //plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
+    //plotter.mousewheel(onPlotterMouseWheel);
+    //plotter.mousemove(onPlotterMouseMove);
+    globals.attitudes.push(attitude); // Save it
+    
+    return attitude;
+}
+
 /* This function initializes the user interface. Call only once during session */
 function setup_mainmenu()
 {
@@ -35,8 +59,9 @@ function setup_mainmenu()
     active_display = $("#display-menu");
     
     // Add plotter to main menu view
-    var plotter = get_plotter();
-    plotter.appendTo("#display-menu-bottom");
+    //var plotter = get_plotter();
+    //plotter.appendTo("#display-menu-bottom");
+	get_attitude().appendTo("#display-menu-bottom");
     
     // Event handlers
     $(document).mousemove(onMouseMove);
@@ -105,12 +130,22 @@ function onResize()
 {
     for (var i = globals.plotters.length; i>0; i--)
     {
-        plotter = globals.plotters[i-1];
+        var plotter = globals.plotters[i-1];
         if (jQuery.contains($("#display")[0], plotter[0])) { 
             var width = plotter.parent().width();
             var height = plotter.parent().height();
-            plotter_resize(plotter.attr("id"), width, height);      // TODO: use object
-            plotter_draw(plotter.attr("id"));                       // TODO: use object
+            plotter_resize(plotter.attr("id"), width, height);    
+            plotter_draw(plotter.attr("id"));                      
+        }
+    }
+	for (var i = globals.attitudes.length; i>0; i--)
+    {
+        var attitude = globals.attitudes[i-1];
+        if (jQuery.contains($("#display")[0], attitude[0])) { 
+            var width = attitude.parent().width();
+            var height = attitude.parent().height();
+            attitude_resize(attitude.attr("id"), width, height);      
+            attitude_draw(attitude.attr("id"));                       
         }
     }
 }

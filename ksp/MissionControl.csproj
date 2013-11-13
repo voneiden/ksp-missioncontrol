@@ -14,7 +14,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>D:\KSP20.02\KSP_win\GameData\MissionControl\MissionControl\Plugins</OutputPath>
+    <OutputPath>C:\Users\voneiden\Desktop\Kerbal Space Program 0.22\GameData\voneiden\plugins</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -23,21 +23,18 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>D:\KSP20.02\KSP_win\GameData\MissionControl\MissionControl\Plugins</OutputPath>
+    <OutputPath>C:\Users\voneiden\Desktop\Kerbal Space Program 0.22\GameData\voneiden\plugins</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="RemoteTech">
-      <HintPath>D:\KSP20.02\KSP_win\GameData\RemoteTech\Plugins\RemoteTech.dll</HintPath>
-    </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>D:\KSP20.02\KSP_win\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>C:\Users\voneiden\Desktop\Kerbal Space Program 0.22\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>D:\KSP20.02\KSP_win\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>C:\Users\voneiden\Desktop\Kerbal Space Program 0.22\KSP_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
   </ItemGroup>

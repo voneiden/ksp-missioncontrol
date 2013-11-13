@@ -9,6 +9,8 @@ globals.mouse_right = false;
 globals.mouse_right_y = false;
 
 globals.plotters = new Array();
+globals.attitudes = new Array();
+
 globals.trackers = new Array();
 
 globals.celestials = {

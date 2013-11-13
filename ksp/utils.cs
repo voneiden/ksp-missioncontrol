@@ -63,9 +63,10 @@ namespace MissionControl  {
 			//Vector3d v = orbit.vel.xzy;
 			List<double> RV = new List<double> ();
 
-			RV.Add(r.y); // X in pygame?
-			RV.Add(r.x); // Z in pygame?
-	       	RV.Add(r.z); // Y in pygame?
+			// TODO explain the coordinate system further
+			RV.Add(r.y); 
+			RV.Add(r.x); 
+	       	RV.Add(r.z); 
 
 	       	RV.Add(v.y);
 	       	RV.Add(v.x);
@@ -73,6 +74,17 @@ namespace MissionControl  {
 
 			buffer.Add ("rv", RV);	// # 8
 
+			Vector3d forward = vessel.ReferenceTransform.forward;
+			Vector3d up = vessel.ReferenceTransform.up;
+			List<double> fwup = new List<double> ();
+			fwup.Add (forward.y);
+			fwup.Add (forward.x);
+			fwup.Add (forward.z);
+			fwup.Add (up.y);
+			fwup.Add (up.x);
+			fwup.Add (up.z);
+
+			buffer.Add ("fwup", fwup);
 			//Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
 			//Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
 			//Debug.Log ("SPEED3: " + orbit.GetRelativeVel ().ToString () );

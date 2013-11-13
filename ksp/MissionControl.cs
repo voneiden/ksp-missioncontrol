@@ -35,7 +35,6 @@ v 0.1 - Testing Remote Tech contact
  */
 
 namespace MissionControl  {
-
 	[KSPAddon(KSPAddon.Startup.Flight, false) ]
 	public class MissionControl : MonoBehaviour
 	{
@@ -132,6 +131,50 @@ namespace MissionControl  {
 			buffer.Add ("rotating", rotating);
 			buffer.Add ("frame_angle", frame_angle);
 
+			//Debug.Log ("Forward: " + active_vessel.GetTransform ().eulerAngles.ToString ());
+			//Debug.Log ("Forward: " + active_vessel.GetTransform ().eulerAngles.ToString ());
+			//Debug.Log ("Surface rotation: " + active_vessel.srfRelRotation.ToString ());
+			//Debug.Log ("Surface eotation: " + active_vessel.srfRelRotation.eulerAngles);
+			//Transform test = active_vessel.GetTransform ();
+			//Debug.Log ("Rotation1: " + active_vessel.GetTransform().eulerAngles);
+			//Debug.Log ("Rotation2: " + active_vessel.GetTransform().rotation.eulerAngles);
+			//Debug.Log ("Rotation3: " + active_vessel.srfRelRotation.eulerAngles);
+
+			// REF: FAR
+			Vector3 tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.forward * Vector3.Dot(active_vessel.transform.forward, active_vessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+			float AoA = Vector3.Dot(tmpVec.normalized, active_vessel.transform.forward);
+			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
+			if (float.IsNaN(AoA))
+				AoA = 0;
+			/*
+			tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.right * Vector3.Dot(active_vessel.transform.right, active_vessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
+			float yaw = Vector3.Dot(tmpVec.normalized, active_vessel.transform.right);
+			yaw = Mathf.Rad2Deg * Mathf.Asin(yaw);
+			if (float.IsNaN(yaw))
+				yaw = 0;
+			*/
+
+			float pitch = 0;
+			float yaw = 0;
+			float roll = 0;
+
+			NavBall ball = FlightUIController.fetch.GetComponentInChildren<NavBall>();
+			if (ball)
+			{
+				Quaternion vesselRot = Quaternion.Inverse(ball.relativeGymbal);
+
+				float heading = vesselRot.eulerAngles.y;
+				//vesselRot *= Quaternion.Euler(0, -heading, 0);
+				//heading = 360 - heading;
+				pitch = (vesselRot.eulerAngles.x > 180) ? (360 - vesselRot.eulerAngles.x) : -vesselRot.eulerAngles.x;
+				yaw = vesselRot.eulerAngles.y;
+				roll = (vesselRot.eulerAngles.z > 180) ? (360 - vesselRot.eulerAngles.z) : -vesselRot.eulerAngles.z;
+			}
+
+			Debug.Log ("AoA: " + AoA);
+			Debug.Log ("PCH: " + pitch);
+			Debug.Log ("YAW: " + yaw);
+			Debug.Log ("ROL: " + roll);
 
 			server.SendAll (buffer.dumps());
 			server.SendAll (utils.getStateLine (ActiveVessel));
