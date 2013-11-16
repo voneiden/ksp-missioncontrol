@@ -1,3 +1,7 @@
+/*
+ * Javascript math function expansions
+ */
+
 function sign(number) 
 {
     var s = number?number<0?-1:1:0;
@@ -28,11 +32,15 @@ function acot(aValue)
    return Math.atan(1 / aValue);
 }
 
+/* 
+ * Does orbit precalculations for an object
+ * Always call after initializing a new object or if orbital parameters
+ * have changed!
+ */
+
 function determine_orbit_constants(object) 
 {
-    /* 
-    * This function calculates constants for an object that has orbit data available
-    */
+    
     if (object.name == "Sun") {
         return;
     }

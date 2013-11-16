@@ -1,5 +1,33 @@
-// Container for plotter objects
-plotters = new Object();
+plotters = new Object(); // Container for plotter objects
+// TODO: rename plotters and globals.plotters
+
+/*
+ * Returns a free plotter object or creates a new one if necessary
+ */
+function get_plotter()
+{
+    var plotter;
+    for (var i = globals.plotters.length; i>0; i--)
+    {
+        plotter = globals.plotters[i-1];
+        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
+        else { return plotter };
+    }
+    
+    // A new plot needs to be created
+    var id = "plotter-" + (globals.plotters.length + 1);
+    $('<canvas id="' + id + '">').appendTo("#hidden");
+    plotter = $("#"+id);
+    plotter_initialize(id);         
+    plotter_set_mode(id, "solar");  
+    plotter.mousedown(onPlotterMouseDown);
+    plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
+    plotter.mousewheel(onPlotterMouseWheel);
+    plotter.mousemove(onPlotterMouseMove);
+    globals.plotters.push(plotter); // Save it
+    
+    return plotter;
+}
 
 
 

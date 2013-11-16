@@ -1,6 +1,32 @@
 // Container for attitude objects
 attitudes = new Object();
 
+/*
+ * Returns an attitude plot object or creates a new one if necessary
+ */
+function get_attitude()
+{
+    var attitude;
+    for (var i = globals.attitudes.length; i>0; i--)
+    {
+        plotter = globals.attitudes[i-1];
+        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
+        else { return plotter };
+    }
+    
+    // Was unable to find a plotter, create a new one!
+    var id = "attitude-" + (globals.plotters.length + 1);
+    $('<canvas id="' + id + '">').appendTo("#hidden");
+    attitude = $("#"+id);
+    attitude_initialize(id);        
+    //plotter.mousedown(onPlotterMouseDown);
+    //plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
+    //plotter.mousewheel(onPlotterMouseWheel);
+    //plotter.mousemove(onPlotterMouseMove);
+    globals.attitudes.push(attitude); // Save it
+    
+    return attitude;
+}
 
 function Pitch(canvas, degrees)
 {

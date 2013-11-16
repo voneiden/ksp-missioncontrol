@@ -1,55 +1,6 @@
-
-/* returns a free plotter, if it does not exist, creates a new one */
-function get_plotter()
-{
-    var plotter;
-    for (var i = globals.plotters.length; i>0; i--)
-    {
-        plotter = globals.plotters[i-1];
-        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
-        else { return plotter };
-    }
-    
-    // Was unable to find a plotter, create a new one!
-    var id = "plotter-" + (globals.plotters.length + 1);
-    $('<canvas id="' + id + '">').appendTo("#hidden");
-    plotter = $("#"+id);
-    plotter_initialize(id);         // TODO: use object
-    plotter_set_mode(id, "solar");  // TODO: use object
-    plotter.mousedown(onPlotterMouseDown);
-    plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
-    plotter.mousewheel(onPlotterMouseWheel);
-    plotter.mousemove(onPlotterMouseMove);
-    globals.plotters.push(plotter); // Save it
-    
-    return plotter;
-}
-
-function get_attitude()
-{
-    var attitude;
-    for (var i = globals.attitudes.length; i>0; i--)
-    {
-        plotter = globals.attitudes[i-1];
-        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
-        else { return plotter };
-    }
-    
-    // Was unable to find a plotter, create a new one!
-    var id = "attitude-" + (globals.plotters.length + 1);
-    $('<canvas id="' + id + '">').appendTo("#hidden");
-    attitude = $("#"+id);
-    attitude_initialize(id);        
-    //plotter.mousedown(onPlotterMouseDown);
-    //plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
-    //plotter.mousewheel(onPlotterMouseWheel);
-    //plotter.mousemove(onPlotterMouseMove);
-    globals.attitudes.push(attitude); // Save it
-    
-    return attitude;
-}
-
-/* This function initializes the user interface. Call only once during session */
+/*
+ * Initializing and closing of different workspaces
+ */
 function setup_mainmenu()
 {
     // Todo clean here
@@ -90,65 +41,7 @@ function close_mainmenu()
     setup_workspace1();
     
 }
-/* Event handlers */
-function onMouseMove(event)
-{
-    if (globals.mouse_left != false)
-    {
-        var delta_x = event.pageX - globals.mouse_left_x;
-        var delta_y = event.pageY - globals.mouse_left_y;
-        onPlotterLeftMouseDrag(globals.mouse_left, delta_x, delta_y);
-        globals.mouse_left_x = event.pageX;
-        globals.mouse_left_y = event.pageY;
-        globals.mouse_left_dragging = true;
-    }
-    if (globals.mouse_right != false)
-    {
-        var delta_y = event.pageY - globals.mouse_right_y;
-        onPlotterRightMouseDrag(globals.mouse_right, delta_y);
-        globals.mouse_right_y = event.pageY;
-    }
-}
-function onMouseUp(event)
-{
-    if (event.button == 0 && globals.mouse_left != false)
-    {
-        if (globals.mouse_left_dragging == false) // Handle as click
-        {
-            onPlotterClick(globals.mouse_left, event);
-        }
-        globals.mouse_left = false;
-        globals.mouse_left_dragging = false;
-    }
-    else if (event.button == 2 && globals.mouse_right != false)
-    {
-        globals.mouse_right = false;
-    }
-}
 
-function onResize()
-{
-    for (var i = globals.plotters.length; i>0; i--)
-    {
-        var plotter = globals.plotters[i-1];
-        if (jQuery.contains($("#display")[0], plotter[0])) { 
-            var width = plotter.parent().width();
-            var height = plotter.parent().height();
-            plotter_resize(plotter.attr("id"), width, height);    
-            plotter_draw(plotter.attr("id"));                      
-        }
-    }
-	for (var i = globals.attitudes.length; i>0; i--)
-    {
-        var attitude = globals.attitudes[i-1];
-        if (jQuery.contains($("#display")[0], attitude[0])) { 
-            var width = attitude.parent().width();
-            var height = attitude.parent().height();
-            attitude_resize(attitude.attr("id"), width, height);      
-            attitude_draw(attitude.attr("id"));                       
-        }
-    }
-}
 function setup_workspace1()
 {
     if (active_display == "#workspace1") { return; }
@@ -217,6 +110,69 @@ function setup_workspace2()
     // Finally scale everything to right size
     onResize();
 }
+/* 
+ * Various event handlers are here 
+ */
+ 
+function onMouseMove(event)
+{
+    if (globals.mouse_left != false)
+    {
+        var delta_x = event.pageX - globals.mouse_left_x;
+        var delta_y = event.pageY - globals.mouse_left_y;
+        onPlotterLeftMouseDrag(globals.mouse_left, delta_x, delta_y);
+        globals.mouse_left_x = event.pageX;
+        globals.mouse_left_y = event.pageY;
+        globals.mouse_left_dragging = true;
+    }
+    if (globals.mouse_right != false)
+    {
+        var delta_y = event.pageY - globals.mouse_right_y;
+        onPlotterRightMouseDrag(globals.mouse_right, delta_y);
+        globals.mouse_right_y = event.pageY;
+    }
+}
+function onMouseUp(event)
+{
+    if (event.button == 0 && globals.mouse_left != false)
+    {
+        if (globals.mouse_left_dragging == false) // Handle as click
+        {
+            onPlotterClick(globals.mouse_left, event);
+        }
+        globals.mouse_left = false;
+        globals.mouse_left_dragging = false;
+    }
+    else if (event.button == 2 && globals.mouse_right != false)
+    {
+        globals.mouse_right = false;
+    }
+}
+
+function onResize()
+{
+    for (var i = globals.plotters.length; i>0; i--)
+    {
+        var plotter = globals.plotters[i-1];
+        if (jQuery.contains($("#display")[0], plotter[0])) { 
+            var width = plotter.parent().width();
+            var height = plotter.parent().height();
+            plotter_resize(plotter.attr("id"), width, height);    
+            plotter_draw(plotter.attr("id"));                      
+        }
+    }
+	for (var i = globals.attitudes.length; i>0; i--)
+    {
+        var attitude = globals.attitudes[i-1];
+        if (jQuery.contains($("#display")[0], attitude[0])) { 
+            var width = attitude.parent().width();
+            var height = attitude.parent().height();
+            attitude_resize(attitude.attr("id"), width, height);      
+            attitude_draw(attitude.attr("id"));                       
+        }
+    }
+}
+
 /*Test environment, as the name implies, is for testing
  * various features without the need to run KSP
  * It setups a few test cases for offline testing
