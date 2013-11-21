@@ -1,3 +1,8 @@
+/*
+ * theme-terminal.css - Green/black color theme
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
 body {
  color: lime;
  font-family: 'Ubuntu Mono', sans-serif;

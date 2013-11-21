@@ -1,3 +1,8 @@
+/*
+ * plotter.js - Provides canvas drawing functions for orbit trajectory plotting
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
 plotters = new Object(); // Container for plotter objects
 // TODO: rename plotters and globals.plotters
 

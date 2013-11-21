@@ -1,3 +1,8 @@
+/*
+ * data.js - Various constants are defiend here.
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
 window.globals = {};
 globals.Vector = Vector
 globals.Matrix = Matrix

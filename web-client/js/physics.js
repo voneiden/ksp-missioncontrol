@@ -1,4 +1,7 @@
 /*
+ * physics.js - Provides functions for two-body problem
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ *
  * Javascript math function expansions
  */
 

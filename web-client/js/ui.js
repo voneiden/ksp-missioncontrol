@@ -1,4 +1,7 @@
 /*
+ * ui.js - Provides user interface manipulation functions
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ *
  * Initializing and closing of different workspaces
  */
 function setup_mainmenu()

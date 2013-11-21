@@ -1,4 +1,7 @@
-
+/*
+ * event.js - Global mouse and keyboard events
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
 
 function onMouseMove(event)
 {

@@ -1,3 +1,8 @@
+/*
+ * attitude.js - Provides canvas drawing functions for attitude indicator
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
 // Container for attitude objects
 attitudes = new Object();
 
