@@ -5,11 +5,14 @@ using UnityEngine;
 using KSP.IO;
 //using RemoteTech; // RemoteTech removed to make debugging easier for now
 using MissionControl;
-/* 
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
-Copyright (c) 2013, Matti 'voneiden' Eiden
+
+/* 
+Copyright (c) 2012-2014, Matti 'voneiden' Eiden
 All rights reserved.
-gvbhjhgkjhgfghjikjuyhtgyhuioiuytrr
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met: 
 
@@ -30,7 +33,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-v 0.1 - Testing Remote Tech contact
 
  */
 
@@ -39,15 +41,17 @@ namespace MissionControl  {
 	public class MissionControl : MonoBehaviour
 	{
 		public static GameObject GameObjectInstance;
-		MCUtils utils = new MCUtils ();
-		Server server;
+		public MCUtils utils = new MCUtils ();
+
 		public bool RMConn = false;
 		public List<Vessel> all_vessels = new List<Vessel>();
 		public Vessel active_vessel = null;
 
+		public WebSocketServer wssv;
+
 		public void Awake ()
 		{
-			// Cancel all old invokes..
+			// Just in case cancel all old invokes related to this instance
 			CancelInvoke ();
 
 			// Do a full sync
@@ -61,18 +65,23 @@ namespace MissionControl  {
 			}
 			InvokeRepeating ("CheckRemote",1.0F,1.0F);
 
+			if (wssv == null) {
+				Debug.Log ("Establishing websocket");
+				wssv = new WebSocketServer ("ws://127.0.0.1"); //TODO: Add possibility to configure IP
+				wssv.AddWebSocketService<MissionControlService> ("/mcs", () => new MissionControlService (this));
+				wssv.Start ();
 
-			if (server != null) { server.Cleanup (); }
-
-			server = gameObject.AddComponent <Server>();
-			server.MC = this;
+				Debug.Log ("Established websocket!");
+			}
 		}
 
 		public void OnDisable()
 		{
-			if (server != null) {
-				server.Cleanup ();
+			if (wssv != null) {
+				wssv.Stop ();
+				wssv = null;
 			}
+
 		}
 
 
