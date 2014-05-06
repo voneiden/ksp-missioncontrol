@@ -12,7 +12,7 @@ globals.plotters = new Array();
 globals.attitudes = new Array();
 
 globals.trackers = new Array();
-
+// TODO this default data is invalid due to frame rotation?
 globals.celestials = {
  "Sun": {
   "alt_atm":0,

@@ -14,6 +14,7 @@
   <script type="text/javascript" src="ps/plotter.js"></script>
   <script type="text/javascript" src="ps/attitude.js"></script>
   <script type="text/javascript" src="js/ui.js"></script>
+  <script type="text/javascript" src="js/net.js"></script>
   <script type="text/javascript" src="js/lambert2.js"></script>
 
  </head>
@@ -30,7 +31,7 @@
      <p>Welcome to KSP Mission Control v0.1 (131020) </p>
      <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
      <p>OR</p>
-     <p><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
+     <p><input type="button" value="LOCALHOST" onclick="ws_connect('127.0.0.1', '80')"><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
     </div>
     <div id="display-menu-bottom">
     </div>

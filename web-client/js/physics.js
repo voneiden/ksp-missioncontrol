@@ -1,3 +1,14 @@
+function rotZ(degrees) {
+    return Matrix.RotationZ(deg2rad(degrees));
+}
+
+function deg2rad(degrees) {
+    return degrees * (Math.PI / 180);
+}
+
+function rad2deg(radians) {
+    return radians * (180 / Math.PI);
+}
 function sign(number) 
 {
     var s = number?number<0?-1:1:0;

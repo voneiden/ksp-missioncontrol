@@ -7,9 +7,10 @@ using KSP.IO;
 namespace MissionControl  {
 
 
-	public class MCUtils 
+	public class Utilities 
 	{
-		public string getStateLine(Vessel vessel) {
+		public json getVesselState(Vessel vessel) {
+			Debug.Log ("STEP_XXX_1");
 			Orbit orbit = vessel.GetOrbit ();
 			//string referenceBody = FlightGlobals.Bodies.IndexOf (orbit.referenceBody).ToString ();
 			string referenceBody = orbit.referenceBody.GetName ();
@@ -47,7 +48,7 @@ namespace MissionControl  {
 				Debug.Log ("Unknown vessel situation");
 				buffer.Add ("state", "unknown");
 			} // # 1
-
+			Debug.Log ("STEP_XXX_2");
 			buffer.Add ("uid", vessel.id.ToString ());
 			buffer.Add ("name", vessel.vesselName); // # 3
 			buffer.Add ("ut", Planetarium.GetUniversalTime ()); // # 4
@@ -62,7 +63,7 @@ namespace MissionControl  {
 			//Vector3d r = orbit.pos.xzy;
 			//Vector3d v = orbit.vel.xzy;
 			List<double> RV = new List<double> ();
-
+			Debug.Log ("STEP_XXX_3");
 			// TODO explain the coordinate system further
 			RV.Add(r.y); 
 			RV.Add(r.x); 
@@ -83,7 +84,7 @@ namespace MissionControl  {
 			fwup.Add (up.y);
 			fwup.Add (up.x);
 			fwup.Add (up.z);
-
+			Debug.Log ("STEP_XXX_4");
 			buffer.Add ("fwup", fwup);
 			//Debug.Log ("SPEED1: " + orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ()).ToString ()); // Tis is currently used velocity
 			//Debug.Log ("SPEED2: " + orbit.GetFrameVelAtUT (Planetarium.GetUniversalTime ()).ToString ());
@@ -126,7 +127,7 @@ namespace MissionControl  {
 			buffer.Add ("srf_v", vessel.srf_velocity.magnitude); // # 14
 			buffer.Add ("vrt_v", vessel.verticalSpeed);   // # 15
 			buffer.Add ("pressure_s", vessel.staticPressure); // # 16
-
+			Debug.Log ("STEP_XXX_5");
 			if (vessel.Parts.Count () > 0) {
 				Part part = vessel.Parts [0];
 				buffer.Add ("pressure_d", part.dynamicPressureAtm); // # 17
@@ -150,12 +151,12 @@ namespace MissionControl  {
 			//buffer.Add (vessel.specificAcceleration.ToString ());
 			//buffer.Add (vessel.terrainAltitude.ToString ());
 
-	
-			return buffer.dumps();
+			Debug.Log ("STEP_XXX_6");
+			return buffer;
 			
 		}
 		
-		public string getCelestialState(CelestialBody celestial) 
+		public json getCelestialState(CelestialBody celestial) 
 		{
 			Debug.Log ("Collecting: " + celestial.GetName ());
 			json buffer = new json ();
@@ -172,17 +173,26 @@ namespace MissionControl  {
 				List<double> RV = new List<double> ();
 
 				// Swap coordinate system
-				RV.Add(r.y); 
-				RV.Add(r.x); 
-				RV.Add(r.z); 
+				RV.Add (r.y); 
+				RV.Add (r.x); 
+				RV.Add (r.z); 
 
-				RV.Add(v.y);
-				RV.Add(v.x);
-				RV.Add(v.z);
+				RV.Add (v.y);
+				RV.Add (v.x);
+				RV.Add (v.z);
 
 				buffer.Add ("rv", RV);	
 
-			} 
+			} else {
+				List<double> RV = new List<double> ();
+				RV.Add (0.0);
+				RV.Add (0.0);
+				RV.Add (0.0);
+				RV.Add (0.0);
+				RV.Add (0.0);
+				RV.Add (0.0);
+				buffer.Add ("rv", RV);
+			}
 	
 			buffer.Add ("mu", celestial.gravParameter);
 			buffer.Add ("radius", celestial.Radius);
@@ -200,7 +210,7 @@ namespace MissionControl  {
 			buffer.Add ("initial_rotation", celestial.initialRotation);
 			buffer.Add ("rotation_angle", celestial.rotationAngle);
 
-			return buffer.dumps ();
+			return buffer;
 		}
 	}
 }

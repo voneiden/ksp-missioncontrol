@@ -49,6 +49,8 @@ function get_attitude()
     return attitude;
 }
 
+
+
 /* This function initializes the user interface. Call only once during session */
 function setup_mainmenu()
 {
@@ -59,9 +61,9 @@ function setup_mainmenu()
     active_display = $("#display-menu");
     
     // Add plotter to main menu view
-    //var plotter = get_plotter();
-    //plotter.appendTo("#display-menu-bottom");
-	get_attitude().appendTo("#display-menu-bottom");
+    var plotter = get_plotter();
+    plotter.appendTo("#display-menu-bottom");
+	//get_attitude().appendTo("#display-menu-bottom");
     
     // Event handlers
     $(document).mousemove(onMouseMove);
