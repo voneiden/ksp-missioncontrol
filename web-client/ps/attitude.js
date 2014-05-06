@@ -1,10 +1,41 @@
-// Container for attitude objects
-attitudes = new Object();
+/*
+ * attitude.js - Provides canvas drawing functions for attitude indicator
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
 
+// Container for attitude objects
+attitude_data = new Object();
+
+/*
+ * Returns an attitude plot object or creates a new one if necessary
+ */
+function get_attitude()
+{
+    var attitude;
+    for (var i = globals.attitudes.length; i>0; i--)
+    {
+        plotter = globals.attitudes[i-1];
+        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
+        else { return plotter };
+    }
+    
+    // Was unable to find a plotter, create a new one!
+    var id = "attitude-" + (globals.plotters.length + 1);
+    $('<canvas id="' + id + '">').appendTo("#hidden");
+    attitude = $("#"+id);
+    attitude_initialize(id);        
+    //plotter.mousedown(onPlotterMouseDown);
+    //plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
+    //plotter.mousewheel(onPlotterMouseWheel);
+    //plotter.mousemove(onPlotterMouseMove);
+    globals.attitudes.push(attitude); // Save it
+    
+    return attitude;
+}
 
 function Pitch(canvas, degrees)
 {
-	P = plotters[canvas];
+	P = attitude_data[canvas];
 	var rads = degrees / 57.2957795;
 	var right_axis = Line.create([0,0,0], P.forward.cross(P.up));
 	console.log("right:"+strvec(P.forward.cross(P.up)));
@@ -15,7 +46,7 @@ function Pitch(canvas, degrees)
 
 function Yaw(canvas, degrees)
 {
-	P = plotters[canvas];
+	P = attitude_data[canvas];
 	var rads = degrees / 57.2957795;
 	var up_axis = Line.create([0,0,0], P.up);
 	P.forward = P.forward.rotate(rads, up_axis);
@@ -25,7 +56,7 @@ function Yaw(canvas, degrees)
 function Roll(canvas, degrees)
 {
 	
-	P = plotters[canvas];
+	P = attitude_data[canvas];
 	console.log("UP1: " + strvec(P.up));
 	var rads = degrees / 57.2957795;
 	var fwd_axis = Line.create([0,0,0], P.forward);
@@ -36,7 +67,7 @@ function Roll(canvas, degrees)
 
 function attitude_create_pitchmarker(canvas)
 {
-	P = plotters[canvas];
+	P = attitude_data[canvas];
 	paper = P.paper;
 	P.marker_pitch = new paper.Group({visible: false});
 	P.marker_pitch.addChild(new paper.Path.Line({ from: [-100,100], to: [100, 100], strokeColor: "yellow"})) // Horizontal centering
@@ -86,7 +117,7 @@ function attitude_create_pitchmarker(canvas)
 
 function attitude_create_pitchmarker_line(canvas)
 {
-	P = plotters[canvas];
+	P = attitude_data[canvas];
 	paper = P.paper;
 	
 	// Left line marker
@@ -130,8 +161,8 @@ function attitude_initialize(canvas) {
 	//$("#display").keyup(attitude_keyup);
 
 	console.log("TEST:"+"#"+canvas);
-    plotters[canvas] = new Object();
-    P = plotters[canvas];
+    attitude_data[canvas] = new Object();
+    P = attitude_data[canvas];
     P.paper = new paper.PaperScope();
     P.paper.setup(canvas);
     paper = P.paper;
@@ -169,7 +200,7 @@ function attitude_initialize(canvas) {
  */
 function attitude_resize(canvas, width, height)
 {
-    P = plotters[canvas];
+    P = attitude_data[canvas];
     paper = P.paper;
     paper.view.setViewSize(width, height);
     if (paper.view.center.x > paper.view.center.y) { P.view_size = paper.view.center.y; }
@@ -192,7 +223,7 @@ function project_to_plane(vector, normal)
 
 function attitude_draw(canvas) {
 	console.log("DRAW:"+canvas);
-    P = plotters[canvas];
+    P = attitude_data[canvas];
     paper = P.paper;
     console.log(P);
 	console.log("fwd:"+strvec(P.forward));

@@ -1,3 +1,10 @@
+/*
+ * physics.js - Provides functions for two-body problem
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ *
+ * Javascript math function expansions
+ */
+ 
 function rotZ(degrees) {
     return Matrix.RotationZ(deg2rad(degrees));
 }
@@ -9,6 +16,7 @@ function deg2rad(degrees) {
 function rad2deg(radians) {
     return radians * (180 / Math.PI);
 }
+
 function sign(number) 
 {
     var s = number?number<0?-1:1:0;
@@ -39,11 +47,15 @@ function acot(aValue)
    return Math.atan(1 / aValue);
 }
 
+/* 
+ * Does orbit precalculations for an object
+ * Always call after initializing a new object or if orbital parameters
+ * have changed!
+ */
+
 function determine_orbit_constants(object) 
 {
-    /* 
-    * This function calculates constants for an object that has orbit data available
-    */
+    
     if (object.name == "Sun") {
         return;
     }

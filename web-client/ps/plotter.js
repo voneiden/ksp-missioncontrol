@@ -1,5 +1,38 @@
-// Container for plotter objects
-plotters = new Object();
+/*
+ * plotter.js - Provides canvas drawing functions for orbit trajectory plotting
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
+plotter_data = new Object(); // Container for plotter objects to store variables
+
+/*
+ * Returns a free plotter object or creates a new one if necessary
+ */
+function get_plotter()
+{
+    var plotter;
+    for (var i = globals.plotters.length; i>0; i--)
+    {
+        plotter = globals.plotters[i-1];
+        if (jQuery.contains(document.documentElement, plotter[0])) { continue }
+        else { return plotter };
+    }
+    
+    // A new plot needs to be created
+    var id = "plotter-" + (globals.plotters.length + 1);
+    $('<canvas id="' + id + '">').appendTo("#hidden");
+    plotter = $("#"+id);
+    console.log(plotter);
+    plotter_initialize(id);         
+    plotter_set_mode(id, "solar");  
+    plotter.mousedown(onPlotterMouseDown);
+    plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
+    plotter.mousewheel(onPlotterMouseWheel);
+    plotter.mousemove(onPlotterMouseMove);
+    globals.plotters.push(plotter); // Save it
+    
+    return plotter;
+}
 
 
 
@@ -28,8 +61,9 @@ function create_celestial_circle(color)
 */ 
 function plotter_initialize(canvas) {
     // Setup the environment
-    plotters[canvas] = new Object();
-    P = plotters[canvas];
+    P = new Object();
+    plotter_data[canvas] = P;
+
     P.paper = new paper.PaperScope();
     P.paper.setup(canvas);
     paper = P.paper;
@@ -94,7 +128,7 @@ function create_plot_marker(color)
  */
 function plotter_resize(canvas, width, height)
 {
-    P = plotters[canvas];
+    P = plotter_data[canvas];
     paper = P.paper;
     paper.view.setViewSize(width, height);
     if (paper.view.center.x > paper.view.center.y) { P.view_size = paper.view.center.y; }
@@ -106,7 +140,7 @@ function plotter_resize(canvas, width, height)
 */
 function plotter_set_mode(canvas, mode)
 {
-    P = plotters[canvas];
+    P = plotter_data[canvas];
     paper = P.paper;
     
     // Disable all celestial dots
@@ -158,7 +192,7 @@ function plotter_set_mode(canvas, mode)
 * camera rotation.
 */
 function plotter_draw(canvas) {
-    P = plotters[canvas];
+    P = plotter_data[canvas];
     paper = P.paper;
     
     // Todo calculate on demand
@@ -229,7 +263,7 @@ function plotter_draw(canvas) {
 
 function onPlotterMouseDown(event) {
     var canvas = $(this)[0].id;
-    P = plotters[canvas];
+    P = plotter_data[canvas];
     
     if (event.button == 0) { 
         globals.mouse_left = canvas;
@@ -249,21 +283,21 @@ function onPlotterMouseDown(event) {
 
 function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
 	// Add a point to the path every time the mouse is dragged
-    P = plotters[canvas];
+    P = plotter_data[canvas];
 	P.camera_rotation.setElements([P.camera_rotation.e(1) + delta_y/100, P.camera_rotation.e(2), P.camera_rotation.e(3) - delta_x/100])
     plotter_draw(canvas);
 }
 
 function onPlotterRightMouseDrag(canvas, delta_y) {
 	// Add a point to the path every time the mouse is dragged
-    P = plotters[canvas];
+    P = plotter_data[canvas];
 	P.camera_distance = P.camera_distance + delta_y * 100000000;
     plotter_draw(canvas);
 }
 
 function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
     var canvas = this.id;
-    P = plotters[canvas]
+    P = plotter_data[canvas]
     P.camera_distance = P.camera_distance - delta_y * 10000000000;
     plotter_draw(canvas);
 }
@@ -275,7 +309,7 @@ function onPlotterMouseMove(event)
 {
     //console.log("Plotter click");
     canvas = this.id;
-    P = plotters[canvas];
+    P = plotter_data[canvas];
     paper = P.paper;
     
     var keys = Object.keys(P.C);
