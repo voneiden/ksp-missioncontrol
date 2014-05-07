@@ -17,6 +17,40 @@ function rad2deg(radians) {
     return radians * (180 / Math.PI);
 }
 
+// Todo, implement theta
+function LatLonAtUT(vessel, ut) {
+    if (vessel.state != "orbiting") {
+        console.log("Vessel not orbiting")
+        ut = vessel.t0; // If the vessel is landed, then the position is fixed at t0
+        var cur_position = vessel.position;
+    }
+    else {
+        console.log("Vessel is orbiting");
+        var cur_position = determine_rv_at_t(vessel, ut)[0];
+    }
+    
+    var ref = globals.celestials[vessel.ref]
+    
+    //if (ref.rotrix_timestamp != ut) {
+    //    ref.rotrix_timestamp = ut;
+    //    ref.rotrix = rotZ(ref.rotation_angle);
+    //}
+    
+    var theta = ref.rotation_angle + ref.ang_v * (ut - ref.rotation_t0);
+    console.log("Theta: " + theta);
+    var rotrix = rotZ(theta);
+    
+    console.log(rotrix);
+    console.log(cur_position);
+    var rot_position = rotrix.multiply(cur_position);
+    var uni_position = rot_position.toUnitVector();
+    
+    var lat = Math.asin(uni_position.e(3));
+    var lon = Math.atan2(uni_position.e(1), uni_position.e(2));
+    
+    return [lat, lon];
+}
+
 function sign(number) 
 {
     var s = number?number<0?-1:1:0;

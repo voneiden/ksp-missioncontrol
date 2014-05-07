@@ -60,4 +60,15 @@ function onResize()
             attitude_draw(attitude.attr("id"));                       
         }
     }
+    for (var i = globals.groundtracks.length; i>0; i--)
+    {
+        var groundtrack = globals.groundtracks[i-1];
+        if (jQuery.contains($("#display")[0], groundtrack[0])) { 
+            var width = groundtrack.parent().width();
+            var height = groundtrack.parent().height();
+            console.log("from event");
+            groundtrack_resize(groundtrack.attr("id"), width, height);      
+            groundtrack_draw(groundtrack.attr("id"));                       
+        }
+    }
 }

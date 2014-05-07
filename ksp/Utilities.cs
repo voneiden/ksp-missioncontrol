@@ -209,6 +209,7 @@ namespace MissionControl  {
 
 			buffer.Add ("initial_rotation", celestial.initialRotation);
 			buffer.Add ("rotation_angle", celestial.rotationAngle);
+			buffer.Add ("rotation_t0", Planetarium.GetUniversalTime ());
 
 			return buffer;
 		}

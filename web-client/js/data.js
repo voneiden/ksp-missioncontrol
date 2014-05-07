@@ -15,8 +15,10 @@ globals.mouse_right_y = false;
 
 globals.plotters = new Array();
 globals.attitudes = new Array();
+globals.groundtracks = new Array();
 
 globals.trackers = new Array();
+globals.vessels = new Array();
 // TODO this default data is invalid due to frame rotation?
 globals.celestials = {
  "Sun": {

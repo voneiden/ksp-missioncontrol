@@ -68,8 +68,9 @@ function setup_mainmenu()
     active_display = $("#display-menu");
     
     // Add plotter to main menu view
-    var plotter = get_plotter();
-    plotter.appendTo("#display-menu-bottom");
+    //var plotter = get_plotter();
+    var groundtrack = get_groundtrack();
+    groundtrack.appendTo("#display-menu-bottom");
 	//get_attitude().appendTo("#display-menu-bottom");
     
     // Event handlers
@@ -82,7 +83,8 @@ function close_mainmenu()
 {
     // Detach the main menu plotter
     $("#plotter-1").detach();
-
+    $("#groundtrack-1").detach();
+    
     // Remove all the main menu stuff
     $("#menu-main").detach().appendTo("#hidden");
     $("#display-menu").detach().appendTo("#hidden");
@@ -94,7 +96,7 @@ function close_mainmenu()
     // Fill views and enable workspace 1
     get_plotter().appendTo("#view1");
     get_plotter().appendTo("#view2");
-    get_plotter().appendTo("#view3");
+    get_groundtrack().appendTo("#view3");
     get_plotter().appendTo("#view4");
     setup_workspace1();
     
@@ -199,3 +201,5 @@ function run_test_environment()
 }
 
 $( document ).ready(setup_mainmenu);
+//$("body").load(setup_mainmenu);
+//$("body").load(function () {setup_mainmenu()});
