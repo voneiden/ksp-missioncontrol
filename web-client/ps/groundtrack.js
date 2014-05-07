@@ -30,6 +30,9 @@ function get_groundtrack()
     return groundtrack;
 }
 
+/* 
+ * Resize event, updates the canvas and rescales the raster
+ */
 function groundtrack_resize(canvas, width, height) {
     console.log("Groundtrack resize" + canvas);
     groundtrack = groundtrack_data[canvas];
@@ -77,7 +80,8 @@ function groundtrack_draw(canvas) {
             groundtrack[vessel.uid] = render;
             render.marker = new paper.Path.Circle(paper.view.center, 5)
             render.marker.fillColor = "yellow";
-            render.trajectory = [];
+            
+            update_trajectory(groundtrack, vessel, render);
         }
         
         render = groundtrack[vessel.uid];
@@ -87,15 +91,50 @@ function groundtrack_draw(canvas) {
         
         if (vessel.period) {
             // Render trajectory
-        
+            
         }
         
     }
     
     paper.view.draw();
 }
-function update_trajectory(vessel) {
-
+function update_trajectory(groundtrack, vessel, render) {
+    if (render.trajectory) {
+        render.trajectory.remove();
+    }
+    
+    
+    render.trajectory = new groundtrack.paper.Group();
+    console.log("New group");
+    console.log(render.trajectory);
+    var start = globals.ut - vessel.period;
+    var end = globals.ut + vessel.period;
+    var steps = 100;
+    var step_size = Math.round((end-start) / steps);
+    
+    var last_lon = NaN;
+    var current_path = new groundtrack.paper.Path();
+    current_path.strokeColor = "red";
+    render.trajectory.addChild(current_path);
+    
+    for (var i=0; i<steps; i++) {
+        var t = start + i*step_size;
+        
+        var LatLon = LatLonAtUT(vessel, t);
+        
+        // Check if passed longitude border 
+        if (last_lon && last_lon - LatLon[1] > Math.PI) {
+            current_path = new groundtrack.paper.Path();
+            current_path.strokeColor = "red";
+            render.trajectory.addChild(current_path);
+        }
+        last_lon = LatLon[1];
+        
+        current_path.add(LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack));
+        
+    }
+    
+    
 }
 function LatLonToPaperPoint(lat, lon, groundtrack) {
     render_lat = lat / Math.PI * groundtrack.map.width * groundtrack.map_scale;
