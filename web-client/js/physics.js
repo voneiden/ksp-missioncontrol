@@ -28,7 +28,7 @@ function LatLonAtUT(vessel, ut) {
         //console.log("Vessel is orbiting");
         var cur_position = determine_rv_at_t(vessel, ut)[0];
     }
-    console.log("LatLonAtUT pos: ", ut, cur_position);
+    
     var ref = globals.celestials[vessel.ref]
     
     //if (ref.rotrix_timestamp != ut) {

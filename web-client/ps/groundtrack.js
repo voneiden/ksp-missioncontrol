@@ -68,21 +68,25 @@ function groundtrack_draw(canvas) {
     console.log("Groundtrack draw");
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
-    
+    scope.activate();
     // TODO use Object.keys()?
     
     for (var i=0; i<globals.vessels.length; i++) 
     {
         var vessel = globals.vessels[i];
+        console.log("Checking",vessel.name);
         if (vessel.ref != "Kerbin") { continue; }
-        console.log("Loading vessel: " + vessel.name);
+        console.log("Drawing vessel: " + vessel.name);
         
         if (!groundtrack.vessels[vessel.uid])
         {
+            console.log("New vessel");
             var render = new Object();
             groundtrack.vessels[vessel.uid] = render;
             
-            update_trajectory(groundtrack, vessel, render); // Create trajectory
+            groundtrack_update_trajectory(groundtrack, vessel, render); // Create trajectory
+            console.log("New marker in scope", scope);
+            
             render.marker = new scope.Path.Circle(scope.view.center, 5)
             render.marker.fillColor = "yellow";
             
@@ -92,9 +96,10 @@ function groundtrack_draw(canvas) {
         render = groundtrack.vessels[vessel.uid];
         var LatLon = LatLonAtUT(vessel, globals.ut);
         console.log(LatLon);
-        update_trajectory(groundtrack, vessel, render); // TODO duplicate
+        groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
         render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
-        
+        console.log(groundtrack);
+        console.log("MARKER",render.marker);
         if (vessel.period) {
             // Render trajectory
             
@@ -104,7 +109,9 @@ function groundtrack_draw(canvas) {
     
     scope.view.draw();
 }
-function update_trajectory(groundtrack, vessel, render) {
+function groundtrack_update_trajectory(groundtrack, vessel, render) {
+    groundtrack.scope.activate();
+    
     if (render.trajectory) {
         render.trajectory.removeChildren();
     }
@@ -128,26 +135,28 @@ function update_trajectory(groundtrack, vessel, render) {
     
     for (var i=0; i<steps; i++) {
         var t = start + i*step_size;
-        console.log("t", t);
         var LatLon = LatLonAtUT(vessel, t);
         
         // Check if passed longitude border 
-        if (last_lon && last_lon - LatLon[1] > Math.PI) {
-            var slope = (LatLon[0] - last_lat) / (LatLon[1] - last_lon);
+        if (last_lon && last_lon - LatLon[1] > Math.PI || last_lon - LatLon[1] < -Math.PI) {
+            var slope = ( LatLon[0] - last_lat) / (LatLon[1] - last_lon + Math.PI*2);
             
             if (last_lon > LatLon[1]) {
                 // The vessel has crossed east to west
                 var cross_lon = Math.PI;
+                
             }
             else {
                 // The vessel has crossed west to east // TODO doesn't work
                 var cross_lon = -Math.PI;
             }
             
-            var cross_lat = last_lat + slope*(cross_lon-last_lon);
-            
+            var cross_lat = last_lat - slope*(last_lon-cross_lon);
+            //var cross_lat = LatLon[0] + slope*(cross_lon - LatLon[1]);
             console.log("Slope: " + slope);
             console.log("cross_lat: ", cross_lat);
+            console.log("last_lat:  ", last_lat);
+            console.log("new_lat:   ", LatLon[0]);
             // Draw 1st crosspoint
             current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
             
@@ -218,7 +227,7 @@ function groundtrack_initialize(canvas)
     
     var keys = Object.keys(groundtrack.vessels);
     var d = new Object(); // Distance object
-    console.log(scope);
+    //console.log(scope);
     var mouse_position = new scope.Point(event.offsetX, event.offsetY);
     
     for (var i = 0; i < keys.length; i++) // Loop through visible objects
@@ -237,7 +246,6 @@ function groundtrack_initialize(canvas)
     
     if (min < 10)
     {
-        console.log("WOOT WOOT");
         //P.hilight_object = d[d_keys[0]];
         var vessel = globals.vessels[d[min]];
         // TODO velocity should be calculated unless KSP relays data for all active vessels.
@@ -256,7 +264,7 @@ function groundtrack_initialize(canvas)
         //P.hilight_object = false;
     }
     
-    console.log("Closest", d[d_keys[0]]);
+    //console.log("Closest", d[d_keys[0]]);
     
 }
 function create_target_marker(scope, color)
