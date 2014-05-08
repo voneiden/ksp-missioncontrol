@@ -20,12 +20,12 @@ function rad2deg(radians) {
 // Todo, implement theta
 function LatLonAtUT(vessel, ut) {
     if (vessel.state != "orbiting") {
-        console.log("Vessel not orbiting")
+        //console.log("Vessel not orbiting")
         ut = vessel.t0; // If the vessel is landed, then the position is fixed at t0
         var cur_position = vessel.position;
     }
     else {
-        console.log("Vessel is orbiting");
+        //console.log("Vessel is orbiting");
         var cur_position = determine_rv_at_t(vessel, ut)[0];
     }
     
@@ -37,11 +37,11 @@ function LatLonAtUT(vessel, ut) {
     //}
     
     var theta = ref.rotation_angle + ref.ang_v * (ut - ref.rotation_t0);
-    console.log("Theta: " + theta);
+    //console.log("Theta: " + theta);
     var rotrix = rotZ(theta);
     
-    console.log(rotrix);
-    console.log(cur_position);
+    //console.log(rotrix);
+    //console.log(cur_position);
     var rot_position = rotrix.multiply(cur_position);
     var uni_position = rot_position.toUnitVector();
     

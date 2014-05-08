@@ -24,7 +24,7 @@ function get_groundtrack()
     //groundtrack.mousedown(onPlotterMouseDown);
     //groundtrack.bind("contextmenu", function() { return false; }); // Disable right click context menu
     //groundtrack.mousewheel(onPlotterMouseWheel);
-    //groundtrack.mousemove(onPlotterMouseMove);
+    groundtrack.mousemove(onGroundtrackMouseMove);
     globals.groundtracks.push(groundtrack); // Save it
     
     return groundtrack;
@@ -66,26 +66,30 @@ function groundtrack_resize(canvas, width, height) {
 
 function groundtrack_draw(canvas) {
     console.log("Groundtrack draw");
-    groundtrack = groundtrack_data[canvas];
-    paper = groundtrack.paper;
+    var groundtrack = groundtrack_data[canvas];
+    var paper = groundtrack.paper;
+    
+    // TODO use Object.keys()?
     
     for (var i=0; i<globals.vessels.length; i++) 
     {
         var vessel = globals.vessels[i];
         if (vessel.ref != "Kerbin") { continue; }
         
-        if (!groundtrack[vessel.uid])
+        if (!groundtrack.vessels[vessel.uid])
         {
-            render = new Object();
-            groundtrack[vessel.uid] = render;
+            var render = new Object();
+            groundtrack.vessels[vessel.uid] = render;
+            
+            update_trajectory(groundtrack, vessel, render); // Create trajectory
             render.marker = new paper.Path.Circle(paper.view.center, 5)
             render.marker.fillColor = "yellow";
             
-            update_trajectory(groundtrack, vessel, render);
+            
         }
         
-        render = groundtrack[vessel.uid];
-        LatLon = LatLonAtUT(vessel, globals.ut);
+        render = groundtrack.vessels[vessel.uid];
+        var LatLon = LatLonAtUT(vessel, globals.ut);
         
         render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
         
@@ -100,11 +104,13 @@ function groundtrack_draw(canvas) {
 }
 function update_trajectory(groundtrack, vessel, render) {
     if (render.trajectory) {
-        render.trajectory.remove();
+        render.trajectory.removeChildren();
+    }
+    else {
+        render.trajectory = new groundtrack.paper.Group();
     }
     
     
-    render.trajectory = new groundtrack.paper.Group();
     console.log("New group");
     console.log(render.trajectory);
     var start = globals.ut - vessel.period;
@@ -113,6 +119,7 @@ function update_trajectory(groundtrack, vessel, render) {
     var step_size = Math.round((end-start) / steps);
     
     var last_lon = NaN;
+    var last_lat = NaN
     var current_path = new groundtrack.paper.Path();
     current_path.strokeColor = "red";
     render.trajectory.addChild(current_path);
@@ -124,12 +131,34 @@ function update_trajectory(groundtrack, vessel, render) {
         
         // Check if passed longitude border 
         if (last_lon && last_lon - LatLon[1] > Math.PI) {
+            var slope = (LatLon[0] - last_lat) / (LatLon[1] - last_lon);
+            
+            if (last_lon > LatLon[1]) {
+                // The vessel has crossed east to west
+                var cross_lon = Math.PI;
+            }
+            else {
+                // The vessel has crossed west to east
+                var cross_lon = -Math.PI;
+            }
+            
+            var cross_lat = last_lat + slope*(cross_lon-last_lon);
+            
+            console.log("Slope: " + slope);
+            console.log("cross_lat: ", cross_lat);
+            // Draw 1st crosspoint
+            current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
+            
+            // Start a new path
             current_path = new groundtrack.paper.Path();
             current_path.strokeColor = "red";
             render.trajectory.addChild(current_path);
+            
+            // Draw 2nd crosspoint
+            current_path.add(LatLonToPaperPoint(cross_lat, -cross_lon, groundtrack));
         }
         last_lon = LatLon[1];
-        
+        last_lat = LatLon[0];
         current_path.add(LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack));
         
     }
@@ -147,6 +176,7 @@ function groundtrack_initialize(canvas)
 	groundtrack =  new Object();
     groundtrack_data[canvas] = groundtrack;
     groundtrack.zoom = 1;
+    groundtrack.vessels = new Object();
 	groundtrack.paper = new paper.PaperScope();
 	paper = groundtrack.paper;
 	paper.setup(canvas);
@@ -162,9 +192,80 @@ function groundtrack_initialize(canvas)
     groundtrack.map.position = paper.view.center;
     groundtrack.map_scale = 1.0
     groundtrack_map = groundtrack.map;
+    
+    var base_layer = paper.project.activeLayer;
+    var marker_layer = new paper.Layer();
+    groundtrack.marker_hilight = create_target_marker(paper, "lime");
+    base_layer.activate();
+    
     console.log(groundtrack.map.width);
     console.log(groundtrack.map.height);
     
 }
 
-//$( document ).ready(setup_groundtrack);
+/*
+ * Events
+ */
+ 
+ function onGroundtrackMouseMove(event)
+{
+    //console.log("Plotter click");
+    canvas = this.id;
+    groundtrack = groundtrack_data[canvas];
+    paper = groundtrack.paper;
+    
+    var keys = Object.keys(groundtrack.vessels);
+    var d = new Object(); // Distance object
+    var mouse_position = new paper.Point(event.offsetX, event.offsetY);
+    
+    for (var i = 0; i < keys.length; i++) // Loop through visible objects
+    {
+        if (true) //(P.C[keys[i]].visible == true)
+        {
+            d[mouse_position.getDistance(groundtrack.vessels[keys[i]].marker.position)] = keys[i];
+        }
+    }
+    
+    var d_keys = Object.keys(d);
+    d_keys.sort(function(a,b){return a-b});
+    //console.log(d);
+    //console.log(keys);
+    var min = d_keys[0];
+    
+    if (min < 10)
+    {
+        console.log("WOOT WOOT");
+        //P.hilight_object = d[d_keys[0]];
+        var vessel = globals.vessels[d[min]];
+        
+        groundtrack.marker_hilight.visible = true;
+        groundtrack.marker_hilight.position = groundtrack.vessels[d[min]].marker.position;
+        groundtrack.marker_hilight.text.content = vessel.name + "\n";
+        groundtrack.marker_hilight.text.content += "Vel: " + Math.round(vessel.velocity_norm * 100) / 100 + "m/s\n";
+        groundtrack.marker_hilight.text.content += "Alt: " + Math.round(vessel.alt) + "m";
+        //console.log(P.marker_hilight.position);
+        //console.log(P.C[d[d_keys[0]]]);
+        //groundtrack_draw(canvas);
+    }
+    else
+    {
+        groundtrack.marker_hilight.visible = false;
+        //P.hilight_object = false;
+    }
+    
+    console.log("Closest", d[d_keys[0]]);
+    
+}
+function create_target_marker(paper, color)
+{
+    var marker = new paper.Group({visible: false});
+    marker.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
+    marker.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
+    marker.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
+    marker.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
+    var text = new paper.PointText(new paper.Point(20, 0));
+    marker.addChild(text);
+    marker.text = text;
+    marker.strokeColor = "lime";
+    return marker;
+}
