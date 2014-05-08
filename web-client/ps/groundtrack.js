@@ -139,24 +139,27 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
         
         // Check if passed longitude border 
         if (last_lon && last_lon - LatLon[1] > Math.PI || last_lon - LatLon[1] < -Math.PI) {
-            var slope = ( LatLon[0] - last_lat) / (LatLon[1] - last_lon + Math.PI*2);
+            
             
             if (last_lon > LatLon[1]) {
                 // The vessel has crossed east to west
                 var cross_lon = Math.PI;
-                
+                var slope = ( LatLon[0] - last_lat) / (LatLon[1] - last_lon + Math.PI*2);
+                var cross_lat = last_lat - slope*(last_lon-cross_lon);
             }
             else {
-                // The vessel has crossed west to east // TODO doesn't work
+                // The vessel has crossed west to east 
                 var cross_lon = -Math.PI;
+                slope = (last_lat - LatLon[0]) / (last_lon + Math.PI*2 - LatLon[1]);
+                var cross_lat = last_lat + slope*(cross_lon-last_lon); 
             }
             
-            var cross_lat = last_lat - slope*(last_lon-cross_lon);
+            
             //var cross_lat = LatLon[0] + slope*(cross_lon - LatLon[1]);
             console.log("Slope: " + slope);
-            console.log("cross_lat: ", cross_lat);
-            console.log("last_lat:  ", last_lat);
-            console.log("new_lat:   ", LatLon[0]);
+            console.log("cross_lat:     ", cross_lat);
+            console.log("last_lat/lon:  ", last_lat, last_lon);
+            console.log("new_lat/lon:   ", LatLon[0], LatLon[1]);
             // Draw 1st crosspoint
             current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
             

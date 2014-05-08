@@ -24,6 +24,7 @@ globals.active_vessel = false;
 globals.trackers = new Array();
 globals.vessels = new Array();
 // TODO this default data is invalid due to frame rotation?
+// ang_v seem to be in rads, fixing to degs for kerbin only
 globals.celestials = {
  "Sun": {
   "alt_atm":0,
@@ -41,7 +42,7 @@ globals.celestials = {
   "childs":["Moho", "Eve", "Kerbin", "Duna", "Dres", "Jool", "Eeloo"]},
  "Kerbin": {
   "alt_atm":70000,
-  "ang_v":0.000290888208666,
+  "ang_v":0.0166666667,
   "initial_rotation":90,
   "mu":3531600000000,
   "name":"Kerbin",
