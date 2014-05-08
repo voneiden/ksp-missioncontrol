@@ -1,0 +1,45 @@
+/*
+ * theme-terminal.css - Green/black color theme
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
+body {
+ color: lime;
+ font-family: 'Ubuntu Mono', sans-serif;
+}
+#display {
+ background: black;
+ outline:1px solid lime;
+}
+#display-main {
+ background:black;
+}
+#menu {
+ background:black;
+}
+
+#menu-main { /* Use this to define the active background color, it's recorded by ui.js */
+ background-color: DarkGreen;
+}
+
+
+input[type=button] {
+ background-color:green;
+ border-style:solid;
+ border-color:lime;
+ color: lime;
+}
+
+input[type=button]:hover {
+ background-color:LimeGreen ;
+}
+input[type=button]:active {
+ background-color:DarkGreen ;
+}
+
+input[type=text] {
+ background-color:green;
+ border-style:solid;
+ border-color:lime;
+ color: lime;
+}

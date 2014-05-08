@@ -1,0 +1,181 @@
+/*
+ * mc.css - Base layout css file
+ * For a license, see: https://github.com/voneiden/ksp-missioncontrol/blob/master/LICENSE.md
+ */
+
+body {
+ margin: 0px;
+}
+*, *:before, *:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
+ 
+/* Menu element */
+#menu {
+ float:left;
+ width:10%;
+ background:green;
+ height: 100%;
+}
+
+#menu ul {
+ list-style-type: none;
+ margin-top: 0px;
+ padding-left: 0px;
+}
+#menu li {
+ text-align: right;
+ padding-top: 10px;
+ padding-right: 10px;
+ padding-bottom: 10px;
+}
+
+#menu li:hover {
+ background-color: cyan;
+}
+
+/* Display element */
+#display {
+  float:right;
+  width:90%;
+  height: 100%;
+}
+/* Plotters */
+#plotter-1 {
+ margin: 0px;
+ padding: 0px;
+}
+
+#plotter-2 {
+ margin: 0px;
+ padding: 0px;
+}
+/* Main/login display */
+#display-menu {
+
+ height: 100%;
+ width: 100%;
+}
+#display-menu-top {
+ text-align: center;
+ margin: 0px;
+ padding: 0px;
+ height: 40%;
+}
+#display-menu-top h1 {
+ padding-top: 40px;
+ margin: 0px;
+}
+#display-menu-bottom {
+ height: 60%;
+ }
+/* WORKSPACES
+ * workspace 1 provides a horizontal split view where the top slice is split in two vertical sections
+ */
+#workspace1 {
+ display: inline-block;
+ height: 100%;
+ width: 100%;
+
+}
+
+#workspace1-top {
+ width: 100%;
+ height: 50%;
+}
+#workspace1-top-left {
+ float:left;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace1-top-right {
+ 
+ float:right;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace1-bottom {
+ height: 50%;
+ width: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+
+/* Workspace 2 provides 4 split screen */
+#workspace2 {
+ display: inline-block;
+ height: 100%;
+ width: 100%;
+
+}
+
+#workspace2-top {
+ width: 100%;
+ height: 50%; 
+}
+#workspace2-top-left {
+ float:left;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-top-right {
+ 
+ float:right;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom {
+ height: 50%;
+ width: 100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom-left {
+ float:left;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+#workspace2-bottom-right {
+ 
+ float:right;
+ width:50%;
+ height:100%;
+ background-color: black;
+ border:1px solid lime;
+}
+/*
+#display-overview-top-left:hover {
+ border:1px solid lime;
+}
+#display-overview-top-right:hover {
+ border:1px solid lime;
+}
+
+#display-overview-bottom:hover {
+ border:1px solid lime;
+}
+*/
+
+/* VIEWS
+ * There are currently 4 views
+ */
+
+.view {
+ height: 100%;
+ width: 100%;
+}
+ 
+#display-main span {
+ 
+ background:lime;
+}

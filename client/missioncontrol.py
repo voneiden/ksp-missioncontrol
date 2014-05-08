@@ -60,7 +60,7 @@ class System(object):
                 f.close()
         
         
-
+    # TODO: parse should be moved to the network class
     def parse(self,data):
         ''' 
         Parse incoming TCP data
@@ -135,7 +135,7 @@ class System(object):
             vessel.surface_velocity    = msg["srf_v"]
             vessel.vertical_velocity   = msg["vrt_v"]
             
-            if self.active_vessel:
+            if self.active_vessel and self.display:
                 self.display.monitor.settings["plotter_target_vessel"] = self.active_vessel
                 self.display.monitor.settings["plotter_reference_body"] = self.active_vessel.parent
                 

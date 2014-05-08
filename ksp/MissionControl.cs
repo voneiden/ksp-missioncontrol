@@ -5,11 +5,14 @@ using UnityEngine;
 using KSP.IO;
 //using RemoteTech; // RemoteTech removed to make debugging easier for now
 using MissionControl;
-/* 
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
-Copyright (c) 2013, Matti 'voneiden' Eiden
+
+/* 
+Copyright (c) 2012-2014, Matti 'voneiden' Eiden
 All rights reserved.
-gvbhjhgkjhgfghjikjuyhtgyhuioiuytrr
+
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met: 
 
@@ -30,29 +33,32 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-v 0.1 - Testing Remote Tech contact
 
  */
 
 namespace MissionControl  {
-
 	[KSPAddon(KSPAddon.Startup.Flight, false) ]
 	public class MissionControl : MonoBehaviour
 	{
-		public static GameObject GameObjectInstance;
-		MCUtils utils = new MCUtils ();
-		Server server;
-		public bool RMConn = false;
+
+
+
+		//public bool RMConn = false;
 		public List<Vessel> all_vessels = new List<Vessel>();
+
+		//public static GameObject GameObjectInstance;
+		public Utilities utilities = new Utilities ();
+		public List<MissionControlService> subscribed_clients = new List<MissionControlService>();
 		public Vessel active_vessel = null;
+		public WebSocketServer wssv;
 
 		public void Awake ()
 		{
-			// Cancel all old invokes..
+			// Just in case cancel all old invokes related to this instance
 			CancelInvoke ();
 
 			// Do a full sync
-			FullSync ();
+			//FullSync ();
 
 			// Add all vessels to the vessel list
 			foreach (Vessel vessel in FlightGlobals.Vessels) {
@@ -60,26 +66,87 @@ namespace MissionControl  {
 					all_vessels.Add (vessel);
 				}
 			}
-			InvokeRepeating ("CheckRemote",1.0F,1.0F);
+			InvokeRepeating ("UpdateClients",1.0F,1.0F);
 
+			if (wssv == null) {
+				Debug.Log ("Establishing websocket");
+				wssv = new WebSocketServer ("ws://127.0.0.1"); //TODO: Add possibility to configure IP
+				wssv.AddWebSocketService<MissionControlService> ("/mcs", () => new MissionControlService (this));
+				wssv.Start ();
 
-			if (server != null) { server.Cleanup (); }
-
-			server = gameObject.AddComponent <Server>();
-			server.MC = this;
+				Debug.Log ("Established websocket!");
+			}
 		}
 
 		public void OnDisable()
 		{
-			if (server != null) {
-				server.Cleanup ();
+			if (wssv != null) {
+				wssv.Stop ();
+				wssv = null;
+			}
+
+		}
+
+		public void Synchronize(MissionControlService client)
+		{
+			Debug.Log ("STEP1");
+			// Retrieve celestial information
+			List<json> celestial_buffer = new List<json>();
+			foreach (CelestialBody celestial in FlightGlobals.Bodies) {
+				celestial_buffer.Add (utilities.getCelestialState (celestial));
+			}
+			Debug.Log ("STEP2");
+			// Retrieve vessel information and add the vessel to known vessels
+			List<json> vessel_buffer = new List<json>();
+			foreach (Vessel vessel in FlightGlobals.Vessels) {
+				vessel_buffer.Add (utilities.getVesselState (vessel));
+				Debug.Log ("STEP2X");
+				client.known_vessels.Add (vessel);
+			}
+
+			Debug.Log ("STEP3");
+			// Compile it into a single json packet
+			json buffer = new json();
+			buffer.Add ("state", GameState ());
+			buffer.Add ("celestials", celestial_buffer);
+			buffer.Add ("vessels", vessel_buffer);
+			Debug.Log ("STEP4");
+			client.send (buffer.dumps ());
+			Debug.Log ("STEP5");
+		}
+
+		public void Subscribe(MissionControlService client) 
+		{
+			if (!subscribed_clients.Contains(client)) {
+				subscribed_clients.Add (client);
 			}
 		}
 
+		public void Unsubscribe(MissionControlService client)
+		{
+			if (subscribed_clients.Contains (client)) {
+				subscribed_clients.Remove (client);
+			}
+		}
 
-		// Check if RemoteTech is active
-		// Remote tech is disabled by default for testing purposes.
-		public void CheckRemote() {
+		public json GameState() {
+			json buffer = new json ();
+			buffer.Add ("ut", Planetarium.GetUniversalTime());
+			//buffer.Add ("rotating", Planetarium.FrameIsRotating());
+			buffer.Add ("frame_angle", Planetarium.InverseRotAngle);
+			buffer.Add ("active_vessel", FlightGlobals.ActiveVessel.id.ToString());
+			return buffer;
+		}
+		public void UpdateClients() {
+			json state = GameState ();
+			json buffer = new json ();
+			buffer.Add ("state", state);
+			string msg = buffer.dumps ();
+
+			foreach (MissionControlService mcs in subscribed_clients) {
+				mcs.send (msg);
+			}
+
 			/*
 			if (RemoteTech.RTGlobals.coreList.ActiveCore != null) {
 				Debug.Log ("Remote connection:" + RemoteTech.RTGlobals.coreList.ActiveCore.InContact.ToString ());
@@ -102,6 +169,7 @@ namespace MissionControl  {
 			*/
 
 			// Check for new vessels..
+			/*
 			foreach (Vessel vessel in FlightGlobals.Vessels) {
 				if (!all_vessels.Contains (vessel)) {
 					all_vessels.Add (vessel);
@@ -114,7 +182,8 @@ namespace MissionControl  {
 				active_vessel = FlightGlobals.ActiveVessel;
 				server.SendAll("AV\t" + active_vessel.id.ToString ());
 			}
-
+			*/
+			/*
 			Vessel ActiveVessel = FlightGlobals.ActiveVessel;
 			double UT = Planetarium.GetUniversalTime ();
 			bool frame_rotating = Planetarium.FrameIsRotating ();
@@ -131,55 +200,56 @@ namespace MissionControl  {
 			buffer.Add ("ut", UT);
 			buffer.Add ("rotating", rotating);
 			buffer.Add ("frame_angle", frame_angle);
+			buffer.Add ("active_vessel", ActiveVessel.id.ToString());
+			*/
 
+			//Debug.Log ("Forward: " + active_vessel.GetTransform ().eulerAngles.ToString ());
+			//Debug.Log ("Forward: " + active_vessel.GetTransform ().eulerAngles.ToString ());
+			//Debug.Log ("Surface rotation: " + active_vessel.srfRelRotation.ToString ());
+			//Debug.Log ("Surface eotation: " + active_vessel.srfRelRotation.eulerAngles);
+			//Transform test = active_vessel.GetTransform ();
+			//Debug.Log ("Rotation1: " + active_vessel.GetTransform().eulerAngles);
+			//Debug.Log ("Rotation2: " + active_vessel.GetTransform().rotation.eulerAngles);
+			//Debug.Log ("Rotation3: " + active_vessel.srfRelRotation.eulerAngles);
 
-			server.SendAll (buffer.dumps());
-			server.SendAll (utils.getStateLine (ActiveVessel));
-		}
+			// REF: FAR
+			Vector3 tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.forward * Vector3.Dot(active_vessel.transform.forward, active_vessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
+			float AoA = Vector3.Dot(tmpVec.normalized, active_vessel.transform.forward);
+			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
+			if (float.IsNaN(AoA))
+				AoA = 0;
+			/*
+			tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.right * Vector3.Dot(active_vessel.transform.right, active_vessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
+			float yaw = Vector3.Dot(tmpVec.normalized, active_vessel.transform.right);
+			yaw = Mathf.Rad2Deg * Mathf.Asin(yaw);
+			if (float.IsNaN(yaw))
+				yaw = 0;
+			*/
 
+			float pitch = 0;
+			float yaw = 0;
+			float roll = 0;
 
-
-
-
-		public void ProcessIncoming(string data) {
-			Debug.Log ("Received message:" + data);
-			string[] requests = data.Split (';');
-			foreach (string request in requests) 
+			NavBall ball = FlightUIController.fetch.GetComponentInChildren<NavBall>();
+			if (ball)
 			{
-				if (!request.Contains (',')) {
-					Debug.Log ("Skip!");
-					continue;
-				}
-				Debug.Log ("Splitting");
-				string[] tok = request.Split (new string[] { "," }, 2, StringSplitOptions.None);
-				Debug.Log (tok.ToString ());
-				int socket = Convert.ToInt32 ( tok [0]);
-				string req = tok [1];
-				Debug.Log ("Derp");
-				if (req == "FULLSYNC") {
-					Debug.Log ("Client requested a full sync");
-					server.Send (socket, FullSync ());
-				}
-			}
-		}
+				Quaternion vesselRot = Quaternion.Inverse(ball.relativeGymbal);
 
-		public string FullSync() {
-			List<string> buffer = new List<string>();
-			foreach (CelestialBody celestial in FlightGlobals.Bodies) {
-				buffer.Add (utils.getCelestialState (celestial));
+				float heading = vesselRot.eulerAngles.y;
+				//vesselRot *= Quaternion.Euler(0, -heading, 0);
+				//heading = 360 - heading;
+				pitch = (vesselRot.eulerAngles.x > 180) ? (360 - vesselRot.eulerAngles.x) : -vesselRot.eulerAngles.x;
+				yaw = vesselRot.eulerAngles.y;
+				roll = (vesselRot.eulerAngles.z > 180) ? (360 - vesselRot.eulerAngles.z) : -vesselRot.eulerAngles.z;
 			}
 
-			foreach (Vessel vessel in FlightGlobals.Vessels) {
-				buffer.Add (utils.getStateLine (vessel));
-			}
+			Debug.Log ("AoA: " + AoA);
+			Debug.Log ("PCH: " + pitch);
+			Debug.Log ("YAW: " + yaw);
+			Debug.Log ("ROL: " + roll);
 
-			// This doesn't work
-			//active_vessel = FlightGlobals.ActiveVessel;
-			//buffer.Add ("AV\t" + active_vessel.id.ToString ());
-
-			buffer.Add ("{\"type\":\"fullsync_ok\"}");
-			Debug.Log ("SYNC MSG:" + buffer.ToString ());
-			return string.Join ("\n",buffer.ToArray ());
+			//server.SendAll (buffer.dumps());
+			//server.SendAll (utils.getStateLine (ActiveVessel));
 		}
 	}
 }
