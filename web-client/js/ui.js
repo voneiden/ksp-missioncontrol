@@ -180,20 +180,25 @@ function setup_workspace2()
 function run_test_environment()
 {
     // Create a test vessel
-    globals.vessels = {test_vessel: {
+    var vessel = {
                         name: "Test  Vessel",
+                        uid: "xxxx",
                         ref: "Kerbin",
                         position: Vector.create([800000, 0, 0]),
-                        velocity: Vector.create([0, 2400, 0]),
-                        t0: 0}
-                       };
+                        velocity: Vector.create([0, -2400, 1000]),
+                        state: "orbiting",
+                        t0: 0};
+    determine_orbit_constants(vessel);
+    
+    globals.vessels["xxxx"] = vessel;
+    globals.vessels.push(vessel);
                        
     // Set active vessel
-    globals.active_vessel = globals.vessels.test_vessel;
+    globals.active_vessel = vessel;
     
     // Setup clock
-    globals.UT = 0;
-    globals.UT_t = new Date().getTime() / 1000;
+    globals.ut = 0;
+    //globals.UT_t = new Date().getTime() / 1000;
     
     
     // Close main menu

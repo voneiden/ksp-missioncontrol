@@ -45,6 +45,7 @@ globals.celestials = {
   "radius":600000,
   "ref":"Sun",
   "rotation_angle":94.6047660319,
+  "rotation_t0": 0,
   "soi":84159286.4796,
   "velocity":Vector.create([-9253.36441785446, -759.736970861599, 0]),
   "t0":0,

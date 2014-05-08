@@ -75,6 +75,7 @@ function groundtrack_draw(canvas) {
     {
         var vessel = globals.vessels[i];
         if (vessel.ref != "Kerbin") { continue; }
+        console.log("Loading vessel: " + vessel.name);
         
         if (!groundtrack.vessels[vessel.uid])
         {
@@ -90,7 +91,8 @@ function groundtrack_draw(canvas) {
         
         render = groundtrack.vessels[vessel.uid];
         var LatLon = LatLonAtUT(vessel, globals.ut);
-        
+        console.log(LatLon);
+        update_trajectory(groundtrack, vessel, render); // TODO duplicate
         render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
         
         if (vessel.period) {
@@ -126,7 +128,7 @@ function update_trajectory(groundtrack, vessel, render) {
     
     for (var i=0; i<steps; i++) {
         var t = start + i*step_size;
-        
+        console.log("t", t);
         var LatLon = LatLonAtUT(vessel, t);
         
         // Check if passed longitude border 
@@ -138,7 +140,7 @@ function update_trajectory(groundtrack, vessel, render) {
                 var cross_lon = Math.PI;
             }
             else {
-                // The vessel has crossed west to east
+                // The vessel has crossed west to east // TODO doesn't work
                 var cross_lon = -Math.PI;
             }
             
@@ -237,7 +239,7 @@ function groundtrack_initialize(canvas)
         console.log("WOOT WOOT");
         //P.hilight_object = d[d_keys[0]];
         var vessel = globals.vessels[d[min]];
-        
+        // TODO velocity should be calculated unless KSP relays data for all active vessels.
         groundtrack.marker_hilight.visible = true;
         groundtrack.marker_hilight.position = groundtrack.vessels[d[min]].marker.position;
         groundtrack.marker_hilight.text.content = vessel.name + "\n";
