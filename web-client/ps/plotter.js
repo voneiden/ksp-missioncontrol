@@ -49,7 +49,7 @@ function calculate_rotation_matrix(rotation_vector)
 }
 
 function create_celestial_circle(color)
-{
+{ // TODO Error here, no scope defined
     var circle = new paper.Path.Circle(new Point(0,0), 1);
     circle.fillColor = color;
     return circle;
@@ -61,61 +61,100 @@ function create_celestial_circle(color)
 */ 
 function plotter_initialize(canvas) {
     // Setup the environment
-    P = new Object();
-    plotter_data[canvas] = P;
+    plotter = new Object();
+    plotter_data[canvas] = plotter;
 
-    P.paper = new paper.PaperScope();
-    P.paper.setup(canvas);
-    paper = P.paper;
+    plotter.scope = new paper.PaperScope();
+    plotter.scope.setup(canvas);
+    var scope = plotter.scope;
     
+    plotter_setup(canvas);
+
+}
+
+function plotter_setup(canvas, ref) {
+    ref = ref || "Sun";
     
+    var plotter = plotter_data[canvas];
+    var scope = plotter.scope;
+    
+    // Gather all visible objects
+    var visible_objects = new Array();
+    var keys = Object.keys(globals.celestials);
+    for (var i=0; i < keys.length; i++) {
+        var celestial = globals.celestials[keys[i]];
+        if (celestial.ref == ref && visible_objects.indexOf(celestial) == -1) {
+            console.log("Add ref", celestial.name);
+            visible_objects.push(celestial);
+        }
+        else {
+            console.log("Skip ref");
+        }
+    }
+    
+    keys = Object.keys(globals.vessels);
+    for (var i=0; i < keys.length; i++) {
+        var vessel = globals.vessels[keys[i]];
+        if (vessel.ref == ref && visible_objects.indexOf(vessel) == -1) {
+            console.log("Add ref", vessel.name);
+            visible_objects.push(vessel);
+        }
+        else {
+            console.log("Skip ref");
+        }
+    }    
     // Default camera setup
-    P.camera_distance = globals.celestials.Eeloo.position.modulus()
-    P.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+    plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
+    plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+    
     // Create paths for all celestials
     // Todo simplify?
-    P.C = new Object(); // Celestial dots
-    P.T = new Object(); // Trajectory paths
-    P.C.Sun = new paper.Path.Circle(paper.view.center, 7);
-    P.C.Sun.fillColor = "yellow"
-    P.C.Sun.visible = false;
+    plotter.C = new Object(); // Celestial dots
+    plotter.T = new Object(); // Trajectory paths
+    plotter.C.Sun = new scope.Path.Circle(scope.view.center, 7);
+    plotter.C.Sun.fillColor = "yellow"
+    plotter.C.Sun.visible = false;
     
-    create_plot_celestial(P, "Sun",    7, "yellow");
-    create_plot_celestial(P, "Moho",   2, "red");
-    create_plot_celestial(P, "Eve",    4, "purple");
-    create_plot_celestial(P, "Kerbin", 3, "SpringGreen");
-    create_plot_celestial(P, "Duna",   3, "orange");
-    create_plot_celestial(P, "Dres",   2, "grey");
-    create_plot_celestial(P, "Jool",   5, "lime");
-    create_plot_celestial(P, "Eeloo",  3, "cyan");
+    create_plot_celestial(plotter, "Sun",    7, "yellow");
+    create_plot_celestial(plotter, "Moho",   2, "red");
+    create_plot_celestial(plotter, "Eve",    4, "purple");
+    create_plot_celestial(plotter, "Kerbin", 3, "SpringGreen");
+    create_plot_celestial(plotter, "Duna",   3, "orange");
+    create_plot_celestial(plotter, "Dres",   2, "grey");
+    create_plot_celestial(plotter, "Jool",   5, "lime");
+    create_plot_celestial(plotter, "Eeloo",  3, "cyan");
     
-    P.marker_hilight = create_plot_marker("yellow");
-    P.marker_focus = create_plot_marker("cyan");
-    P.marker_select = create_plot_marker("red");
+    plotter.marker_hilight = create_plot_marker(plotter, "yellow");
+    plotter.marker_focus = create_plot_marker(plotter, "cyan");
+    plotter.marker_select = create_plot_marker(plotter, "red");
     
     var active_mode = null;
-    paper.view.draw();
+    scope.view.draw();
 }
 /* Creates new celestial planet and trajectory */
-function create_plot_celestial(P, name, size, color)
-{
-    P.C[name] = new paper.Path.Circle(paper.view.center, size);
-    P.C[name].fillColor = color;
-    P.C[name].visible = false;
-    P.T[name] = new paper.Path({closed: true, visible: false, strokeColor: color});
+function create_plot_celestial(plotter, name, size, color)
+{ 
+    var scope = plotter.scope;
+    
+    plotter.C[name] = new scope.Path.Circle(scope.view.center, size);
+    plotter.C[name].fillColor = color;
+    plotter.C[name].visible = false;
+    plotter.T[name] = new scope.Path({closed: true, visible: false, strokeColor: color});
     for (var i = 0; i < 10; i++) {
-        P.T[name].add(new paper.Point(0, 0));
+        plotter.T[name].add(new scope.Point(0, 0));
     }
 }
 /* Creates a new marker with text */
-function create_plot_marker(color)
-{
-    var marker = new paper.Group({visible: false});
-    marker.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
-    marker.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
-    marker.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
-    marker.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
-    var text = new paper.PointText(new paper.Point(20, 0));
+function create_plot_marker(plotter, color)
+{   
+    var scope = plotter.scope;
+    
+    var marker = new scope.Group({visible: false});
+    marker.addChild(new scope.Path.Line(new scope.Point(0, -10), new scope.Point(0, -5)));
+    marker.addChild(new scope.Path.Line(new scope.Point(0, 10),  new scope.Point(0, 5)));
+    marker.addChild(new scope.Path.Line(new scope.Point(-10, 0), new scope.Point(-5, 0)));
+    marker.addChild(new scope.Path.Line(new scope.Point(10, 0),  new scope.Point(5, 0)));
+    var text = new scope.PointText(new scope.Point(20, 0));
     marker.addChild(text);
     marker.text = text;
     marker.strokeColor = "lime";
@@ -129,10 +168,10 @@ function create_plot_marker(color)
 function plotter_resize(canvas, width, height)
 {
     P = plotter_data[canvas];
-    paper = P.paper;
-    paper.view.setViewSize(width, height);
-    if (paper.view.center.x > paper.view.center.y) { P.view_size = paper.view.center.y; }
-    else { P.view_size = paper.view.center.x; }
+    var scope = P.scope;
+    scope.view.setViewSize(width, height);
+    if (scope.view.center.x > scope.view.center.y) { P.view_size = scope.view.center.y; }
+    else { P.view_size = scope.view.center.x; }
 }
 
 /*
@@ -141,7 +180,7 @@ function plotter_resize(canvas, width, height)
 function plotter_set_mode(canvas, mode)
 {
     P = plotter_data[canvas];
-    paper = P.paper;
+    var scope = P.scope;
     
     // Disable all celestial dots
     var keys = Object.keys(P.C)
@@ -193,7 +232,7 @@ function plotter_set_mode(canvas, mode)
 */
 function plotter_draw(canvas) {
     P = plotter_data[canvas];
-    paper = P.paper;
+    var scope = P.scope;
     
     // Todo calculate on demand
     var rot = calculate_rotation_matrix(P.camera_rotation)
@@ -219,7 +258,7 @@ function plotter_draw(canvas) {
             console.log(render_position);
             */
             distances[cam_pos.distanceFrom(render_position)] = obj; // I know I'm doing a bit wrong here but it works for now
-            obj.position = new paper.Point(render_position.e(1) + paper.view.center.x, render_position.e(2) + paper.view.center.y);
+            obj.position = new scope.Point(render_position.e(1) + scope.view.center.x, render_position.e(2) + scope.view.center.y);
         }
     }
     
@@ -237,7 +276,7 @@ function plotter_draw(canvas) {
                 //console.log(globals.celestials[keys[i]].trajectory);
                 var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
                 //console.log("OK");
-                obj.segments[j].point = new paper.Point(render_segment_position.e(1) + paper.view.center.x, render_segment_position.e(2) + paper.view.center.y);
+                obj.segments[j].point = new scope.Point(render_segment_position.e(1) + scope.view.center.x, render_segment_position.e(2) + scope.view.center.y);
             }
             obj.smooth();
         }
@@ -247,15 +286,15 @@ function plotter_draw(canvas) {
     keys.sort(function(a,b){return a-b});
     for (var i = 0; i < keys.length; i++)
     {
-        paper.project.activeLayer.insertChild(i, distances[keys[i]]);
+        scope.project.activeLayer.insertChild(i, distances[keys[i]]);
     }
     
     var keys = Object.keys(P.T)
     for (var i = 0; i < keys.length; i++)
     {
-        paper.project.activeLayer.insertChild(0, P.T[keys[i]]);
+        scope.project.activeLayer.insertChild(0, P.T[keys[i]]);
     }
-    paper.view.draw();
+    scope.view.draw();
 }
 // event.button 0 left mouse
 // event.button 2 right mouse
@@ -310,13 +349,13 @@ function onPlotterMouseMove(event)
     //console.log("Plotter click");
     canvas = this.id;
     P = plotter_data[canvas];
-    paper = P.paper;
+    var scope = P.scope;
     
     var keys = Object.keys(P.C);
     var d = new Object(); // Distance object
-    var click_x = event.offsetX - P.paper.view.center.x;
-    var click_y = event.offsetY - P.paper.view.center.y;
-    var click_position = new paper.Point(click_x, click_y);
+    var click_x = event.offsetX - P.scope.view.center.x;
+    var click_y = event.offsetY - P.scope.view.center.y;
+    var click_position = new scope.Point(click_x, click_y);
     //console.log(click_position);
     var rot = calculate_rotation_matrix(P.camera_rotation) // Todo this needs not to be calculated all the time
     
@@ -327,7 +366,7 @@ function onPlotterMouseMove(event)
             var ratio = (P.view_size / P.camera_distance);
             var render_position = P.C[keys[i]].render_position; // Precalculated by plot draw
             //rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
-            render_position = new paper.Point(render_position.e(1), render_position.e(2))
+            render_position = new scope.Point(render_position.e(1), render_position.e(2))
             //console.log(keys[i] + ": " + render_position);
             d[click_position.getDistance(render_position)] = keys[i];
         }

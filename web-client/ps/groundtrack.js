@@ -35,9 +35,9 @@ function get_groundtrack()
  */
 function groundtrack_resize(canvas, width, height) {
     console.log("Groundtrack resize" + canvas);
-    groundtrack = groundtrack_data[canvas];
-    paper = groundtrack.paper;
-    paper.view.setViewSize(width, height);
+    var groundtrack = groundtrack_data[canvas];
+    var scope = groundtrack.scope;
+    scope.view.setViewSize(width, height);
     
     
     
@@ -61,13 +61,13 @@ function groundtrack_resize(canvas, width, height) {
     //console.log("Map height   : " + groundtrack.map.height);
 	groundtrack.map.scale(new_scale_factor);
     groundtrack.map_scale = scale_factor;
-    groundtrack.map.position = paper.view.center;
+    groundtrack.map.position = scope.view.center;
 }
 
 function groundtrack_draw(canvas) {
     console.log("Groundtrack draw");
     var groundtrack = groundtrack_data[canvas];
-    var paper = groundtrack.paper;
+    var scope = groundtrack.scope;
     
     // TODO use Object.keys()?
     
@@ -83,7 +83,7 @@ function groundtrack_draw(canvas) {
             groundtrack.vessels[vessel.uid] = render;
             
             update_trajectory(groundtrack, vessel, render); // Create trajectory
-            render.marker = new paper.Path.Circle(paper.view.center, 5)
+            render.marker = new scope.Path.Circle(scope.view.center, 5)
             render.marker.fillColor = "yellow";
             
             
@@ -102,14 +102,14 @@ function groundtrack_draw(canvas) {
         
     }
     
-    paper.view.draw();
+    scope.view.draw();
 }
 function update_trajectory(groundtrack, vessel, render) {
     if (render.trajectory) {
         render.trajectory.removeChildren();
     }
     else {
-        render.trajectory = new groundtrack.paper.Group();
+        render.trajectory = new groundtrack.scope.Group();
     }
     
     
@@ -122,7 +122,7 @@ function update_trajectory(groundtrack, vessel, render) {
     
     var last_lon = NaN;
     var last_lat = NaN
-    var current_path = new groundtrack.paper.Path();
+    var current_path = new groundtrack.scope.Path();
     current_path.strokeColor = "red";
     render.trajectory.addChild(current_path);
     
@@ -152,7 +152,7 @@ function update_trajectory(groundtrack, vessel, render) {
             current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
             
             // Start a new path
-            current_path = new groundtrack.paper.Path();
+            current_path = new groundtrack.scope.Path();
             current_path.strokeColor = "red";
             render.trajectory.addChild(current_path);
             
@@ -168,9 +168,9 @@ function update_trajectory(groundtrack, vessel, render) {
     
 }
 function LatLonToPaperPoint(lat, lon, groundtrack) {
-    render_lat = lat / Math.PI * groundtrack.map.width * groundtrack.map_scale;
+    render_lat = lat / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5; // TODO: Check if this is working
     render_lon = lon / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5;
-    return new paper.Point(groundtrack.paper.view.center.x + render_lon, groundtrack.paper.view.center.y - render_lat)
+    return new groundtrack.scope.Point(groundtrack.scope.view.center.x + render_lon, groundtrack.scope.view.center.y - render_lat)
 }
 function groundtrack_initialize(canvas)
 {
@@ -179,25 +179,25 @@ function groundtrack_initialize(canvas)
     groundtrack_data[canvas] = groundtrack;
     groundtrack.zoom = 1;
     groundtrack.vessels = new Object();
-	groundtrack.paper = new paper.PaperScope();
-	paper = groundtrack.paper;
-	paper.setup(canvas);
+	groundtrack.scope = new paper.PaperScope();
+	var scope = groundtrack.scope;
+	scope.setup(canvas);
 	
 	
-	groundtrack.map = new paper.Raster("img/kerbin.png");
+	groundtrack.map = new scope.Raster("img/kerbin.png");
     groundtrack.map.onLoad = function () {
         console.log("map loaded");
         console.log(groundtrack);
-        groundtrack_resize(canvas, paper.view.size.width, paper.view.size.height);
+        groundtrack_resize(canvas, scope.view.size.width, scope.view.size.height);
         groundtrack_draw(canvas);
     }
-    groundtrack.map.position = paper.view.center;
+    groundtrack.map.position = scope.view.center;
     groundtrack.map_scale = 1.0
     groundtrack_map = groundtrack.map;
     
-    var base_layer = paper.project.activeLayer;
-    var marker_layer = new paper.Layer();
-    groundtrack.marker_hilight = create_target_marker(paper, "lime");
+    var base_layer = scope.project.activeLayer;
+    var marker_layer = new scope.Layer();
+    groundtrack.marker_hilight = create_target_marker(scope, "lime");
     base_layer.activate();
     
     console.log(groundtrack.map.width);
@@ -212,13 +212,14 @@ function groundtrack_initialize(canvas)
  function onGroundtrackMouseMove(event)
 {
     //console.log("Plotter click");
-    canvas = this.id;
-    groundtrack = groundtrack_data[canvas];
-    paper = groundtrack.paper;
+    var canvas = this.id;
+    var groundtrack = groundtrack_data[canvas];
+    var scope = groundtrack.scope;
     
     var keys = Object.keys(groundtrack.vessels);
     var d = new Object(); // Distance object
-    var mouse_position = new paper.Point(event.offsetX, event.offsetY);
+    console.log(scope);
+    var mouse_position = new scope.Point(event.offsetX, event.offsetY);
     
     for (var i = 0; i < keys.length; i++) // Loop through visible objects
     {
@@ -258,14 +259,14 @@ function groundtrack_initialize(canvas)
     console.log("Closest", d[d_keys[0]]);
     
 }
-function create_target_marker(paper, color)
+function create_target_marker(scope, color)
 {
-    var marker = new paper.Group({visible: false});
-    marker.addChild(new paper.Path.Line(new paper.Point(0, -10), new paper.Point(0, -5)));
-    marker.addChild(new paper.Path.Line(new paper.Point(0, 10),  new paper.Point(0, 5)));
-    marker.addChild(new paper.Path.Line(new paper.Point(-10, 0), new paper.Point(-5, 0)));
-    marker.addChild(new paper.Path.Line(new paper.Point(10, 0),  new paper.Point(5, 0)));
-    var text = new paper.PointText(new paper.Point(20, 0));
+    var marker = new scope.Group({visible: false});
+    marker.addChild(new scope.Path.Line(new scope.Point(0, -10), new scope.Point(0, -5)));
+    marker.addChild(new scope.Path.Line(new scope.Point(0, 10),  new scope.Point(0, 5)));
+    marker.addChild(new scope.Path.Line(new scope.Point(-10, 0), new scope.Point(-5, 0)));
+    marker.addChild(new scope.Path.Line(new scope.Point(10, 0),  new scope.Point(5, 0)));
+    var text = new scope.PointText(new scope.Point(20, 0));
     marker.addChild(text);
     marker.text = text;
     marker.strokeColor = "lime";

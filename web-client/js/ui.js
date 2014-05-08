@@ -20,6 +20,7 @@ function get_plotter()
     var id = "plotter-" + (globals.plotters.length + 1);
     $('<canvas id="' + id + '">').appendTo("#hidden");
     plotter = $("#"+id);
+    
     plotter_initialize(id);         // TODO: use object
     plotter_set_mode(id, "solar");  // TODO: use object
     plotter.mousedown(onPlotterMouseDown);
@@ -185,7 +186,7 @@ function run_test_environment()
                         uid: "xxxx",
                         ref: "Kerbin",
                         position: Vector.create([800000, 0, 0]),
-                        velocity: Vector.create([0, -2400, 1000]),
+                        velocity: Vector.create([0, -2200, 1000]),
                         state: "orbiting",
                         t0: 0};
     determine_orbit_constants(vessel);
