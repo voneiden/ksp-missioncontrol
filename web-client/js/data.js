@@ -17,6 +17,10 @@ globals.plotters = new Array();
 globals.attitudes = new Array();
 globals.groundtracks = new Array();
 
+globals.ut = 0;
+globals.active_vessel = false;
+
+
 globals.trackers = new Array();
 globals.vessels = new Array();
 // TODO this default data is invalid due to frame rotation?
@@ -44,7 +48,7 @@ globals.celestials = {
   "position":Vector.create([1112854808.61815, -13554232149.5411, 0]),
   "radius":600000,
   "ref":"Sun",
-  "rotation_angle":94.6047660319,
+  "rotation_angle":90,
   "rotation_t0": 0,
   "soi":84159286.4796,
   "velocity":Vector.create([-9253.36441785446, -759.736970861599, 0]),

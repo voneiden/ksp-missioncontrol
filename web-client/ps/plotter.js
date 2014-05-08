@@ -73,10 +73,18 @@ function plotter_initialize(canvas) {
 }
 
 function plotter_setup(canvas, ref) {
-    ref = ref || "Sun";
+    if (!ref) {
+        if (globals.active_vessel) {
+            ref = globals.active_vessel.ref;
+        }
+        else {
+            ref = "Sun";
+        }
+    }
     
     var plotter = plotter_data[canvas];
     var scope = plotter.scope;
+    plotter.ref = ref;
     
     // Gather all visible objects
     var visible_objects = new Array();
@@ -104,30 +112,56 @@ function plotter_setup(canvas, ref) {
         }
     }    
     // Default camera setup
-    plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
-    plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-    
-    // Create paths for all celestials
-    // Todo simplify?
-    plotter.C = new Object(); // Celestial dots
-    plotter.T = new Object(); // Trajectory paths
-    plotter.C.Sun = new scope.Path.Circle(scope.view.center, 7);
-    plotter.C.Sun.fillColor = "yellow"
-    plotter.C.Sun.visible = false;
-    
-    create_plot_celestial(plotter, "Sun",    7, "yellow");
-    create_plot_celestial(plotter, "Moho",   2, "red");
-    create_plot_celestial(plotter, "Eve",    4, "purple");
-    create_plot_celestial(plotter, "Kerbin", 3, "SpringGreen");
-    create_plot_celestial(plotter, "Duna",   3, "orange");
-    create_plot_celestial(plotter, "Dres",   2, "grey");
-    create_plot_celestial(plotter, "Jool",   5, "lime");
-    create_plot_celestial(plotter, "Eeloo",  3, "cyan");
-    
+    if (ref == "Sun") {
+        plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
+        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+        
+        // Create paths for all celestials
+        // Todo simplify?
+        plotter.C = new Object(); // Celestial dots
+        plotter.T = new Object(); // Trajectory paths
+        plotter.C.Sun = new scope.Path.Circle(scope.view.center, 7);
+        plotter.C.Sun.fillColor = "yellow"
+        plotter.C.Sun.visible = false;
+        
+        create_plot_celestial(plotter, "Sun",    7, "yellow");
+        create_plot_celestial(plotter, "Moho",   2, "red");
+        create_plot_celestial(plotter, "Eve",    4, "purple");
+        create_plot_celestial(plotter, "Kerbin", 3, "SpringGreen");
+        create_plot_celestial(plotter, "Duna",   3, "orange");
+        create_plot_celestial(plotter, "Dres",   2, "grey");
+        create_plot_celestial(plotter, "Jool",   5, "lime");
+        create_plot_celestial(plotter, "Eeloo",  3, "cyan");
+    }
+    else if (ref == "Kerbin") {
+        console.log("KERBIN MODE");
+        plotter.camera_distance = globals.celestials.Minmus.position.modulus()
+        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+        
+        // Create paths for all celestials
+        // Todo simplify?
+        plotter.C = new Object(); // Celestial dots
+        plotter.T = new Object(); // Trajectory paths
+        plotter.C.Kerbin = new scope.Path.Circle(scope.view.center, 7);
+        plotter.C.Kerbin.fillColor = "cyan"
+        plotter.C.Kerbin.visible = true;
+        
+        //create_plot_celestial(plotter, "Kerbin",    7, "cyan");
+        create_plot_celestial(plotter, "Mun",   4, "grey");
+        create_plot_celestial(plotter, "Minmus",    3, "purple");
+        
+        for (var i=0; i<visible_objects.length; i++) {
+            var object = visible_objects[i];
+            if (object.name == "Mun" || object.name == "Minmus") { continue; }
+            else {
+                create_plot_celestial(plotter, object.uid, 2, "lime");
+            }
+        }
+    }
     plotter.marker_hilight = create_plot_marker(plotter, "yellow");
     plotter.marker_focus = create_plot_marker(plotter, "cyan");
     plotter.marker_select = create_plot_marker(plotter, "red");
-    
+
     var active_mode = null;
     scope.view.draw();
 }
@@ -138,8 +172,8 @@ function create_plot_celestial(plotter, name, size, color)
     
     plotter.C[name] = new scope.Path.Circle(scope.view.center, size);
     plotter.C[name].fillColor = color;
-    plotter.C[name].visible = false;
-    plotter.T[name] = new scope.Path({closed: true, visible: false, strokeColor: color});
+    plotter.C[name].visible = true;
+    plotter.T[name] = new scope.Path({closed: true, visible: true, strokeColor: color});
     for (var i = 0; i < 10; i++) {
         plotter.T[name].add(new scope.Point(0, 0));
     }
@@ -181,7 +215,7 @@ function plotter_set_mode(canvas, mode)
 {
     P = plotter_data[canvas];
     var scope = P.scope;
-    
+    return;
     // Disable all celestial dots
     var keys = Object.keys(P.C)
     for (var i = 0; i < keys.length; i++)
@@ -248,7 +282,20 @@ function plotter_draw(canvas) {
         if (obj.visible == true)
         {
             var ratio = (P.view_size / P.camera_distance);
-            var render_position = rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
+            if (P.ref == keys[i]) {
+                var world_position = Vector.create([0, 0, 0]);
+            }
+            else {
+                if (globals.celestials[keys[i]]) {
+                    var world_position = globals.celestials[keys[i]].position; // TODO position at time?
+                }
+                else {
+                    console.log("SEARCH",keys[i]);
+                    var world_position = globals.vessels[keys[i]].position; // TODO this is a hack
+                }
+            }
+            
+            var render_position = rot.multiply(world_position.multiply(ratio)); 
             obj.render_position = render_position; // Save this 
             /*
             console.log("Rendering "+keys[i]+" to ");
@@ -274,7 +321,15 @@ function plotter_draw(canvas) {
  
                 //console.log(keys[i]);
                 //console.log(globals.celestials[keys[i]].trajectory);
-                var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
+                if (globals.celestials[keys[i]]) {
+                    var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
+                }
+                else {
+                    console.log("SEARCH",keys[i]);
+                    var render_segment_position = rot.multiply(globals.vessels[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
+                }
+                    
+ 
                 //console.log("OK");
                 obj.segments[j].point = new scope.Point(render_segment_position.e(1) + scope.view.center.x, render_segment_position.e(2) + scope.view.center.y);
             }
@@ -337,7 +392,7 @@ function onPlotterRightMouseDrag(canvas, delta_y) {
 function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
     var canvas = this.id;
     P = plotter_data[canvas]
-    P.camera_distance = P.camera_distance - delta_y * 10000000000;
+    P.camera_distance = P.camera_distance - delta_y * 0.1*P.camera_distance;
     plotter_draw(canvas);
 }
 
