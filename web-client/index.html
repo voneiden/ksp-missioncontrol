@@ -1,75 +1,74 @@
 <html>
- <head>
-  <meta charset="utf-8"> 
-  <link rel="stylesheet" type="text/css" href="mc.css">
-  <link rel="stylesheet" type="text/css" href="theme-terminal.css">
-  <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
-  <script type="text/javascript" src="js/jquery.min.js"></script>
-  <script type="text/javascript" src="js/jquery.mousewheel.js"></script>
-  <script type="text/javascript" src="js/paper-full.min.js"></script>
-  <script type="text/javascript" src="js/sylvester.js"></script>
-  <script type="text/javascript" src="js/brent.js"></script>
-  <script type="text/javascript" src="js/event.js"></script>
-  <script type="text/javascript" src="js/data.js"></script>
-  <script type="text/javascript" src="js/physics.js"></script>
-  <script type="text/javascript" src="ps/plotter.js"></script>
-  <script type="text/javascript" src="ps/attitude.js"></script>
-  <script type="text/javascript" src="ps/groundtrack.js"></script>
-  <script type="text/javascript" src="js/ui.js"></script>
-  <script type="text/javascript" src="js/net.js"></script>
-  <script type="text/javascript" src="js/lambert2.js"></script>
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="mc.css">
+    <link rel="stylesheet" type="text/css" href="theme-terminal.css">
+    <link href='http://fonts.googleapis.com/css?family=Ubuntu+Mono' rel='stylesheet' type='text/css'>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery.mousewheel.js"></script>
+    <script type="text/javascript" src="js/paper-full.min.js"></script>
+    <script type="text/javascript" src="js/sylvester.js"></script>
+    <script type="text/javascript" src="js/brent.js"></script>
+    <script type="text/javascript" src="js/event.js"></script>
+    <script type="text/javascript" src="js/data.js"></script>
+    <script type="text/javascript" src="js/physics.js"></script>
+    <script type="text/javascript" src="ps/plotter.js"></script>
+    <script type="text/javascript" src="ps/attitude.js"></script>
+    <script type="text/javascript" src="ps/groundtrack.js"></script>
+    <script type="text/javascript" src="js/ui.js"></script>
+    <script type="text/javascript" src="js/net.js"></script>
+    <script type="text/javascript" src="js/lambert2.js"></script>
 
- </head>
- <body>
-  <div id="menu">
-   <ul id="ulmenu">
-    <li id="menu-main">MAIN</li>
-   </ul>
-  </div>
-  <div id="display">
-   <div id="display-menu">
-    <div id="display-menu-top">
-     <h1>KSP MISSION CONTROL</h1>
-     <p>Welcome to KSP Mission Control v0.1 (131020) </p>
-     <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
-     <p>OR</p>
-     <p><input type="button" value="LOCALHOST" onclick="ws_connect('127.0.0.1', '80')"><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
+</head>
+<body>
+<div id="menu">
+    <ul id="ulmenu">
+        <li id="menu-main">MAIN</li>
+    </ul>
+</div>
+<div id="display">
+    <div id="display-menu">
+        <div id="display-menu-top">
+            <h1>KSP MISSION CONTROL</h1>
+            <p>Welcome to KSP Mission Control v0.1 (131020) </p>
+            <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
+            <p>OR</p>
+            <p><input type="button" value="LOCALHOST" onclick="ws_connect('127.0.0.1', '80')"><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
+        </div>
+        <div id="display-menu-bottom">
+        </div>
     </div>
-    <div id="display-menu-bottom">
-    </div>
-  </div>
-  <div id="hidden" style="display:none;">
-   <!-- this area is hidden by default, add all by default invisible, dynamic location elements here-->
-   <div id="workspace1">
-    <div id="workspace1-top">
-     <div id="workspace1-top-left"></div>
-     <div id="workspace1-top-right"></div>
-    </div>
-    <div id="workspace1-bottom"></div>
-   </div>
-   
-   <div id="workspace2">
-    <div id="workspace2-top">
-     <div id="workspace2-top-left"></div>
-     <div id="workspace2-top-right"></div>
-    </div>
-    <div id="workspace2-bottom">
-     <div id="workspace2-bottom-left"></div>
-     <div id="workspace2-bottom-right"></div>
-    </div>
-   </div>
-  
-   <div id="view1" class="view"></div>
-   <div id="view2" class="view"></div>
-   <div id="view3" class="view"></div>
-   <div id="view4" class="view"></div>
-  
-   <li id="menu-workspace1" onclick="setup_workspace1();">WORKSPACE 1</li>
-   <li id="menu-workspace2" onclick="setup_workspace2();">WORKSPACE 2</li>
-   
-   <img id="map-kerbin" src="img/kerbin.png">
-  </div>
-   
+    <div id="hidden" style="display:none;">
+        <!-- this area is hidden by default, add all by default invisible, dynamic location elements here-->
+        <div id="workspace1">
+            <div id="workspace1-top">
+                <div id="workspace1-top-left"></div>
+                <div id="workspace1-top-right"></div>
+            </div>
+            <div id="workspace1-bottom"></div>
+        </div>
 
- </body>
+        <div id="workspace2">
+            <div id="workspace2-top">
+                <div id="workspace2-top-left"></div>
+                <div id="workspace2-top-right"></div>
+            </div>
+            <div id="workspace2-bottom">
+                <div id="workspace2-bottom-left"></div>
+                <div id="workspace2-bottom-right"></div>
+            </div>
+        </div>
+
+        <div id="view1" class="view"></div>
+        <div id="view2" class="view"></div>
+        <div id="view3" class="view"></div>
+        <div id="view4" class="view"></div>
+
+        <li id="menu-workspace1" onclick="setup_workspace1();">WORKSPACE 1</li>
+        <li id="menu-workspace2" onclick="setup_workspace2();">WORKSPACE 2</li>
+
+        <img id="map-kerbin" src="img/kerbin.png">
+    </div>
+</div>
+</body>
 </html>
