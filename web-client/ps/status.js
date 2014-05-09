@@ -54,13 +54,52 @@ function get_status() {
 function status_update(id){
     console.log("Status update:", id)
     var root = $("#"+id);
+    var status = globals.status[id];
     var launch = root.children("div[id$=launch]");
 
+    // Set up default status mode
+    if (!status.mode) {
+        status.mode = 0;
+        launch.hide(0);
+    }
     // If we are in prelaunch or suborbital, display launch window
-    // TODO IF
-    launch.show();
+    if (globals.active_vessel) {
 
-    // If prelaunch, hide orbital information
-    var launch_orbit = launch.children(".status-launch-current");
-    launch_orbit.hide(0);
+        var state = globals.active_vessel.state;
+        if (state == "suborbital" || state == "flying" || state == "prelaunch"  || state == "landed") {
+            if (status.mode != 1) {
+                launch.show(0);
+                status.mode = 1;
+            }
+        }
+        else {
+            console.log("UNKNOWN STATE");
+            console.log(globals.active_vessel.state);
+        }
+        var LatLon = LatLonAtUT(globals.active_vessel, globals.ut);
+        var lat = Math.round(rad2deg(LatLon[0]) * 100) / 100;
+        var lon = Math.round(rad2deg(LatLon[1]) * 100) / 100;
+        var alt = Math.round(globals.active_vessel.alt) + " m";
+        var inc = Math.round(globals.active_vessel.elements[2] * 10) / 10;
+        var alt_apo = Math.round(globals.active_vessel.alt_apo) + " m";
+        var srf_v = Math.round(globals.active_vessel.srf_v * 10) / 10 + " m/s";
+        var pressure_d = Math.round(0.5 * globals.active_vessel.pressure_d * Math.pow(globals.active_vessel.srf_v, 2) * 10) / 10;
+
+
+        launch.find(".status-av-lon").text(lon); // TODO should the lon be calculated?
+        launch.find(".status-av-lat").text(lat);
+        launch.find(".status-av-alt").text(alt);
+        launch.find(".status-av-inc").text(inc);
+        launch.find(".status-av-apo").text(alt_apo);
+        launch.find(".status-av-v").text(srf_v);
+        launch.find(".status-av-dp").text(pressure_d);
+
+        console.log("Check");
+        // If prelaunch, hide orbital information
+        //var launch_orbit = launch.children(".status-launch-current");
+        //launch_orbit.hide(0);
+    }
+    else {
+
+    }
 }

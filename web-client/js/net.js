@@ -25,10 +25,18 @@ function ws_receive(event)
     
     if (data.state){
         console.log("UPDATE");
-        //console.log(data.frame_angle);
+        console.log(data);
+        if (data.state.active_vessel) {
+            globals.active_vessel = globals.vessels[data.state.active_vessel];
+        }
+        else {
+            globals.active_vessel = false;
+        }
         globals.frame_angle = data.state.frame_angle;
         globals.frame_rotrix = rotZ(-globals.frame_angle);
         globals.ut = data.state.ut;
+
+        refreshState();
     }
 
     if (data.celestials) {

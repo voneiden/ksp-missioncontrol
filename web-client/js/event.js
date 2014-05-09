@@ -71,6 +71,10 @@ function onResize()
             groundtrack_draw(groundtrack.attr("id"));                       
         }
     }
+    refreshState();
+}
+
+function refreshState() {
     for (var i = globals.status.length; i>0; i--)
     {
         var status = globals.status[i-1];

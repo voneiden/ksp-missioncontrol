@@ -185,9 +185,9 @@ function run_test_environment()
                         name: "Test  Vessel",
                         uid: "xxxx",
                         ref: "Kerbin",
-                        position: Vector.create([800000, 0, 0]),
+                        position: Vector.create([800000, 800000, 0]),
                         velocity: Vector.create([0, -1200, 1000]),
-                        state: "orbiting",
+                        state: "suborbital",
                         t0: 0};
     determine_orbit_constants(vessel);
     

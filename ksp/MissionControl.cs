@@ -141,6 +141,11 @@ namespace MissionControl  {
 			json state = GameState ();
 			json buffer = new json ();
 			buffer.Add ("state", state);
+
+			List<json> vessel_buffer = new List<json> ();
+			vessel_buffer.Add (utilities.getVesselState (FlightGlobals.ActiveVessel));
+			buffer.Add ("vessels", vessel_buffer);
+
 			string msg = buffer.dumps ();
 
 			foreach (MissionControlService mcs in subscribed_clients) {

@@ -141,6 +141,9 @@ namespace MissionControl  {
 			buffer.Add ("alt_srf", vessel.heightFromSurface); // # 20
 			buffer.Add ("alt_ter", vessel.heightFromTerrain); // # 21
 
+
+			buffer.Add ("alt_per", orbit.PeA);
+			buffer.Add ("alt_apo", orbit.ApA);
 			//buffer.Add (vessel.acceleration.magnitude.ToString ());
 			//buffer.Add (vessel.angularMomentum.magnitude.ToString ());
 			//buffer.Add (vessel.angularVelocity.magnitude.ToString ());
