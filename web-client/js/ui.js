@@ -96,7 +96,7 @@ function close_mainmenu()
     
     // Fill views and enable workspace 1
     get_plotter().appendTo("#view1");
-    get_plotter().appendTo("#view2");
+    get_status().appendTo("#view2");
     get_groundtrack().appendTo("#view3");
     get_plotter().appendTo("#view4");
     setup_workspace1();

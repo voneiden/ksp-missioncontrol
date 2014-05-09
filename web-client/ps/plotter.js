@@ -61,7 +61,7 @@ function create_celestial_circle(color)
 */ 
 function plotter_initialize(canvas) {
     // Setup the environment
-    plotter = new Object();
+    var plotter = new Object();
     plotter_data[canvas] = plotter;
 
     plotter.scope = new paper.PaperScope();
@@ -328,7 +328,7 @@ function plotter_draw(canvas) {
                     console.log("SEARCH",keys[i]);
                     var render_segment_position = rot.multiply(globals.vessels[keys[i]].trajectory[j].multiply(P.view_size / P.camera_distance));
                 }
-                    
+
  
                 //console.log("OK");
                 obj.segments[j].point = new scope.Point(render_segment_position.e(1) + scope.view.center.x, render_segment_position.e(2) + scope.view.center.y);
@@ -448,5 +448,5 @@ function onPlotterMouseMove(event)
         P.hilight_object = false;
     }
     console.log("Closest", d[keys[0]]);
-    
+
 }

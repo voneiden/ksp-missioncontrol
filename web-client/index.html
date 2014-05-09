@@ -15,6 +15,7 @@
     <script type="text/javascript" src="ps/plotter.js"></script>
     <script type="text/javascript" src="ps/attitude.js"></script>
     <script type="text/javascript" src="ps/groundtrack.js"></script>
+    <script type="text/javascript" src="ps/status.js"></script>
     <script type="text/javascript" src="js/ui.js"></script>
     <script type="text/javascript" src="js/net.js"></script>
     <script type="text/javascript" src="js/lambert2.js"></script>
@@ -66,6 +67,39 @@
 
         <li id="menu-workspace1" onclick="setup_workspace1();">WORKSPACE 1</li>
         <li id="menu-workspace2" onclick="setup_workspace2();">WORKSPACE 2</li>
+
+        <div id="status-0-root">
+            <div id="status-0-launch">
+                LAUNCH MODE<br>
+                <div class="status-box status-launch-site">
+                    Launch site information <br>
+                    Longitude: <span class="status-av-lon">0.00</span><br>
+                    Latitude : <span class="status-av-lat">0.00</span><br>
+                    Altitude : <span class="status-av-alt">0 meters</span><br>
+                </div>
+                <div class="status-box status-launch-target">
+                    Target orbit
+                    <select class="status-launch-target-select">
+                        <option>MANUAL MODE</option>
+                        <option>Some ship</option>
+                    </select><br>
+                    Inclination: <input type="text" class="status-launch-target-inclination"><br>
+                    Periapsis:    <input type="text" class="status-launch-target-altitude"><br>
+                    Launch azimuth:    <input type="text" class="status-launch-target-azimuth" disabled><br>
+                </div>
+                <div class="status-box status-launch-current" style="display:inline-block">
+                    Current orbit <br>
+                    Longitude: <span class="status-av-lon">0.00</span><br>
+                    Latitude : <span class="status-av-lat">0.00</span><br>
+                    Inclination : <span class="status-av-inc">0.00</span><br>
+                    Periapsis : <span class="status-av-per">0.00</span><br>
+                    Velocity : <span class="status-av-v">0.00</span><br>
+                    Altitude : <span class="status-av-alt">0.00</span><br>
+                    D-pressure : <span class="status-av-dp">0.00</span><br>
+                </div>
+
+            </div>
+        </div>
 
         <img id="map-kerbin" src="img/kerbin.png">
     </div>

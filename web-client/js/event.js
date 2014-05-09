@@ -71,4 +71,13 @@ function onResize()
             groundtrack_draw(groundtrack.attr("id"));                       
         }
     }
+    for (var i = globals.status.length; i>0; i--)
+    {
+        var status = globals.status[i-1];
+        if (jQuery.contains($("#display")[0], status[0])) {
+            var width = status.parent().width();
+            var height = status.parent().height();
+            status_update(status.attr("id"), width, height);
+        }
+    }
 }

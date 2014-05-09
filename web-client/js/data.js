@@ -16,6 +16,7 @@ globals.mouse_right_y = false;
 globals.plotters = new Array();
 globals.attitudes = new Array();
 globals.groundtracks = new Array();
+globals.status = new Array();
 
 globals.ut = 0;
 globals.active_vessel = false;

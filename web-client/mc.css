@@ -179,3 +179,9 @@ body {
  
  background:lime;
 }
+
+.status-box {
+    display: inline-block;
+    border: 1px solid red;
+    vertical-align: top;
+}

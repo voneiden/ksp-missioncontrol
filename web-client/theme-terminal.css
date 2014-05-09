@@ -43,3 +43,10 @@ input[type=text] {
  border-color:lime;
  color: lime;
 }
+
+select {
+ background-color:green;
+ border-style:solid;
+ border-color:lime;
+ color: lime;
+}
