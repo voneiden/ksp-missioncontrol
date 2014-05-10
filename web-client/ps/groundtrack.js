@@ -34,7 +34,7 @@ function get_groundtrack()
  * Resize event, updates the canvas and rescales the raster
  */
 function groundtrack_resize(canvas, width, height) {
-    console.log("Groundtrack resize" + canvas);
+    //console.log("Groundtrack resize" + canvas);
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
     scope.view.setViewSize(width, height);
@@ -52,9 +52,9 @@ function groundtrack_resize(canvas, width, height) {
         var scale_factor = width_scale_factor;
     }
     var new_scale_factor = scale_factor / groundtrack.map_scale;
-    console.log("Required scale: " + scale_factor);
-    console.log("Current scale : " + groundtrack.map_scale);
-    console.log("Apply scale   : " + new_scale_factor);
+    //console.log("Required scale: " + scale_factor);
+    //console.log("Current scale : " + groundtrack.map_scale);
+    //console.log("Apply scale   : " + new_scale_factor);
     //console.log("Target width: " + width);
     //console.log("Target height: " + height);
     //console.log("Map width    : " + groundtrack.map.width);
@@ -65,7 +65,7 @@ function groundtrack_resize(canvas, width, height) {
 }
 
 function groundtrack_draw(canvas) {
-    console.log("Groundtrack draw");
+    //console.log("Groundtrack draw");
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
     scope.activate();
@@ -74,9 +74,9 @@ function groundtrack_draw(canvas) {
     for (var i=0; i<globals.vessels.length; i++) 
     {
         var vessel = globals.vessels[i];
-        console.log("Checking",vessel.name);
+        //console.log("Checking",vessel.name);
         if (vessel.ref != "Kerbin") { continue; }
-        console.log("Drawing vessel: " + vessel.name);
+        //console.log("Drawing vessel: " + vessel.name);
         
         if (!groundtrack.vessels[vessel.uid])
         {
@@ -95,11 +95,11 @@ function groundtrack_draw(canvas) {
         
         render = groundtrack.vessels[vessel.uid];
         var LatLon = LatLonAtUT(vessel, globals.ut);
-        console.log(LatLon);
+        //console.log(LatLon);
         groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
         render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
-        console.log(groundtrack);
-        console.log("MARKER",render.marker);
+        //console.log(groundtrack);
+        //console.log("MARKER",render.marker);
         if (vessel.period) {
             // Render trajectory
             
@@ -120,8 +120,8 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
     }
     
     
-    console.log("New group");
-    console.log(render.trajectory);
+    //console.log("New group");
+    //console.log(render.trajectory);
     var start = globals.ut - vessel.period;
     var end = globals.ut + vessel.period;
     var steps = 100;

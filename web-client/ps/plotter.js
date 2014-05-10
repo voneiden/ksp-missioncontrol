@@ -314,7 +314,7 @@ function plotter_draw(canvas) {
     for (var i = 0; i < keys.length; i++)
     {
         var obj = P.T[keys[i]];
-        if (obj.visible == true)
+        if (obj.visible == true && globals.celestials[keys[i]].trajectory) // TODO: checking that object has trajectory
         {
             for (var j = 0; j < 10; j++)
             {

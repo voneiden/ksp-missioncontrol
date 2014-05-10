@@ -9,6 +9,14 @@ function rotZ(degrees) {
     return Matrix.RotationZ(deg2rad(degrees));
 }
 
+function rotY(degrees) {
+    return Matrix.RotationY(deg2rad(degrees));
+}
+
+function rotX(degrees) {
+    return Matrix.RotationX(deg2rad(degrees));
+}
+
 function deg2rad(degrees) {
     return degrees * (Math.PI / 180);
 }
@@ -124,10 +132,10 @@ function determine_orbit_constants(object)
     }
     else { // TODO, deal with hyperbolics
         object.e = Math.sqrt(1 -object.p / object.a);
-        console.log("Orbit eccentricity: "+object.e + "(" + object.name + ")");
-        console.log(object.p + "/" +  object.a)
-        console.log(mu)
-        console.log(object.h_norm);
+        //console.log("Orbit eccentricity: "+object.e + "(" + object.name + ")");
+        //console.log(object.p + "/" +  object.a)
+        //console.log(mu)
+        //console.log(object.h_norm);
     }
     // Determine apoapsis and periapsis
     if (object.a > 0) {

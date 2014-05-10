@@ -144,6 +144,17 @@ namespace MissionControl  {
 
 			buffer.Add ("alt_per", orbit.PeA);
 			buffer.Add ("alt_apo", orbit.ApA);
+			//vessel.GetTransform().rotation
+			Vector3 roteul = vessel.GetTransform ().rotation.eulerAngles;
+			Vector3 rotinv = Quaternion.Inverse(vessel.GetTransform ().rotation).eulerAngles;
+			List<double> rot = new List<double> ();
+			rot.Add (roteul.y);
+			rot.Add (roteul.x);
+			rot.Add (roteul.z);
+			rot.Add (rotinv.y);
+			rot.Add (rotinv.x);
+			rot.Add (rotinv.z);
+			buffer.Add ("rot", rot);
 			//buffer.Add (vessel.acceleration.magnitude.ToString ());
 			//buffer.Add (vessel.angularMomentum.magnitude.ToString ());
 			//buffer.Add (vessel.angularVelocity.magnitude.ToString ());

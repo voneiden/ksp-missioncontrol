@@ -24,8 +24,8 @@ function ws_receive(event)
     var obj;
     
     if (data.state){
-        console.log("UPDATE");
-        console.log(data);
+        //console.log("UPDATE");
+        //console.log(data);
         if (data.state.active_vessel) {
             globals.active_vessel = globals.vessels[data.state.active_vessel];
         }
@@ -76,8 +76,8 @@ function ws_receive(event)
             globals.vessels.push(vessel);
             globals.determine_orbit_constants(vessel);
             
-            console.log("Latitude (official): " + vessel.lat);
-            console.log("Longitude(official): " + vessel.lon);
+            //console.log("Latitude (official): " + vessel.lat);
+            //console.log("Longitude(official): " + vessel.lon);
             
             //lon = Math.atan2(vessel.position.e(1), vessel.position.e(2))
             //lon = Math.atan(vessel.position.e(1) / vessel.position.e(2));
@@ -95,8 +95,8 @@ function ws_receive(event)
             var lat = Math.asin(uni_position.e(3));
             var lon = Math.atan2(uni_position.e(1), uni_position.e(2));
 
-            console.log("Latitude (calc):     " + rad2deg(lat));
-            console.log("Longitude(calc):     " + rad2deg(lon));
+            //console.log("Latitude (calc):     " + rad2deg(lat));
+            //console.log("Longitude(calc):     " + rad2deg(lon));
             
         }
         //for (var i = globals.groundtracks.length; i>0; i--) {
