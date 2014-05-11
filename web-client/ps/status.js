@@ -76,6 +76,7 @@ function status_update(id){
             console.log("UNKNOWN STATE");
             console.log(globals.active_vessel.state);
         }
+        var vessel = globals.active_vessel;
         var LatLon = LatLonAtUT(globals.active_vessel, globals.ut);
         var lat = Math.round(rad2deg(LatLon[0]) * 100) / 100;
         var lon = Math.round(rad2deg(LatLon[1]) * 100) / 100;
@@ -125,7 +126,8 @@ function status_update(id){
         var mnorth = position.cross(east).toUnitVector();
 
         // Calculate pitch
-        var pitch = -(rad2deg(vessel_forward.angleFrom(globals.active_vessel.position))-90);
+        var pitch = -(rad2deg(vessel_forward.angleFrom(vessel.position))-90);
+        var prograde_pitch = -(rad2deg(vessel.velocity.angleFrom(vessel.position))-90);
 
         // Calculate yaw
         var yaw_east_component = east.dot(vessel_forward);
@@ -133,20 +135,26 @@ function status_update(id){
         var yaw = rad2deg(Math.atan2(-yaw_east_component, yaw_mnorth_component));
         if (yaw < 0) { yaw += 360; }
 
+        // Calculate prograde yaw
+        var velocity = vessel.velocity.toUnitVector();
+        var prograde_yaw_east_component = east.dot(velocity);
+        var prograde_yaw_mnorth_component = mnorth.dot(velocity);
+        var prograde_yaw = rad2deg(Math.atan2(-prograde_yaw_east_component, prograde_yaw_mnorth_component));
+
         // calculate roll
         var roll_position_component = position.dot(vessel_up);
         var roll_right_component = right.dot(vessel_up);
         var roll = rad2deg(Math.atan2(roll_right_component, -roll_position_component));
 
-        var a = vessel_forward.toUnitVector();
-        var b = globals.active_vessel.position.toUnitVector()
-        var c = vessel_up.toUnitVector();
+        //var a = vessel_forward.toUnitVector();
+        //var b = globals.active_vessel.position.toUnitVector()
+        //var c = vessel_up.toUnitVector();
         //rot = "<br>" + a.e(1) + ", " + a.e(2) + ", " + a.e(3) + "<br>"
         //rot +=b.e(1) + ", " + b.e(2) + ", " + b.e(3) + "<br>"
         //rot +=c.e(1) + ", " + c.e(2) + ", " + c.e(3) + "<br>"
-        rot = "Pitch: " + pitch + "<br>";
-        rot += "Yaw  : " + yaw + "<br>";
-        rot += "Roll : " + roll + "<br>";
+        rot = "Pitch: " + pitch.toFixed(1) + " (" + (pitch-prograde_pitch).toFixed(1) + ")<br>";
+        rot += "Yaw  : " + yaw.toFixed(1) + " (" + (yaw-prograde_yaw).toFixed(1) + ")<br>";
+        rot += "Roll : " + roll.toFixed(1) + "<br>";
         //console.log("NIG");
         //console.log(rot);
         //console.log(rotZ(rot_z).multiply(forward_vector));
@@ -167,4 +175,53 @@ function status_update(id){
     else {
 
     }
+}
+
+function status_launch_target_update(element) {
+    var id = element.parentNode.parentNode.parentNode.id;
+    var status = globals.status[id];
+    var parent = $(element.parentNode);
+
+    var target_inclination = parent.children(".status-launch-target-inclination");
+    var target_periapsis = parent.children(".status-launch-target-periapsis");
+    var target_azimuth = parent.children(".status-launch-target-azimuth");
+
+    var inc = target_inclination.val()
+    var per_alt = target_periapsis.val()
+
+    var vessel = globals.active_vessel
+    if (!vessel) { return; }
+
+    if (isNaN(inc)) {
+        target_inclination.val("ERROR");
+        return;
+    }
+    if (inc < vessel.lat) {
+        inc = vessel.lat;
+        target_inclination.val(inc);
+    }
+    if (isNaN(per_alt) || per_alt < 1) {
+        target_periapsis.val("ERROR");
+        return;
+    }
+
+    var ref = globals.celestials[vessel.ref];
+    var per = per_alt*1000 + ref.radius;
+
+    var orbit_velocity = Math.sqrt(ref.mu / per);
+    var lat = deg2rad(vessel.lat);
+    var beta = Math.asin(Math.cos(deg2rad(inc)) / Math.cos(lat));
+
+    var surface_velocity = ref.ang_v / 360 * ref.radius;
+
+    var x_component = orbit_velocity * Math.sin(beta) - surface_velocity * Math.cos(lat);
+    var y_component = orbit_velocity * Math.cos(beta);
+
+    var result1 = Math.atan2(x_component, y_component);
+
+    console.log("Orbit velocity: ",orbit_velocity);
+    console.log("Beta: ", rad2deg(beta));
+    console.log("Bet4: ", rad2deg(result1));
+
+    console.log(target_inclination.val());
 }

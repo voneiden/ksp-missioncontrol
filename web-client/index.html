@@ -31,7 +31,7 @@
     <div id="display-menu">
         <div id="display-menu-top">
             <h1>KSP MISSION CONTROL</h1>
-            <p>Welcome to KSP Mission Control v0.1 (131020) </p>
+            <p>Welcome to KSP Mission Control v0.3 (140511) </p>
             <p><input type="text" placeholder="IP ADDRESS"><input type="button" value="CONNECT"></p>
             <p>OR</p>
             <p><input type="button" value="LOCALHOST" onclick="ws_connect('127.0.0.1', '12321')"><input type="button" value="RUN TEST ENVIRONMENT" onclick=run_test_environment()></p>
@@ -83,9 +83,10 @@
                         <option>MANUAL MODE</option>
                         <option>Some ship</option>
                     </select><br>
-                    Inclination: <input type="text" class="status-launch-target-inclination"><br>
-                    Periapsis:    <input type="text" class="status-launch-target-altitude"><br>
-                    Launch azimuth:    <input type="text" class="status-launch-target-azimuth" disabled><br>
+                    Inclination: <input type="text" class="status-launch-target-inclination"> degrees<br>
+                    Apoapsis:    <input type="text" class="status-launch-target-apoapsis"> km alt<br>
+                    Launch azimuth:    <input type="text" class="status-launch-target-azimuth" disabled> degrees<br>
+                    <input type="button" value="Update" onclick="status_launch_target_update(this)"><br>
                 </div>
                 <div class="status-box status-launch-current" style="display:inline-block">
                     Current orbit <br>

@@ -55,7 +55,11 @@ function LatLonAtUT(vessel, ut) {
     
     var lat = Math.asin(uni_position.e(3));
     var lon = Math.atan2(uni_position.e(1), uni_position.e(2));
-    
+
+    if (ut == globals.ut) { // TODO: make net call LatLonAtUT when vessel data is received
+        vessel.lat = lat;
+        vessel.lon = lon;
+    }
     return [lat, lon];
 }
 
