@@ -135,6 +135,7 @@ namespace MissionControl  {
 			//buffer.Add ("rotating", Planetarium.FrameIsRotating());
 			buffer.Add ("frame_angle", Planetarium.InverseRotAngle);
 			buffer.Add ("active_vessel", FlightGlobals.ActiveVessel.id.ToString());
+			buffer.Add ("throttle", FlightInputHandler.state.mainThrottle);
 			return buffer;
 		}
 		public void UpdateClients() {

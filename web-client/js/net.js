@@ -35,7 +35,7 @@ function ws_receive(event)
         globals.frame_angle = data.state.frame_angle;
         globals.frame_rotrix = rotZ(-globals.frame_angle);
         globals.ut = data.state.ut;
-
+        globals.throttle = data.state.throttle;
         refreshState();
     }
 
@@ -103,7 +103,7 @@ function ws_receive(event)
         //    var groundtrack = globals.groundtracks[i];
         //    groundtrack.
         //}
-        onResize();
+        //onResize();
     }
     
     

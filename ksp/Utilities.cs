@@ -56,6 +56,10 @@ namespace MissionControl  {
 
 			buffer.Add ("lon", vessel.longitude); // # 6
 			buffer.Add ("lat", vessel.latitude); // # 7
+
+			buffer.Add ("apo_t", vessel.orbit.timeToAp);
+			buffer.Add ("per_t", vessel.orbit.timeToPe);
+
 			// Why was this zero?
 			Vector3d r = orbit.getRelativePositionAtUT (Planetarium.GetUniversalTime ());
 			Vector3d v = orbit.getOrbitalVelocityAtUT (Planetarium.GetUniversalTime ());

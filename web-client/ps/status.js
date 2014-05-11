@@ -85,6 +85,10 @@ function status_update(id){
         var alt_apo = Math.round(globals.active_vessel.alt_apo) + " m";
         var srf_v = Math.round(globals.active_vessel.srf_v * 10) / 10 + " m/s";
         var pressure_d = Math.round(0.5 * globals.active_vessel.pressure_d * Math.pow(globals.active_vessel.srf_v, 2) * 10) / 10;
+        var apo_t = vessel.apo_t.toFixed(0);
+        var per_t = vessel.per_t.toFixed(0);
+        var throttle = (globals.throttle*100).toFixed(0) + "%";
+
         var rot = globals.active_vessel.rot;
 
         // Unity exports the rotation as X Y Z, the plugin sends it in "Y X Z" to us,
@@ -166,6 +170,10 @@ function status_update(id){
         launch.find(".status-av-v").text(srf_v);
         launch.find(".status-av-dp").text(pressure_d);
         launch.find(".status-av-rot").html(rot);
+        launch.find(".status-av-apo-t").text(apo_t);
+        launch.find(".status-av-per-t").text(per_t);
+        launch.find(".status-av-throttle").text(throttle);
+        console.log(throttle);
 
         //console.log("Check");
         // If prelaunch, hide orbital information
