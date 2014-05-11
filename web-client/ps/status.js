@@ -98,7 +98,7 @@ function status_update(id){
 
 
         // World up vector, which points "north"
-        var ksp_up_vector = Vector.create([-1, 0, 0]);
+        var ksp_up_vector = Vector.create([1, 0, 0]);
 
         // World forward vector..
         var ksp_forward_vector = Vector.create([0, 0, 1]); //
@@ -113,21 +113,30 @@ function status_update(id){
 
         var north = Vector.create([0,0,1]);
 
-        // My logic says the cross product should be other way around but this
-        // seems to give a vector that points east
-        var east = globals.active_vessel.position.cross(north).toUnitVector();
+        // Calculate position unit vector TODO: should position be calculated with the physics engine?
+        var position = globals.active_vessel.position.toUnitVector();
+        var right = vessel_forward.cross(position).toUnitVector();
+
+        // Calculate east unit vector
+        var east = north.cross(position).toUnitVector();
 
         // "Magnetic north" for mnorth-east plane
-        var mnorth = east.cross(globals.active_vessel.position).toUnitVector();
+        //var mnorth = east.cross(globals.active_vessel.position).toUnitVector();
+        var mnorth = position.cross(east).toUnitVector();
 
         // Calculate pitch
         var pitch = -(rad2deg(vessel_forward.angleFrom(globals.active_vessel.position))-90);
 
         // Calculate yaw
-        east_component = east.toUnitVector().dot(vessel_forward);
-        mnorth_component = mnorth.dot(vessel_forward);
-        var yaw = rad2deg(Math.atan2(east_component, mnorth_component));
+        var yaw_east_component = east.dot(vessel_forward);
+        var yaw_mnorth_component = mnorth.dot(vessel_forward);
+        var yaw = rad2deg(Math.atan2(-yaw_east_component, yaw_mnorth_component));
         if (yaw < 0) { yaw += 360; }
+
+        // calculate roll
+        var roll_position_component = position.dot(vessel_up);
+        var roll_right_component = right.dot(vessel_up);
+        var roll = rad2deg(Math.atan2(roll_right_component, -roll_position_component));
 
         var a = vessel_forward.toUnitVector();
         var b = globals.active_vessel.position.toUnitVector()
@@ -137,6 +146,7 @@ function status_update(id){
         //rot +=c.e(1) + ", " + c.e(2) + ", " + c.e(3) + "<br>"
         rot = "Pitch: " + pitch + "<br>";
         rot += "Yaw  : " + yaw + "<br>";
+        rot += "Roll : " + roll + "<br>";
         //console.log("NIG");
         //console.log(rot);
         //console.log(rotZ(rot_z).multiply(forward_vector));
