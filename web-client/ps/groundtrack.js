@@ -156,10 +156,10 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
             
             
             //var cross_lat = LatLon[0] + slope*(cross_lon - LatLon[1]);
-            console.log("Slope: " + slope);
-            console.log("cross_lat:     ", cross_lat);
-            console.log("last_lat/lon:  ", last_lat, last_lon);
-            console.log("new_lat/lon:   ", LatLon[0], LatLon[1]);
+            //console.log("Slope: " + slope);
+            //console.log("cross_lat:     ", cross_lat);
+            //console.log("last_lat/lon:  ", last_lat, last_lon);
+            //console.log("new_lat/lon:   ", LatLon[0], LatLon[1]);
             // Draw 1st crosspoint
             current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
             
@@ -237,12 +237,19 @@ function groundtrack_initialize(canvas)
     {
         if (true) //(P.C[keys[i]].visible == true)
         {
-            d[mouse_position.getDistance(groundtrack.vessels[keys[i]].marker.position)] = keys[i];
+            var distance = mouse_position.getDistance(groundtrack.vessels[keys[i]].marker.position);
+            if (isNaN(distance))
+            {
+
+                console.log("Vessel",keys[i],"has NaN");
+                continue;
+            }
+            d[distance] = keys[i];
         }
     }
     
     var d_keys = Object.keys(d);
-    d_keys.sort(function(a,b){return a-b});
+    d_keys.sort(function(a,b){return a- b});
     //console.log(d);
     //console.log(keys);
     var min = d_keys[0];
@@ -250,7 +257,9 @@ function groundtrack_initialize(canvas)
     if (min < 10)
     {
         //P.hilight_object = d[d_keys[0]];
+        console.log("vessel", d[min])
         var vessel = globals.vessels[d[min]];
+        console.log(vessel);
         // TODO velocity should be calculated unless KSP relays data for all active vessels.
         groundtrack.marker_hilight.visible = true;
         groundtrack.marker_hilight.position = groundtrack.vessels[d[min]].marker.position;

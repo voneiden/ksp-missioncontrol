@@ -113,6 +113,7 @@ namespace MissionControl  {
 			Debug.Log ("STEP4");
 			client.send (buffer.dumps ());
 			Debug.Log ("STEP5");
+			UpdateClients (); // TODO: not necessary the right way to do it.
 		}
 
 		public void Subscribe(MissionControlService client) 
@@ -219,11 +220,13 @@ namespace MissionControl  {
 			//Debug.Log ("Rotation3: " + active_vessel.srfRelRotation.eulerAngles);
 
 			// REF: FAR
+			/*
 			Vector3 tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.forward * Vector3.Dot(active_vessel.transform.forward, active_vessel.srf_velocity.normalized);   //velocity vector projected onto a plane that divides the airplane into left and right halves
 			float AoA = Vector3.Dot(tmpVec.normalized, active_vessel.transform.forward);
 			AoA = Mathf.Rad2Deg * Mathf.Asin(AoA);
 			if (float.IsNaN(AoA))
 				AoA = 0;
+			*/
 			/*
 			tmpVec = active_vessel.transform.up * Vector3.Dot(active_vessel.transform.up, active_vessel.srf_velocity.normalized) + active_vessel.transform.right * Vector3.Dot(active_vessel.transform.right, active_vessel.srf_velocity.normalized);     //velocity vector projected onto the vehicle-horizontal plane
 			float yaw = Vector3.Dot(tmpVec.normalized, active_vessel.transform.right);
@@ -231,7 +234,7 @@ namespace MissionControl  {
 			if (float.IsNaN(yaw))
 				yaw = 0;
 			*/
-
+			/*
 			float pitch = 0;
 			float yaw = 0;
 			float roll = 0;
@@ -256,6 +259,7 @@ namespace MissionControl  {
 
 			//server.SendAll (buffer.dumps());
 			//server.SendAll (utils.getStateLine (ActiveVessel));
+			*/
 		}
 	}
 }

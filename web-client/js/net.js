@@ -37,6 +37,7 @@ function ws_receive(event)
         globals.ut = data.state.ut;
         globals.throttle = data.state.throttle;
         refreshState();
+        refreshGroundtracks();
     }
 
     if (data.celestials) {
@@ -61,7 +62,7 @@ function ws_receive(event)
         }
     }
     if (data.vessels) {
-        globals.vessels = new Array();
+        //globals.vessels = new Array();
         for (var i=0; i < data.vessels.length; i++) {
             var vessel = data.vessels[i];
             

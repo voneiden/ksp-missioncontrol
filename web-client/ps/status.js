@@ -173,7 +173,7 @@ function status_update(id){
         launch.find(".status-av-apo-t").text(apo_t);
         launch.find(".status-av-per-t").text(per_t);
         launch.find(".status-av-throttle").text(throttle);
-        console.log(throttle);
+
 
         //console.log("Check");
         // If prelaunch, hide orbital information

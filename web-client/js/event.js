@@ -71,7 +71,7 @@ function refreshGroundtracks() {
         if (jQuery.contains($("#display")[0], groundtrack[0])) {
             var width = groundtrack.parent().width();
             var height = groundtrack.parent().height();
-            //console.log("from event");
+            //console.log("from event");//TODO check if resize is required
             groundtrack_resize(groundtrack.attr("id"), width, height);
             groundtrack_draw(groundtrack.attr("id"));
         }
