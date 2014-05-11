@@ -70,7 +70,7 @@ namespace MissionControl  {
 
 			if (wssv == null) {
 				Debug.Log ("Establishing websocket");
-				wssv = new WebSocketServer ("ws://127.0.0.1"); //TODO: Add possibility to configure IP
+				wssv = new WebSocketServer (12321); //TODO: Add possibility to configure IP
 				wssv.AddWebSocketService<MissionControlService> ("/mcs", () => new MissionControlService (this));
 				wssv.Start ();
 
