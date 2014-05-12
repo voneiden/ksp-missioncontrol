@@ -37,7 +37,11 @@ function ws_receive(event)
         globals.ut = data.state.ut;
         globals.throttle = data.state.throttle;
         refreshState();
+        var ticks_start = new Date().getTime();
         refreshGroundtracks();
+        var ticks = new Date().getTime() - ticks_start;
+        ticks /= 1000;
+        $(".debug-groundtrack-ticks").text(ticks.toFixed(3))
     }
 
     if (data.celestials) {
@@ -65,7 +69,12 @@ function ws_receive(event)
         //globals.vessels = new Array();
         for (var i=0; i < data.vessels.length; i++) {
             var vessel = data.vessels[i];
-            
+            if (!globals.vessels[vessel.uid]) {
+                // Here was a silly memory leak
+                // Should push the vessel only if its not pushed already, duh
+                globals.vessels[vessel.uid] = vessel;
+                globals.vessels.push(vessel);
+            }
             vessel.position = Vector.create([vessel.rv[0], vessel.rv[1], vessel.rv[2]]);
             vessel.velocity = Vector.create([vessel.rv[3], vessel.rv[4], vessel.rv[5]]);
             vessel.t0 = vessel.ut;
@@ -73,8 +82,7 @@ function ws_receive(event)
             vessel.position = globals.frame_rotrix.multiply(vessel.position);
             vessel.velocity = globals.frame_rotrix.multiply(vessel.velocity);
             
-            globals.vessels[vessel.uid] = vessel;
-            globals.vessels.push(vessel);
+
             globals.determine_orbit_constants(vessel);
             
             //console.log("Latitude (official): " + vessel.lat);

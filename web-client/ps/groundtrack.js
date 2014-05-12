@@ -37,6 +37,7 @@ function groundtrack_resize(canvas, width, height) {
     //console.log("Groundtrack resize" + canvas);
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
+    if (scope.view.viewSize.width == width && scope.view.viewSize.height == height) { return; }
     scope.view.setViewSize(width, height);
     
     
@@ -65,12 +66,12 @@ function groundtrack_resize(canvas, width, height) {
 }
 
 function groundtrack_draw(canvas) {
-    //console.log("Groundtrack draw");
+    // TODO: we have a memory leak here
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
     scope.activate();
+
     // TODO use Object.keys()?
-    
     for (var i=0; i<globals.vessels.length; i++) 
     {
         var vessel = globals.vessels[i];
@@ -96,7 +97,13 @@ function groundtrack_draw(canvas) {
         render = groundtrack.vessels[vessel.uid];
         var LatLon = LatLonAtUT(vessel, globals.ut);
         //console.log(LatLon);
-        groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
+        //groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
+
+        // Memory leak test, remove the marker position from project
+        //if (render.marker.position) {
+        //    console.log(render.marker.position);
+        //    render.marker.position.remove();
+        //}
         render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
         //console.log(groundtrack);
         //console.log("MARKER",render.marker);
@@ -180,8 +187,8 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
     
 }
 function LatLonToPaperPoint(lat, lon, groundtrack) {
-    render_lat = lat / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5; // TODO: Check if this is working
-    render_lon = lon / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5;
+    var render_lat = lat / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5; // TODO: Check if this is working
+    var render_lon = lon / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5;
     return new groundtrack.scope.Point(groundtrack.scope.view.center.x + render_lon, groundtrack.scope.view.center.y - render_lat)
 }
 function groundtrack_initialize(canvas)
@@ -241,7 +248,7 @@ function groundtrack_initialize(canvas)
             if (isNaN(distance))
             {
 
-                console.log("Vessel",keys[i],"has NaN");
+                //console.log("Vessel",keys[i],"has NaN");
                 continue;
             }
             d[distance] = keys[i];

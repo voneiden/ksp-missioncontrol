@@ -66,7 +66,7 @@ function status_update(id){
     if (globals.active_vessel) {
 
         var state = globals.active_vessel.state;
-        if (state == "suborbital" || state == "flying" || state == "prelaunch"  || state == "landed") {
+        if (state == "suborbital" || state == "flying" || state == "prelaunch"  || state == "landed" || true) {
             if (status.mode != 1) {
                 launch.show(0);
                 status.mode = 1;
@@ -83,6 +83,7 @@ function status_update(id){
         var alt = Math.round(globals.active_vessel.alt) + " m";
         var inc = Math.round(globals.active_vessel.elements[2] * 10) / 10;
         var alt_apo = Math.round(globals.active_vessel.alt_apo) + " m";
+        var alt_per = Math.round(globals.active_vessel.alt_per) + " m";
         var srf_v = Math.round(globals.active_vessel.srf_v * 10) / 10 + " m/s";
         var pressure_d = Math.round(0.5 * globals.active_vessel.pressure_d * Math.pow(globals.active_vessel.srf_v, 2) * 10) / 10;
         var apo_t = vessel.apo_t.toFixed(0);
@@ -167,6 +168,7 @@ function status_update(id){
         launch.find(".status-av-alt").text(alt);
         launch.find(".status-av-inc").text(inc);
         launch.find(".status-av-apo").text(alt_apo);
+        launch.find(".status-av-per").text(alt_per);
         launch.find(".status-av-v").text(srf_v);
         launch.find(".status-av-dp").text(pressure_d);
         launch.find(".status-av-rot").html(rot);
