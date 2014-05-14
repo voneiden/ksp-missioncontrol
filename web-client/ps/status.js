@@ -77,6 +77,7 @@ function status_update(id){
             console.log(globals.active_vessel.state);
         }
         var vessel = globals.active_vessel;
+        console.log(globals.active_vessel);
         var LatLon = LatLonAtUT(globals.active_vessel, globals.ut);
         var lat = Math.round(rad2deg(LatLon[0]) * 100) / 100;
         var lon = Math.round(rad2deg(LatLon[1]) * 100) / 100;
@@ -174,14 +175,17 @@ function status_update(id){
         launch.find(".status-av-apo-t").text(apo_t);
         launch.find(".status-av-per-t").text(per_t);
         launch.find(".status-av-throttle").text(throttle);
-        launch.find(".status-av-munarangle").text(rad2deg(vessel.position.angleTo(globals.celestials.Mun.position)).toFixed(2))
-        launch.find("status-av-sma").text(vessel.elements.sma.toFixed(0));
-        launch.find("status-av-ecc").text(vessel.elements.ecc.toFixed(2));
-        launch.find("status-av-inc").text(vessel.elements.inc.toFixed(2));
-        launch.find("status-av-lan").text(vessel.elements.lan.toFixed(2));
-        launch.find("status-av-aop").text(vessel.elements.aop.toFixed(2));
-        launch.find("status-av-tan").text(vessel.elements.tan.toFixed(2));
-        launch.find("status-av-epo").text(vessel.elements.epo.toFixed(0));
+        //launch.find(".status-av-munarangle").text(rad2deg(vessel.position.angleTo(globals.celestials.Mun.position)).toFixed(2))
+        launch.find(".status-av-sma").text(vessel.elements.sma.toFixed(0));
+        launch.find(".status-av-ecc").text(vessel.elements.ecc.toFixed(2));
+        launch.find(".status-av-inc").text(vessel.elements.inc.toFixed(2));
+        launch.find(".status-av-lan").text(vessel.elements.lan.toFixed(2));
+        launch.find(".status-av-aop").text(vessel.elements.aop.toFixed(2));
+        launch.find(".status-av-tan").text(vessel.elements.tan.toFixed(2));
+        launch.find(".status-av-epo").text(vessel.elements.epo.toFixed(0));
+
+        var elements = determine_orbit_elements(globals.active_vessel);
+        launch.find(".status-av-tlan").text(elements.lan.toFixed(2));
 
 
         //console.log("Check");

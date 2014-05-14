@@ -18,7 +18,7 @@ function get_groundtrack()
     var id = "groundtrack-" + (globals.groundtracks.length + 1);
     $('<canvas id="' + id + '">').appendTo("#hidden");
     groundtrack = $("#"+id);
-    console.log(groundtrack);
+    //console.log(groundtrack);
     groundtrack_initialize(id);         
     //groundtrack_set_mode(id, "solar");  
     //groundtrack.mousedown(onPlotterMouseDown);
@@ -34,14 +34,14 @@ function get_groundtrack()
  * Resize event, updates the canvas and rescales the raster
  */
 function groundtrack_resize(canvas, width, height) {
-    console.log("Groundtrack resize" + canvas);
+    //console.log("Groundtrack resize" + canvas);
     var groundtrack = groundtrack_data[canvas];
     var scope = groundtrack.scope;
     //if (scope.view.viewSize.width == width && scope.view.viewSize.height == height) { return; }
     scope.view.setViewSize(width, height);
     
     
-    console.log("gs",groundtrack.map_scale);
+    //console.log("gs",groundtrack.map_scale);
     // Map scaling
     if (!isNaN(groundtrack.map_scale)) {
         var width_scale_factor = width / groundtrack.map.width;
@@ -54,13 +54,13 @@ function groundtrack_resize(canvas, width, height) {
             var scale_factor = width_scale_factor;
         }
         var new_scale_factor = scale_factor / groundtrack.map_scale;
-        console.log("Required scale: " + scale_factor);
-        console.log("Current scale : " + groundtrack.map_scale);
-        console.log("Apply scale   : " + new_scale_factor);
-        console.log("Target width: " + width);
-        console.log("Target height: " + height);
-        console.log("Map width    : " + groundtrack.map.width);
-        console.log("Map height   : " + groundtrack.map.height);
+        //console.log("Required scale: " + scale_factor);
+        //console.log("Current scale : " + groundtrack.map_scale);
+        //console.log("Apply scale   : " + new_scale_factor);
+        //console.log("Target width: " + width);
+        //console.log("Target height: " + height);
+        //console.log("Map width    : " + groundtrack.map.width);
+        //console.log("Map height   : " + groundtrack.map.height);
         groundtrack.map.scale(new_scale_factor);
         groundtrack.map_scale = scale_factor;
         groundtrack.map.position = scope.view.center;
@@ -74,20 +74,24 @@ function groundtrack_draw(canvas) {
     scope.activate();
 
     // Create daynight delimiter
-    groundtrack_update_daynight(groundtrack);
+    //groundtrack_update_daynight(groundtrack);
 
     // Check ref
     if (globals.active_vessel) {
         if (globals.active_vessel.ref != groundtrack.ref) {
+            groundtrack.vessels = new Object();
+            groundtrack.layer_markers.removeChildren();
+            groundtrack.layer_trajectory.removeChildren();
             groundtrack_load_map(canvas, globals.active_vessel.ref);
         }
     }
     // TODO use Object.keys()?
+
     for (var i=0; i<globals.vessels.length; i++) 
     {
         var vessel = globals.vessels[i];
         //console.log("Checking",vessel.name);
-        if (vessel.ref != "Kerbin") { continue; }
+        if (vessel.ref != groundtrack.ref) { continue; }
         //console.log("Drawing vessel: " + vessel.name);
         
         if (!groundtrack.vessels[vessel.uid])
@@ -101,24 +105,29 @@ function groundtrack_draw(canvas) {
 
             groundtrack.layer_markers.activate();
             render.marker = new scope.Path.Circle(scope.view.center, 5)
-            render.marker.fillColor = "yellow";
+            render.marker.fillColor = "red";
             
             
         }
         
-        render = groundtrack.vessels[vessel.uid];
-        var LatLon = LatLonAtUT(vessel, globals.ut);
-        //console.log(LatLon);
-        //groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
+        var render = groundtrack.vessels[vessel.uid];
 
-        // Memory leak test, remove the marker position from project
-        //if (render.marker.position) {
-        //    console.log(render.marker.position);
-        //    render.marker.position.remove();
-        //}
-        render.marker.position = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
-        //console.log(groundtrack);
-        //console.log("MARKER",render.marker);
+
+        groundtrack_update_trajectory(groundtrack, vessel, render); // TODO duplicate
+
+        var LatLon = LatLonAtUT(vessel, globals.ut);
+
+        // LatLonToPaperPoint may return NaN values, check for them
+        // if NaN is accidentally passed to a path it's ruined!
+        var render_point = LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack);
+        if (!isNaN(render_point.x) && !isNaN(render_point.y)) {
+            render.marker.position = render_point;
+            render.marker.visible = true;
+        }
+        else {
+            render.marker.visible = false;
+        }
+
         if (vessel.period) {
             // Render trajectory
             
@@ -167,7 +176,29 @@ function groundtrack_update_daynight(groundtrack) {
         groundtrack.layer_daynight.removeChildren();
     }
 
+    var sun_LatLon = LatLonAtPos(sun_position);
+    var sun_point = LatLonToPaperPoint(sun_LatLon[0], sun_LatLon[1], groundtrack);
+    var sun_marker = new groundtrack.scope.Path.Circle(sun_point, 5)
+    sun_marker.fillColor = "yellow";
+    sun_marker.opacity = 0.5;
 
+
+    var translate = (Math.PI/2.2) / Math.PI * groundtrack.map.width * groundtrack.map_scale;
+    //console.log("Translate",translate);
+    //console.log(sun_point.x);
+    var left_shade = new groundtrack.scope.Path.Rectangle(
+        sun_point.x - 4*translate, sun_point.y - translate,
+        3*translate, 2*translate);
+
+    var right_shade = new groundtrack.scope.Path.Rectangle(
+        sun_point.x + translate, sun_point.y - translate,
+        3*translate, 2*translate);
+    left_shade.fillColor = "black";
+    left_shade.opacity = 0.25;
+    right_shade.fillColor = "black";
+    right_shade.opacity = 0.25;
+    return;
+    /*
     // Create a path for darkness
     var north = Math.PI/2;
     var south = -Math.PI/2;
@@ -201,11 +232,7 @@ function groundtrack_update_daynight(groundtrack) {
     //globals.debug_path = new Array();
 
     // Rotate around the sun axis to get a LatLon array
-    var sun_LatLon = LatLonAtPos(sun_position);
-    console.log("sun latlon",sun_LatLon);
-    var sun_marker = new groundtrack.scope.Path.Circle(LatLonToPaperPoint(sun_LatLon[0], sun_LatLon[1], groundtrack), 5)
-    sun_marker.fillColor = "yellow";
-    sun_marker.opacity = 0.5;
+
 
     for (var i=0; i < steps; i++) {
         // TODO handle longitude and latitude crossing somehow..
@@ -258,6 +285,7 @@ function groundtrack_update_daynight(groundtrack) {
     daynight.fillColor = "black";
     daynight.opacity = 0.35;
     night_path.remove();
+    */
 }
 function groundtrack_update_trajectory(groundtrack, vessel, render) {
     groundtrack.scope.activate();
@@ -269,7 +297,8 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
     else {
         render.trajectory = new groundtrack.scope.Group();
     }
-    
+
+    render.trajectory.visible = !render.trajectory.visible;
     
     //console.log("New group");
     //console.log(render.trajectory);
@@ -283,7 +312,9 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
     var current_path = new groundtrack.scope.Path();
     current_path.strokeColor = "red";
     render.trajectory.addChild(current_path);
-    
+    if (vessel.uid == "ef97bb77-24a6-4bb8-b043-3dfeff9d21e7") {
+        console.log("This is the vessel",vessel.elements.inc, vessel)
+    }
     for (var i=0; i<steps; i++) {
         var t = start + i*step_size;
         var LatLon = LatLonAtUT(vessel, t);
@@ -333,6 +364,11 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
 function LatLonToPaperPoint(lat, lon, groundtrack) {
     var render_lat = lat / Math.PI * groundtrack.map.height * groundtrack.map_scale; // TODO: Check if this is working
     var render_lon = lon / Math.PI * groundtrack.map.width * groundtrack.map_scale * 0.5;
+    /*if (isNaN(render_lat)) {
+
+        console.log("WARNING, latlontopaperpoint is producing nan values")
+        console.log(lat,lon,groundtrack.map.height, groundtrack.map_scale, render_lat, render_lon)
+    }*/
     return new groundtrack.scope.Point(groundtrack.scope.view.center.x + render_lon, groundtrack.scope.view.center.y - render_lat)
 }
 
@@ -396,7 +432,9 @@ function groundtrack_load_map(canvas, ref) {
     }
 
     // Load new map
+
     groundtrack.map = new scope.Raster("img/" + groundtrack.ref + ".png");
+
     groundtrack.map.onLoad = function () {
         console.log("map loaded");
         // Reset map scale
@@ -434,7 +472,7 @@ function groundtrack_load_map(canvas, ref) {
     
     for (var i = 0; i < keys.length; i++) // Loop through visible objects
     {
-        if (true) //(P.C[keys[i]].visible == true)
+        if (groundtrack.vessels[keys[i]].marker.visible) //(P.C[keys[i]].visible == true)
         {
             var distance = mouse_position.getDistance(groundtrack.vessels[keys[i]].marker.position);
             if (isNaN(distance))
@@ -461,10 +499,13 @@ function groundtrack_load_map(canvas, ref) {
         console.log(vessel);
         // TODO velocity should be calculated unless KSP relays data for all active vessels.
         groundtrack.marker_hilight.visible = true;
-        groundtrack.marker_hilight.position = groundtrack.vessels[d[min]].marker.position;
+
         groundtrack.marker_hilight.text.content = vessel.name + "\n";
         groundtrack.marker_hilight.text.content += "Vel: " + Math.round(vessel.velocity_norm * 100) / 100 + "m/s\n";
         groundtrack.marker_hilight.text.content += "Alt: " + Math.round(vessel.alt) + "m";
+
+        groundtrack.marker_hilight.position.x = groundtrack.vessels[d[min]].marker.position.x + groundtrack.marker_hilight.bounds.width/2 - 10;
+        groundtrack.marker_hilight.position.y = groundtrack.vessels[d[min]].marker.position.y + groundtrack.marker_hilight.bounds.height/2 - 10;
         //console.log(P.marker_hilight.position);
         //console.log(P.C[d[d_keys[0]]]);
         //groundtrack_draw(canvas);
@@ -481,11 +522,11 @@ function groundtrack_load_map(canvas, ref) {
 function create_target_marker(scope, color)
 {
     var marker = new scope.Group({visible: false});
-    marker.addChild(new scope.Path.Line(new scope.Point(0, -10), new scope.Point(0, -5)));
-    marker.addChild(new scope.Path.Line(new scope.Point(0, 10),  new scope.Point(0, 5)));
-    marker.addChild(new scope.Path.Line(new scope.Point(-10, 0), new scope.Point(-5, 0)));
-    marker.addChild(new scope.Path.Line(new scope.Point(10, 0),  new scope.Point(5, 0)));
-    var text = new scope.PointText(new scope.Point(20, 0));
+    marker.addChild(new scope.Path.Line(new scope.Point(10, 0), new scope.Point(10, 5)));   // top
+    marker.addChild(new scope.Path.Line(new scope.Point(0, 10),  new scope.Point(5, 10)));// left
+    marker.addChild(new scope.Path.Line(new scope.Point(15, 10), new scope.Point(20, 10))); // right
+    marker.addChild(new scope.Path.Line(new scope.Point(10, 15),  new scope.Point(10, 20))); // bottom
+    var text = new scope.PointText(new scope.Point(30, 30));
     marker.addChild(text);
     marker.text = text;
     marker.strokeColor = "lime";

@@ -27,14 +27,22 @@ function rad2deg(radians) {
 
 // Todo, implement theta
 function LatLonAtUT(vessel, ut) {
-    if (vessel.state != "orbiting") {
+    var state = vessel.state;
+
+    // Do not attempt to determine orbit for non orbital states
+    if (state == "prelaunch" || state == "landed" || state == "splashed" || state == "flying") {
         //console.log("Vessel not orbiting")
         ut = vessel.t0; // If the vessel is landed, then the position is fixed at t0
         var cur_position = vessel.position;
     }
     else {
         //console.log("Vessel is orbiting");
-        var cur_position = determine_rv_at_t(vessel, ut)[0];
+        if (ut == 0) { console.log("Determine..");}
+       var cur_position = determine_rv_at_t(vessel, ut)[0];
+       if (!cur_position) {
+           console.log("FIX", vessel);
+           cur_position = vessel.position;
+       }
     }
 
     var ref = globals.celestials[vessel.ref]
@@ -44,12 +52,17 @@ function LatLonAtUT(vessel, ut) {
     //    ref.rotrix = rotZ(ref.rotation_angle);
     //}
     
-    var theta = ref.rotation_angle + ref.ang_v * (ut - ref.rotation_t0);
+    var theta = ref.rotation_angle + ref.ang_v * (ut - ref.rotation_t0)// - globals.frame_angle;
+    if (ut == 0) {
+        console.log("Theta",theta);
+        console.log("frame",globals.frame_angle);
+        console.log("vector", cur_position.e(1));
+        console.log("ut", ut)
+        console.log("vt0", vessel.t0)
+    }
     //console.log("Theta: " + theta);
     var rotrix = rotZ(theta);
-    
-    //console.log(rotrix);
-    //console.log(cur_position);
+
     var rot_position = rotrix.multiply(cur_position);
 
 
@@ -100,6 +113,31 @@ function cot(aValue)
 function acot(aValue)
 {
    return Math.atan(1 / aValue);
+}
+
+/*
+ * Generate orbital elements from state vector
+ */
+
+function determine_orbit_elements(object) {
+    if (!object.h) { return false; }
+
+    elements = new Object();
+
+    // TODO check inclination, undefined for 0 inclination
+    // Calculate LAN
+    var n = Vector.create([0, 0, 1]).cross(object.h);
+    //console.log("n",n)
+    //n = rotZ(globals.frame_angle).multiply(n);
+    //console.log(object.h.e(1))
+    //console.log(object.position.e(1));
+    elements.lan = rad2deg(Math.acos(n.e(2) / n.modulus()));
+    //console.log(elements.lan);
+    if (n.e(1) < 0) {
+        elements.lan =  - elements.lan;
+    }
+    //elements.lan += globals.frame_angle;
+    return elements;
 }
 
 /* 
@@ -277,11 +315,11 @@ function determine_rv_at_t(object, t, depth)
         }
     }
     if (i == maxiter) {
-        console.log("Was unable to find solution (depth "+depth+")");
-        console.log(object.name);
-        console.log(X0);
-        console.log(dt);
-        console.log(t);
+        console.log("Was unable to find solution (depth "+depth+")",object);
+        //console.log(object.name);
+        //console.log(X0);
+        //console.log(dt);
+        //console.log(t);
         if (depth < 2)
         {
             return determine_rv_at_t(object, t+0.0000001, depth+1);
