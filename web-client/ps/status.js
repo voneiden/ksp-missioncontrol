@@ -81,7 +81,7 @@ function status_update(id){
         var lat = Math.round(rad2deg(LatLon[0]) * 100) / 100;
         var lon = Math.round(rad2deg(LatLon[1]) * 100) / 100;
         var alt = Math.round(globals.active_vessel.alt) + " m";
-        var inc = Math.round(globals.active_vessel.elements[2] * 10) / 10;
+        var inc = Math.round(globals.active_vessel.elements.inc * 10) / 10;
         var alt_apo = Math.round(globals.active_vessel.alt_apo) + " m";
         var alt_per = Math.round(globals.active_vessel.alt_per) + " m";
         var srf_v = Math.round(globals.active_vessel.srf_v * 10) / 10 + " m/s";
@@ -166,7 +166,6 @@ function status_update(id){
         launch.find(".status-av-lon").text(lon); // TODO should the lon be calculated?
         launch.find(".status-av-lat").text(lat);
         launch.find(".status-av-alt").text(alt);
-        launch.find(".status-av-inc").text(inc);
         launch.find(".status-av-apo").text(alt_apo);
         launch.find(".status-av-per").text(alt_per);
         launch.find(".status-av-v").text(srf_v);
@@ -175,6 +174,14 @@ function status_update(id){
         launch.find(".status-av-apo-t").text(apo_t);
         launch.find(".status-av-per-t").text(per_t);
         launch.find(".status-av-throttle").text(throttle);
+        launch.find(".status-av-munarangle").text(rad2deg(vessel.position.angleTo(globals.celestials.Mun.position)).toFixed(2))
+        launch.find("status-av-sma").text(vessel.elements.sma.toFixed(0));
+        launch.find("status-av-ecc").text(vessel.elements.ecc.toFixed(2));
+        launch.find("status-av-inc").text(vessel.elements.inc.toFixed(2));
+        launch.find("status-av-lan").text(vessel.elements.lan.toFixed(2));
+        launch.find("status-av-aop").text(vessel.elements.aop.toFixed(2));
+        launch.find("status-av-tan").text(vessel.elements.tan.toFixed(2));
+        launch.find("status-av-epo").text(vessel.elements.epo.toFixed(0));
 
 
         //console.log("Check");

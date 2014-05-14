@@ -79,6 +79,7 @@ globals.celestials = {
   "radius":60000,
   "ref":"Kerbin",
   "rotation_angle":232.461954116,
+  "rotation_t0":0,
   "soi":2247428.3879,
   "velocity":Vector.create([-262.092417803864, -80.299084673002, 0.216938510793855]),
   "t0":0},

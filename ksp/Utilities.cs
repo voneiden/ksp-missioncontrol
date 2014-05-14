@@ -112,13 +112,15 @@ namespace MissionControl  {
 
 
 			//buffer.Add (orbit.epoch.ToString ());
-			List<double> elements = new List<double> ();
+			json elements = new json();
 
-			elements.Add (orbit.semiMajorAxis);
-			elements.Add (orbit.eccentricity);
-			elements.Add (orbit.inclination);
-			elements.Add (orbit.LAN);
-			elements.Add (orbit.argumentOfPeriapsis); // # 9
+			elements.Add ("sma", orbit.semiMajorAxis);
+			elements.Add ("ecc", orbit.eccentricity);
+			elements.Add ("inc", orbit.inclination);
+			elements.Add ("lan", orbit.LAN);
+			elements.Add ("aop", orbit.argumentOfPeriapsis); // # 9
+			elements.Add ("tan", orbit.trueAnomaly);
+			elements.Add ("epo", orbit.epoch);
 
 			//buffer.Add (orbit.meanAnomalyAtEpoch.ToString ());
 

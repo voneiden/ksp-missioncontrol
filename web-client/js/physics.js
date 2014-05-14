@@ -36,7 +36,7 @@ function LatLonAtUT(vessel, ut) {
         //console.log("Vessel is orbiting");
         var cur_position = determine_rv_at_t(vessel, ut)[0];
     }
-    
+
     var ref = globals.celestials[vessel.ref]
     
     //if (ref.rotrix_timestamp != ut) {
@@ -51,15 +51,24 @@ function LatLonAtUT(vessel, ut) {
     //console.log(rotrix);
     //console.log(cur_position);
     var rot_position = rotrix.multiply(cur_position);
-    var uni_position = rot_position.toUnitVector();
-    
+
+
+    var LatLon = LatLonAtPos(rot_position);
+
+    if (ut == globals.ut) { // TODO: make net call LatLonAtUT when vessel data is received
+        vessel.lat = LatLon[0];
+        vessel.lon = LatLon[1];
+    }
+
+    return LatLon;
+}
+
+function LatLonAtPos(position) {
+    var uni_position = position.toUnitVector();
+
     var lat = Math.asin(uni_position.e(3));
     var lon = Math.atan2(uni_position.e(1), uni_position.e(2));
 
-    if (ut == globals.ut) { // TODO: make net call LatLonAtUT when vessel data is received
-        vessel.lat = lat;
-        vessel.lon = lon;
-    }
     return [lat, lon];
 }
 
