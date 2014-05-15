@@ -298,68 +298,181 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
         render.trajectory = new groundtrack.scope.Group();
     }
 
-    render.trajectory.visible = !render.trajectory.visible;
+    //render.trajectory.visible = !render.trajectory.visible;
     
-    //console.log("New group");
-    //console.log(render.trajectory);
+    // TODO hyperbolic orbits don't have a period.
+    // Determine drawing distance and accuracy
     var start = globals.ut - vessel.period;
     var end = globals.ut + vessel.period;
     var steps = 100;
     var step_size = Math.round((end-start) / steps);
     
     var last_lon = NaN;
-    var last_lat = NaN
+    var last_lat = NaN;
+    var last_rad = NaN;
+
     var current_path = new groundtrack.scope.Path();
     current_path.strokeColor = "red";
     render.trajectory.addChild(current_path);
-    if (vessel.uid == "ef97bb77-24a6-4bb8-b043-3dfeff9d21e7") {
-        console.log("This is the vessel",vessel.elements.inc, vessel)
-    }
+
     for (var i=0; i<steps; i++) {
         var t = start + i*step_size;
         var LatLon = LatLonAtUT(vessel, t);
-        
-        // Check if passed longitude border 
-        if (last_lon && last_lon - LatLon[1] > Math.PI || last_lon - LatLon[1] < -Math.PI) {
-            
-            
-            if (last_lon > LatLon[1]) {
-                // The vessel has crossed east to west
-                var cross_lon = Math.PI;
-                var slope = ( LatLon[0] - last_lat) / (LatLon[1] - last_lon + Math.PI*2);
-                var cross_lat = last_lat - slope*(last_lon-cross_lon);
-            }
-            else {
-                // The vessel has crossed west to east 
-                var cross_lon = -Math.PI;
-                slope = (last_lat - LatLon[0]) / (last_lon + Math.PI*2 - LatLon[1]);
-                var cross_lat = last_lat + slope*(cross_lon-last_lon); 
-            }
-            
-            
-            //var cross_lat = LatLon[0] + slope*(cross_lon - LatLon[1]);
-            //console.log("Slope: " + slope);
-            //console.log("cross_lat:     ", cross_lat);
-            //console.log("last_lat/lon:  ", last_lat, last_lon);
-            //console.log("new_lat/lon:   ", LatLon[0], LatLon[1]);
-            // Draw 1st crosspoint
-            current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
-            
-            // Start a new path
-            current_path = new groundtrack.scope.Path();
-            current_path.strokeColor = "red";
-            render.trajectory.addChild(current_path);
-            
-            // Draw 2nd crosspoint
-            current_path.add(LatLonToPaperPoint(cross_lat, -cross_lon, groundtrack));
-        }
-        last_lon = LatLon[1];
+
+        // Check for impact (checks also for longitude boundary)
+        current_path = groundtrack_draw_trajectory_impact_boundary(groundtrack, vessel, render, current_path, LatLon, last_lat, last_lon, last_rad);
+
+
+
+
+
         last_lat = LatLon[0];
+        last_lon = LatLon[1];
+
+        if (last_lon > 2*Math.PI) {
+            console.warn("Last lon higher than 2PI",last_lon);
+        }
+        last_rad = LatLon[2];
+
         current_path.add(LatLonToPaperPoint(LatLon[0], LatLon[1], groundtrack));
-        
     }
-    
-    
+}
+
+function groundtrack_draw_trajectory_longitude_boundary(groundtrack, render, current_path, LatLon, last_lat, last_lon) {
+    if (last_lon && last_lon - LatLon[1] > Math.PI || last_lon - LatLon[1] < -Math.PI) {
+        if (last_lon > LatLon[1]) {
+            // The vessel has crossed east to west
+            var cross_lon = Math.PI;
+            var slope = ( LatLon[0] - last_lat) / (LatLon[1] - last_lon + Math.PI*2);
+            var cross_lat = last_lat - slope*(last_lon-cross_lon);
+        }
+        else {
+            // The vessel has crossed west to east
+            var cross_lon = -Math.PI;
+            slope = (last_lat - LatLon[0]) / (last_lon + Math.PI*2 - LatLon[1]);
+            var cross_lat = last_lat + slope*(cross_lon-last_lon);
+        }
+
+        // Draw 1st crosspoint
+        current_path.add(LatLonToPaperPoint(cross_lat, cross_lon, groundtrack));
+
+        // Start a new path
+        current_path = new groundtrack.scope.Path();
+        current_path.strokeColor = "red";
+        render.trajectory.addChild(current_path);
+
+        // Draw 2nd crosspoint
+        current_path.add(LatLonToPaperPoint(cross_lat, -cross_lon, groundtrack));
+    }
+    return current_path;
+}
+
+function groundtrack_draw_trajectory_impact_boundary(groundtrack, vessel, render, current_path, LatLon, last_lat, last_lon, last_rad) {
+    var celestial_radius = globals.celestials[vessel.ref].radius;
+    var impact;
+
+    // Sanity test
+    if (Math.abs(LatLon[1]) > Math.PI || Math.abs(last_lon) > Math.PI)
+    {
+        console.error("Received longitude and latitude points that are out of allowed bounds")
+        console.error(LatLon);
+        console.error(last_lon);
+        return current_path;
+    }
+
+    // Case 1) Impact point
+    if (last_rad && LatLon[2] <= celestial_radius && last_rad > celestial_radius ) {
+        impact = true;
+    }
+
+    // Case 2) "launch" point
+    else if (last_rad && LatLon[2] > celestial_radius && last_rad <= celestial_radius) {
+        impact = false;
+    }
+
+    else {
+        // Check for longitude boundary
+        current_path = groundtrack_draw_trajectory_longitude_boundary(groundtrack, render, current_path, LatLon, last_lat, last_lon);
+
+        if (last_rad <= celestial_radius && current_path.visible) {
+            current_path.visible = false; // Ensure the path is not visible
+        }
+        return current_path;
+    }
+
+    console.log("New call. Impact:", impact);
+    console.log("last_lat:",rad2deg(last_lat));
+    console.log("last_lon:",rad2deg(last_lon));
+    console.log("last_rad:",last_rad);
+    console.log("curr_lat:",rad2deg(LatLon[0]));
+    console.log("curr_lon:",rad2deg(LatLon[1]));
+    console.log("curr_rad:",LatLon[2]);
+
+
+    // If there has been a boundary cross, we kinda want to ignore it for now so that we can calculate the slopes
+    // last_rad is checked for !NaN above, last_lon & lat should be also !NaN
+    // East-West boundary crossing
+    if (last_lon - LatLon[1]  > Math.PI) {
+        LatLon[1] += 2*Math.PI;
+    }
+
+    else if (last_lon - LatLon[1] < -Math.PI) {
+        LatLon[1] -= 2*Math.PI;
+    }
+
+    // Determine impact trajectory slope
+    var delta_lat = LatLon[0] - last_lat;
+    var delta_lon = LatLon[1] - last_lon;
+    var delta_rad = LatLon[2] - last_rad;
+
+    var rad_lat_slope = delta_rad / delta_lat;
+    var rad_lon_slope = delta_rad / delta_lon;
+
+    // Solve impact_lon * rad_slope + last_lon = 0
+    // last_rad - impact_lon * slope = celestial.radius
+    // -impact_lon = (celestial.radius - last_rad)/slope
+    var impact_lon = (celestial_radius - last_rad) / rad_lon_slope + last_lon;
+    var impact_lat = (celestial_radius - last_rad) / rad_lat_slope + last_lat;
+
+    // Solve impact_lat * lat_slope + last_lat = 0
+
+
+    console.log("impa_lat:",rad2deg(impact_lat));
+    console.log("impa_lon:",rad2deg(impact_lon));
+
+    if (LatLon[1] > Math.PI) { LatLon[1] -= 2*Math.PI; }
+    if (LatLon[1] < -Math.PI) { LatLon[1] += 2*Math.PI; }
+    if (impact_lon > Math.PI) { impact_lon -= 2*Math.PI; }
+    if (impact_lon < -Math.PI) { impact_lon += 2*Math.PI; }
+
+    console.log("impa_lat:",rad2deg(impact_lat));
+    console.log("impa_lon:",rad2deg(impact_lon));
+    console.log("curr_lat:",rad2deg(LatLon[0]));
+    console.log("curr_lon:",rad2deg(LatLon[1]));
+
+    // Check if there's a boundary crossing between last point and event point
+    current_path = groundtrack_draw_trajectory_longitude_boundary(groundtrack, render, current_path, [impact_lat, impact_lon], last_lat, last_lon);
+    current_path.visible = impact; // In case above function created a new path, ensure it has correct visibility setting
+
+    // Add impact/launch marker & crosspoint?
+    current_path.add(LatLonToPaperPoint(impact_lat, impact_lon, groundtrack));
+    current_path.strokeColor = "purple";
+    // Start a new path
+    current_path = new groundtrack.scope.Path();
+    current_path.strokeColor = "green";
+    render.trajectory.addChild(current_path);
+
+    current_path.add(LatLonToPaperPoint(impact_lat, impact_lon, groundtrack));
+
+    current_path = groundtrack_draw_trajectory_longitude_boundary(groundtrack, render, current_path, LatLon, impact_lat, impact_lon);
+    current_path.strokeColor = "cyan";
+    current_path.visible = !impact; // In case above function created a new path, ensure it has correct visibility setting
+
+    var impact_marker = new groundtrack.scope.Path.Circle(LatLonToPaperPoint(impact_lat, impact_lon, groundtrack), 5)
+    if (impact) { impact_marker.fillColor = "lime"; }
+    if (!impact) { impact_marker.fillColor = "cyan"; }
+
+    return current_path;
 }
 function LatLonToPaperPoint(lat, lon, groundtrack) {
     var render_lat = lat / Math.PI * groundtrack.map.height * groundtrack.map_scale; // TODO: Check if this is working

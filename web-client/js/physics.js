@@ -73,6 +73,8 @@ function LatLonAtUT(vessel, ut) {
         vessel.lon = LatLon[1];
     }
 
+    // Add distance
+    LatLon.push(rot_position.modulus());
     return LatLon;
 }
 

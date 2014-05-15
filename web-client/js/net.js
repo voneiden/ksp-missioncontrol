@@ -49,8 +49,8 @@ function ws_receive(event)
             celestial.velocity = Vector.create([celestial.rv[3], celestial.rv[4], celestial.rv[5]]);
             
             // Fix the rotation
-            console.log("Fixing the rotation");
-            console.log(globals.frame_angle);
+            //console.log("Fixing the rotation");
+            //console.log(globals.frame_angle);
             
             celestial.position = globals.frame_rotrix.multiply(celestial.position);
             celestial.velocity = globals.frame_rotrix.multiply(celestial.velocity);
@@ -60,6 +60,25 @@ function ws_receive(event)
             celestial.t0 = 0.0;
             globals.celestials[celestial.name] = celestial;
             globals.determine_orbit_constants(globals.celestials[celestial.name]);
+
+            // DEBUG Testing mEp
+
+            if (celestial.name == "Sun") { continue; }
+            var rv = determine_rv_at_t(globals.celestials[celestial.name], 0);
+            console.log(rv);
+            var test = new Object();
+
+            test.position = rv[0]
+            test.velocity = rv[1]
+            test.t0 = 0;
+            test.ref = celestial.ref;
+            console.log("Ref",test.ref);
+            determine_orbit_constants(test);
+            determine_orbit_elements(test);
+
+            var n = Vector.create([0, 0, 1]).cross(test.h);
+            console.log(celestial.name, "mEp", rad2deg(Math.acos(n.dot(test.position) / (n.modulus() * test.position.modulus()))));
+
         }
     }
     if (data.vessels) {
