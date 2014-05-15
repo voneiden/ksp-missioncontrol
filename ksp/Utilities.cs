@@ -171,6 +171,36 @@ namespace MissionControl  {
 			//buffer.Add (vessel.specificAcceleration.ToString ());
 			//buffer.Add (vessel.terrainAltitude.ToString ());
 
+			// Lets fetch active parts for fuel amount?
+			json resources = new json ();
+			double max_liquid = 0;
+			double liquid = 0;
+			double max_electric = 0;
+			double electric = 0;
+
+			foreach (Vessel.ActiveResource resource in vessel.GetActiveResources()) {
+				if (resource.info.name == "LiquidFuel") {
+					max_liquid += resource.maxAmount;
+					liquid += resource.amount;
+				}
+				else if (resource.info.name == "ElectricCharge") {
+					max_electric += resource.maxAmount;
+					electric += resource.amount;
+				}
+			}
+
+			json liquid_fuel = new json ();
+			liquid_fuel.Add ("cur", liquid);
+			liquid_fuel.Add ("max", max_liquid);
+			resources.Add ("LiquidFuel", liquid_fuel);
+
+			json electric_charge = new json ();
+			electric_charge.Add ("cur", electric);
+			electric_charge.Add ("max", max_electric);
+			resources.Add ("ElectricCharge", electric_charge);
+
+			buffer.Add ("resources", resources);
+
 			Debug.Log ("STEP_XXX_6");
 			return buffer;
 			
