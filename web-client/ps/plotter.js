@@ -84,22 +84,93 @@ function plotter_setup(canvas, ref) {
     
     var plotter = plotter_data[canvas];
     var scope = plotter.scope;
-    plotter.ref = ref;
-    
-    // Gather all visible objects
+
+    if (!globals.celestials[ref]) { console.error("Reference undefined"); return; }
+    plotter.ref = ref;                  // Reference object
+    plotter.camera = NaN;                     // Camera position
+
+    // Check what objects to render
+    plotter.visible_objects = new Object();
+    plotter_find_visible_objects(plotter);
+    plotter_draw(canvas);
+
+}
+
+function plotter_find_visible_objects(plotter) {
+
     var visible_objects = new Array();
+
+    // Check celestials
     var keys = Object.keys(globals.celestials);
+
     for (var i=0; i < keys.length; i++) {
         var celestial = globals.celestials[keys[i]];
-        if (celestial.ref == ref && visible_objects.indexOf(celestial) == -1) {
-            console.log("Add ref", celestial.name);
-            visible_objects.push(celestial);
-        }
-        else {
-            console.log("Skip ref");
+
+        // Skip objects that we've found already
+        if (visible_objects.indexOf(celestial) != -1) { continue; }
+
+        // Child objects
+        if (celestial.ref) { visible_objects.push(celestial); }
+
+        // Parent object
+        else if (plotter.ref == celestial.name) { visible_objects.push(celestial); }
+
+        // Parent of parent object
+        else if (celestial.ref && plotter.ref == globals.celestials[celestial.ref].name) {visible_objects.push(celestial); }
+    }
+
+    // Create graphics for new objects
+    for (var i=0; i < visible_objects.length; i++) {
+        var object = visible_objects[i];
+
+        // Define unique identifier for the object (vessels have uid, planets have names)
+        var uid;
+        if (object.uid) { uid = object.uid; }
+        else { uid = object.name; }
+
+        if (!plotter.visible_objects[uid]) {
+
+            // Determine object color
+            var color;
+            if (uid == "Sun") { color = "yellow"; }
+            else if (uid == "Moho") { color = "red"; }
+            else if (uid == "Eve") { color = "purple"; }
+            else if (uid == "Kerbin") { color = "SpringGreen"; }
+            else if (uid == "Duna") { color = "orange"; }
+            else if (uid == "Dres") { color = "grey"; }
+            else if (uid == "Jool") { color = "lime"; }
+            else if (uid == "Eeloo") { color = "cyan"; }
+
+            else {
+                var choices = ["red","green","cyan","purple","yellow"]
+                color = choices[Math.floor(Math.random()*choices.length)];
+            }
+
+
+            // Determine size
+            var size;
+            if (!object.radius) {
+                size = 10;
+            }
+            else { size = object.radius; }
+
+            var render_object = new Object();
+
+            render_object.color = color;
+            render_object.size = size;
+            render_object.object = object;
+            render_object.uid = uid;
+            render_object.scale = 1;
+            render_object.marker = new plotter.scope.Path.Circle(plotter.scope.view.center, size);
+            render_object.marker.fillColor = color;
+
+            plotter.visible_objects[uid] = render_object;
+
         }
     }
-    
+
+    // Check vessels
+    /*
     keys = Object.keys(globals.vessels);
     for (var i=0; i < keys.length; i++) {
         var vessel = globals.vessels[keys[i]];
@@ -110,7 +181,9 @@ function plotter_setup(canvas, ref) {
         else {
             console.log("Skip ref");
         }
-    }    
+    }
+    */
+}   /*
     // Default camera setup
     if (ref == "Sun") {
         plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
@@ -165,6 +238,7 @@ function plotter_setup(canvas, ref) {
     var active_mode = null;
     scope.view.draw();
 }
+*/
 /* Creates new celestial planet and trajectory */
 function create_plot_celestial(plotter, name, size, color)
 { 
@@ -272,7 +346,14 @@ function plotter_draw(canvas) {
     var rot = calculate_rotation_matrix(P.camera_rotation)
     //var cam_pos = rot.multiply(Vector.create([0, 0, P.camera_distance]))
     var cam_pos = Vector.create([0, 0, P.camera_distance]) // TODO: cam pos can be focused on other planets too!
-    
+
+    // Testing latlon
+    var cam_tmp = rot.multiply(cam_pos)
+    var LatLon = LatLonAtPos(cam_tmp);
+    console.log("Camera Latitude ", rad2deg(LatLon[0]));
+    console.log("Camera Longitude", rad2deg(LatLon[1]));
+
+
     // Update visible celestials
     var distances = new Object();
     var keys = Object.keys(P.C)
