@@ -89,30 +89,30 @@ namespace MissionControl  {
 
 		public void Synchronize(MissionControlService client)
 		{
-			Debug.Log ("STEP1");
+			//Debug.Log ("STEP1");
 			// Retrieve celestial information
 			List<json> celestial_buffer = new List<json>();
 			foreach (CelestialBody celestial in FlightGlobals.Bodies) {
 				celestial_buffer.Add (utilities.getCelestialState (celestial));
 			}
-			Debug.Log ("STEP2");
+			//Debug.Log ("STEP2");
 			// Retrieve vessel information and add the vessel to known vessels
 			List<json> vessel_buffer = new List<json>();
 			foreach (Vessel vessel in FlightGlobals.Vessels) {
 				vessel_buffer.Add (utilities.getVesselState (vessel));
-				Debug.Log ("STEP2X");
+				//YDebug.Log ("STEP2X");
 				client.known_vessels.Add (vessel);
 			}
 
-			Debug.Log ("STEP3");
+			//Debug.Log ("STEP3");
 			// Compile it into a single json packet
 			json buffer = new json();
 			buffer.Add ("state", GameState ());
 			buffer.Add ("celestials", celestial_buffer);
 			buffer.Add ("vessels", vessel_buffer);
-			Debug.Log ("STEP4");
+			//Debug.Log ("STEP4");
 			client.send (buffer.dumps ());
-			Debug.Log ("STEP5");
+			//Debug.Log ("STEP5");
 			UpdateClients (); // TODO: not necessary the right way to do it.
 		}
 

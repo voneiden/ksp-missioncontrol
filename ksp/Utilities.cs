@@ -177,15 +177,19 @@ namespace MissionControl  {
 			double liquid = 0;
 			double max_electric = 0;
 			double electric = 0;
+			double max_solid = 0;
+			double solid = 0;
 
 			foreach (Vessel.ActiveResource resource in vessel.GetActiveResources()) {
 				if (resource.info.name == "LiquidFuel") {
 					max_liquid += resource.maxAmount;
 					liquid += resource.amount;
-				}
-				else if (resource.info.name == "ElectricCharge") {
+				} else if (resource.info.name == "ElectricCharge") {
 					max_electric += resource.maxAmount;
 					electric += resource.amount;
+				} else if (resource.info.name == "SolidFuel") {
+					max_solid += resource.maxAmount;
+					solid += resource.amount;
 				}
 			}
 
@@ -198,6 +202,11 @@ namespace MissionControl  {
 			electric_charge.Add ("cur", electric);
 			electric_charge.Add ("max", max_electric);
 			resources.Add ("ElectricCharge", electric_charge);
+
+			json solid_fuel = new json ();
+			solid_fuel.Add ("cur", solid);
+			solid_fuel.Add ("max", max_solid);
+			resources.Add ("SolidFuel", solid_fuel);
 
 			buffer.Add ("resources", resources);
 

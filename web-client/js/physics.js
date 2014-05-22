@@ -129,16 +129,42 @@ function determine_orbit_elements(object) {
     // TODO check inclination, undefined for 0 inclination
     // Calculate LAN
     var n = Vector.create([0, 0, 1]).cross(object.h);
-    //console.log("n",n)
-    //n = rotZ(globals.frame_angle).multiply(n);
-    //console.log(object.h.e(1))
-    //console.log(object.position.e(1));
     elements.lan = rad2deg(Math.acos(n.e(2) / n.modulus()));
-    //console.log(elements.lan);
     if (n.e(1) < 0) {
         elements.lan =  - elements.lan;
     }
-    //elements.lan += globals.frame_angle;
+
+    // Eccentricity
+    var mu = globals.celestials[object.ref].mu;
+    console.log("e");
+    var e = object.velocity.cross(object.h).multiply(1/mu).subtract(object.position.toUnitVector());
+    elements.ecc = e.modulus();
+    console.log("e");
+    // AoP
+    if (e.modulus() < 0.000001) {
+        elements.aop = NaN;
+    }
+    else {
+        elements.aop = rad2deg(Math.acos(n.dot(e) / (n.modulus() * e.modulus())));
+    }
+    if (e.e(3) < 0) {
+        elements.aop = 360 - elements.aop;
+    }
+
+    var test1 = Vector.create([1,0,0]);
+    var test2 = Vector.create([0,1,0]);
+    console.log("test1", rad2deg(Math.acos(test1.dot(e) / (test1.modulus() * e.modulus()))));
+    console.log("test2", rad2deg(Math.acos(test2.dot(e) / (test2.modulus() * e.modulus()))));
+
+
+    if (elements.ecc < 0.00001) {
+        elements.tan = rad2deg(Math.acos(n.dot(object.position) / (n.modulus() * object.position.modulus())));
+        if (n.dot(object.velocity) > 0) {
+            elements.tan = 360 - elements.tan;
+        }
+    }
+
+    elements.inc = rad2deg(Math.acos(-object.h.e(3) / object.h.modulus()));
     return elements;
 }
 
@@ -378,6 +404,20 @@ function create_trajectory(object)
     }
 }
 
+function determine_launch_lan_tan(target_object, arrival_ut, launch_inclination) {
+    var arrival_position = determine_rv_at_t(target_object, arrival_ut)[0];
+    var depart_latitude = -LatLonAtPos(arrival_position)[0];
+    var depart_lan = Math.atan2(arrival_position.e(2), arrival_position.e(1)) + Math.PI;
+
+    // Todo check destination inclination  < parking orbit inclination?
+
+    // Todo launch inclination in rad?
+
+    depart_lan -= Math.asin(depart_latitude / launch_inclination);
+
+    return [depart_latitude, depart_lan];
+
+}
 function find_t_at_distance(obj1, obj2, d, x0)
 {
     /*

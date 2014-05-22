@@ -89,8 +89,30 @@ function status_update(id){
         var pressure_d = Math.round(0.5 * globals.active_vessel.pressure_d * Math.pow(globals.active_vessel.srf_v, 2) * 10) / 10;
         var apo_t = vessel.apo_t.toFixed(0);
         var per_t = vessel.per_t.toFixed(0);
-        var throttle = (globals.throttle*100).toFixed(0) + "%";
 
+        var throttle = (globals.throttle*100).toFixed(0) + "%";
+        var stage_fuel = false;
+        if (vessel.resources.LiquidFuel && vessel.resources.LiquidFuel.max > 0) {
+            var lf = vessel.resources.LiquidFuel;
+            stage_fuel = lf.cur.toFixed(0) + "/" + lf.max.toFixed(0) + " (" + (lf.cur/lf.max*100).toFixed(0) + "%)";
+        }
+        if (vessel.resources.SolidFuel && vessel.resources.SolidFuel.max > 0) {
+            if (stage_fuel) { stage_fuel += "<br>"; }
+            else { stage_fuel = "";}
+            var sf = vessel.resources.SolidFuel;
+            stage_fuel += "[Booster: " + sf.cur.toFixed(0) + "/" + sf.max.toFixed(0) + " (" + (sf.cur/sf.max*100).toFixed(0) + "%)]";
+        }
+        if (!stage_fuel) {
+            stage_fuel = "N/A";
+        }
+
+        if (vessel.resources.ElectricCharge && vessel.resources.ElectricCharge.max > 0) {
+            var el = vessel.resources.ElectricCharge;
+            var stage_electricity = el.cur.toFixed(0) + "/" + el.max.toFixed(0) + " (" + (el.cur/el.max*100).toFixed(0) + "%)";
+        }
+        else {
+            stage_electricity = "N/A";
+        }
         var rot = globals.active_vessel.rot;
 
         // Unity exports the rotation as X Y Z, the plugin sends it in "Y X Z" to us,
@@ -174,7 +196,12 @@ function status_update(id){
         launch.find(".status-av-rot").html(rot);
         launch.find(".status-av-apo-t").text(apo_t);
         launch.find(".status-av-per-t").text(per_t);
+
         launch.find(".status-av-throttle").text(throttle);
+
+        launch.find(".status-av-stage-fuel").text(stage_fuel);
+        launch.find(".status-av-stage-electricity").text(stage_electricity);
+
         //launch.find(".status-av-munarangle").text(rad2deg(vessel.position.angleTo(globals.celestials.Mun.position)).toFixed(2))
         launch.find(".status-av-sma").text(vessel.elements.sma.toFixed(0));
         launch.find(".status-av-ecc").text(vessel.elements.ecc.toFixed(2));
