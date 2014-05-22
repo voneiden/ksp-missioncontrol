@@ -69,57 +69,51 @@
         <li id="menu-workspace2" onclick="setup_workspace2();">WORKSPACE 2</li>
 
         <div id="status-0-root">
-            <div id="status-0-launch">
-                LAUNCH MODE<br>
-                <div class="status-box status-launch-site">
-                    Launch site information <br>
-                    Longitude: <span class="status-av-lon">0.00</span><br>
-                    Latitude : <span class="status-av-lat">0.00</span><br>
-                    Altitude : <span class="status-av-alt">0 meters</span><br>
-                    Munar angle: <span class="status-av-munarangle"></span><br>
-                </div>
-                <div class="status-box status-launch-target">
-                    Target orbit
-                    <select class="status-launch-target-select">
-                        <option>MANUAL MODE</option>
-                        <option>Some ship</option>
-                    </select><br>
-                    Inclination: <input type="text" class="status-launch-target-inclination"> degrees<br>
-                    Apoapsis:    <input type="text" class="status-launch-target-apoapsis"> km alt<br>
-                    Launch azimuth:    <input type="text" class="status-launch-target-azimuth" disabled> degrees<br>
-                    <input type="button" value="Update" onclick="status_launch_target_update(this)"><br>
-                </div>
-                <div class="status-box status-launch-current" style="display:inline-block">
-                    Current orbit <br>
-                    Longitude: <span class="status-av-lon">0.00</span><br>
-                    Latitude : <span class="status-av-lat">0.00</span><br>
-                    Altitude : <span class="status-av-alt">0.00</span><br>
-                    Apoapsis : <span class="status-av-apo">0.00</span><br>
-                    Periapsis : <span class="status-av-per">0.00</span><br>
-                    Velocity : <span class="status-av-v">0.00</span><br>
-                    D-pressure : <span class="status-av-dp">0.00</span><br>
-                    <span class="status-av-rot">0.00</span><br>
-                    Time to apoapsis: <span class="status-av-apo-t">0.00</span> s<br>
-                    Time to periapsis: <span class="status-av-per-t">0.00</span> s<br>
-                </div>
-                <div class="status-box status-launch-engines">
-                    Throttle: <span class="status-av-throttle">0.00</span><br>
-                    Stage fuel: <span class="status-av-stage-fuel">0.00</span><br>
-                    Stage elec: <span class="status-av-stage-electricity">0.00</span><br>
-                </div>
-                <div class="status-box status-launch-orbit">
-                    SMA: <span class="status-av-sma">0000</span><br>
-                    ECC: <span class="status-av-ecc">0000</span><br>
-                    INC: <span class="status-av-inc">0000</span><br>
-                    LAN: <span class="status-av-lan">0000</span><br>
-                    AOP: <span class="status-av-aop">0000</span><br>
-                    TAN: <span class="status-av-tan">0000</span><br>
-                    EPO: <span class="status-av-epo">0000</span><br>
-                    T-LAN: <span class="status-av-tlan">0000</span><br>
-                </div>
-
+            <span class="status-mission-state">NO TARGET</span>
+            <div class="status-box status-launch-information">
+                Launch information <br>
+                Launch AZM: <input type="text" class="status-launch-target-azm" disabled> degrees<br>
+                Launch LAN: <input type="text" class="status-launch-target-lan" disabled> degrees<br>
             </div>
-            GT ticks: <span class="debug-groundtrack-ticks"></span><br>
+            <div class="status-box status-launch-settings">
+                Target orbit
+                <select class="status-launch-settings-target">
+                    <option>Mun</option>
+                    <option>Minmus</option>
+                </select><br>
+                Arrival UT:    <input type="text" class="status-launch-settings-arrival-ut"> s<br>
+                <!--<input type="button" value="Update" onclick="status_launch_target_update(this)"><br>-->
+            </div>
+            <div class="status-box status-av-info-orbit" style="display:inline-block">
+                Current orbit <br>
+                Apoapsis : <span class="status-av-apo">0.00</span><br>
+                Periapsis : <span class="status-av-per">0.00</span><br>
+                Time to apoapsis: <span class="status-av-apo-t">0.00</span> s<br>
+                Time to periapsis: <span class="status-av-per-t">0.00</span> s<br>
+            </div>
+            <div class="status-box status-av-info-atmosphere">
+                D-pressure : <span class="status-av-dp">0.00</span><br>
+            </div>
+            <div class="status-box status-av-info-general">
+                Longitude: <span class="status-av-lon">0.00</span><br>
+                Latitude : <span class="status-av-lat">0.00</span><br>
+                Altitude : <span class="status-av-alt">0.00</span><br>
+                Velocity : <span class="status-av-v">0.00</span><br>
+                <span class="status-av-rot">0.00</span><br>
+                Throttle: <span class="status-av-throttle">0.00</span><br>
+                Stage fuel: <span class="status-av-stage-fuel">0.00</span><br>
+                Stage elec: <span class="status-av-stage-electricity">0.00</span><br>
+            </div>
+            <div class="status-box status-launch-orbit">
+                SMA: <span class="status-av-sma">0000</span><br>
+                ECC: <span class="status-av-ecc">0000</span><br>
+                INC: <span class="status-av-inc">0000</span><br>
+                LAN: <span class="status-av-lan">0000</span><br>
+                AOP: <span class="status-av-aop">0000</span><br>
+                TAN: <span class="status-av-tan">0000</span><br>
+                EPO: <span class="status-av-epo">0000</span><br>
+            </div>
+            <!--GT ticks: <span class="debug-groundtrack-ticks"></span><br>-->
         </div>
 
         <img id="map-kerbin" src="img/Kerbin.png">

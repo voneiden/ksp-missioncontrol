@@ -121,14 +121,15 @@ function ws_receive(event)
             var lat = Math.asin(uni_position.e(3));
             var lon = Math.atan2(uni_position.e(1), uni_position.e(2));
 
-
+            /*
             if (globals.active_vessel && globals.active_vessel.uid == vessel_data.uid) {
                 var tmp = LatLonAtUT(globals.active_vessel, vessel_data.ut);
                 console.log("LATLON", rad2deg(tmp[0]), "and",rad2deg(tmp[1]));
                 console.log("TERRORl",  vessel_data);
             }
-            console.log("Latitude (calc):     " ,rad2deg(lat), "vs", vessel_data.lat);
-            console.log("Longitude(calc):     " ,rad2deg(lon), "vs", vessel_data.lon);
+            */
+            //console.log("Latitude (calc):     " ,rad2deg(lat), "vs", vessel_data.lat);
+            //console.log("Longitude(calc):     " ,rad2deg(lon), "vs", vessel_data.lon);
 
             if (!globals.vessels[vessel_data.uid]) {
                 // Vessel uid does not exist in database. Insert the received data as the vessel object

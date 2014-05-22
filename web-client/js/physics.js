@@ -136,10 +136,9 @@ function determine_orbit_elements(object) {
 
     // Eccentricity
     var mu = globals.celestials[object.ref].mu;
-    console.log("e");
     var e = object.velocity.cross(object.h).multiply(1/mu).subtract(object.position.toUnitVector());
     elements.ecc = e.modulus();
-    console.log("e");
+
     // AoP
     if (e.modulus() < 0.000001) {
         elements.aop = NaN;
@@ -153,8 +152,8 @@ function determine_orbit_elements(object) {
 
     var test1 = Vector.create([1,0,0]);
     var test2 = Vector.create([0,1,0]);
-    console.log("test1", rad2deg(Math.acos(test1.dot(e) / (test1.modulus() * e.modulus()))));
-    console.log("test2", rad2deg(Math.acos(test2.dot(e) / (test2.modulus() * e.modulus()))));
+    //console.log("test1", rad2deg(Math.acos(test1.dot(e) / (test1.modulus() * e.modulus()))));
+    //console.log("test2", rad2deg(Math.acos(test2.dot(e) / (test2.modulus() * e.modulus()))));
 
 
     if (elements.ecc < 0.00001) {
@@ -343,15 +342,16 @@ function determine_rv_at_t(object, t, depth)
         }
     }
     if (i == maxiter) {
-        console.log("Was unable to find solution (depth "+depth+")",object);
+
         //console.log(object.name);
         //console.log(X0);
         //console.log(dt);
         //console.log(t);
-        if (depth < 2)
+        if (depth < 3)
         {
-            return determine_rv_at_t(object, t+0.0000001, depth+1);
+            return determine_rv_at_t(object, t+0.001, depth+1);
         }
+        console.log("Was unable to find solution (depth "+depth+")",t,object);
         return false;
     }
     
@@ -412,9 +412,13 @@ function determine_launch_lan_tan(target_object, arrival_ut, launch_inclination)
     // Todo check destination inclination  < parking orbit inclination?
 
     // Todo launch inclination in rad?
-
-    depart_lan -= Math.asin(depart_latitude / launch_inclination);
-
+    if (isNaN(depart_lan)) { console.error("NaN 1")}
+    var ratio = depart_latitude / launch_inclination;
+    if (launch_inclination != 0 && 0 <= ratio && ratio <= 1) { // TODO: also check ratio?
+        depart_lan -= Math.asin(depart_latitude / launch_inclination);
+    }
+    if (isNaN(depart_lan)) { console.error("NaN 2", depart_latitude, launch_inclination)}
+    else { console.log("LaN ok", depart_lan);}
     return [depart_latitude, depart_lan];
 
 }

@@ -18,11 +18,11 @@ function get_status() {
 
     // Take a copy of status-0-root element
     var root = $("#status-0-root").clone();
-    var launch = root.children("#status-0-launch");
+    //var launch = root.children("#status-0-launch");
 
     // Rename ID's
     root.attr("id", root.attr("id").replace("status-0", id));
-    launch.attr("id", launch.attr("id").replace("status-0", id));
+    //launch.attr("id", launch.attr("id").replace("status-0", id));
 
     id += "-root";
 
@@ -32,6 +32,8 @@ function get_status() {
     globals.status.push(root);
 
     // Bind events
+    root.find(".status-launch-settings-target").change(function() { status_launch_target_update(root) });
+    root.find(".status-launch-settings-arrival-ut").keyup(function() { status_launch_target_update(root) });
 
     // Refresh
     status_update(id);
@@ -55,12 +57,12 @@ function status_update(id){
     //console.log("Status update:", id)
     var root = $("#"+id);
     var status = globals.status[id];
-    var launch = root.children("div[id$=launch]");
+    //var launch = root.children("div[id$=launch]");
 
     // Set up default status mode
     if (!status.mode) {
         status.mode = 0;
-        launch.hide(0);
+        //launch.hide(0);
     }
     // If we are in prelaunch or suborbital, display launch window
     if (globals.active_vessel) {
@@ -68,7 +70,7 @@ function status_update(id){
         var state = globals.active_vessel.state;
         if (state == "suborbital" || state == "flying" || state == "prelaunch"  || state == "landed" || true) {
             if (status.mode != 1) {
-                launch.show(0);
+                //launch.show(0);
                 status.mode = 1;
             }
         }
@@ -77,7 +79,7 @@ function status_update(id){
             console.log(globals.active_vessel.state);
         }
         var vessel = globals.active_vessel;
-        console.log(globals.active_vessel);
+        //console.log(globals.active_vessel);
         var LatLon = LatLonAtUT(globals.active_vessel, globals.ut);
         var lat = Math.round(rad2deg(LatLon[0]) * 100) / 100;
         var lon = Math.round(rad2deg(LatLon[1]) * 100) / 100;
@@ -186,33 +188,33 @@ function status_update(id){
         //console.log("NIG");
         //console.log(rot);
         //console.log(rotZ(rot_z).multiply(forward_vector));
-        launch.find(".status-av-lon").text(lon); // TODO should the lon be calculated?
-        launch.find(".status-av-lat").text(lat);
-        launch.find(".status-av-alt").text(alt);
-        launch.find(".status-av-apo").text(alt_apo);
-        launch.find(".status-av-per").text(alt_per);
-        launch.find(".status-av-v").text(srf_v);
-        launch.find(".status-av-dp").text(pressure_d);
-        launch.find(".status-av-rot").html(rot);
-        launch.find(".status-av-apo-t").text(apo_t);
-        launch.find(".status-av-per-t").text(per_t);
+        root.find(".status-av-lon").text(lon); // TODO should the lon be calculated?
+        root.find(".status-av-lat").text(lat);
+        root.find(".status-av-alt").text(alt);
+        root.find(".status-av-apo").text(alt_apo);
+        root.find(".status-av-per").text(alt_per);
+        root.find(".status-av-v").text(srf_v);
+        root.find(".status-av-dp").text(pressure_d);
+        root.find(".status-av-rot").html(rot);
+        root.find(".status-av-apo-t").text(apo_t);
+        root.find(".status-av-per-t").text(per_t);
 
-        launch.find(".status-av-throttle").text(throttle);
+        root.find(".status-av-throttle").text(throttle);
 
-        launch.find(".status-av-stage-fuel").text(stage_fuel);
-        launch.find(".status-av-stage-electricity").text(stage_electricity);
+        root.find(".status-av-stage-fuel").text(stage_fuel);
+        root.find(".status-av-stage-electricity").text(stage_electricity);
 
         //launch.find(".status-av-munarangle").text(rad2deg(vessel.position.angleTo(globals.celestials.Mun.position)).toFixed(2))
-        launch.find(".status-av-sma").text(vessel.elements.sma.toFixed(0));
-        launch.find(".status-av-ecc").text(vessel.elements.ecc.toFixed(2));
-        launch.find(".status-av-inc").text(vessel.elements.inc.toFixed(2));
-        launch.find(".status-av-lan").text(vessel.elements.lan.toFixed(2));
-        launch.find(".status-av-aop").text(vessel.elements.aop.toFixed(2));
-        launch.find(".status-av-tan").text(vessel.elements.tan.toFixed(2));
-        launch.find(".status-av-epo").text(vessel.elements.epo.toFixed(0));
+        root.find(".status-av-sma").text(vessel.elements.sma.toFixed(0));
+        root.find(".status-av-ecc").text(vessel.elements.ecc.toFixed(2));
+        root.find(".status-av-inc").text(vessel.elements.inc.toFixed(2));
+        root.find(".status-av-lan").text(vessel.elements.lan.toFixed(2));
+        root.find(".status-av-aop").text(vessel.elements.aop.toFixed(2));
+        root.find(".status-av-tan").text(vessel.elements.tan.toFixed(2));
+        root.find(".status-av-epo").text(vessel.elements.epo.toFixed(0));
 
         var elements = determine_orbit_elements(globals.active_vessel);
-        launch.find(".status-av-tlan").text(elements.lan.toFixed(2));
+        root.find(".status-av-tlan").text(elements.lan.toFixed(2));
 
 
         //console.log("Check");
@@ -225,7 +227,42 @@ function status_update(id){
     }
 }
 
-function status_launch_target_update(element) {
+function status_launch_target_update(root) {
+    console.log("Target update");
+    var target = root.find(".status-launch-settings-target").val();
+    var arrival_ut = parseFloat(root.find(".status-launch-settings-arrival-ut").val());
+    console.log(root.find(".status-launch-settings-arrival-ut").val())
+    if (globals.celestials[target]) {
+        target = globals.celestials[target];
+    }
+
+    else { return; }
+    console.log("ok");
+    var vessel = globals.active_vessel;
+    if (!vessel || !arrival_ut) { console.log("No vessel or ut", vessel, arrival_ut); return ; }
+    var lat = rad2deg(vessel.lat);
+
+    var inc;
+
+    if (target.elements) { inc = target.elements.inc }
+    else { inc = NaN; }
+
+
+    // Determine launch inclination
+    var launch_inclination;
+    if (!inc) { launch_inclination = lat; }
+    else if (inc < lat) { launch_inclination = lat; }
+    else if (inc > 180-lat) { launch_inclination = 180-lat; }
+    else { launch_inclination = inc; }
+
+    departure_lat_lan = determine_launch_lan_tan(target, arrival_ut, launch_inclination);
+    console.log("Hurr", departure_lat_lan);
+
+    var launch_azimuth = Math.asin(Math.cos(launch_inclination) / Math.cos(lat));
+    root.find(".status-launch-target-azm").val(rad2deg(launch_azimuth).toFixed(2));
+    root.find(".status-launch-target-lan").val(rad2deg(departure_lat_lan[1]).toFixed(2));
+
+    /*
     var id = element.parentNode.parentNode.parentNode.id;
     var status = globals.status[id];
     var parent = $(element.parentNode);
@@ -272,4 +309,5 @@ function status_launch_target_update(element) {
     console.log("Bet4: ", rad2deg(result1));
 
     console.log(target_inclination.val());
+    */
 }
