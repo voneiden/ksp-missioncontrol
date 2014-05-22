@@ -69,9 +69,10 @@ function setup_mainmenu()
     active_display = $("#display-menu");
     
     // Add plotter to main menu view
-    //var plotter = get_plotter();
-    var groundtrack = get_groundtrack();
-    groundtrack.appendTo("#display-menu-bottom");
+    var plotter = get_plotter();
+    plotter.appendTo("#display-menu-bottom");
+    //var groundtrack = get_groundtrack();
+    //groundtrack.appendTo("#display-menu-bottom");
 	//get_attitude().appendTo("#display-menu-bottom");
     
     // Event handlers

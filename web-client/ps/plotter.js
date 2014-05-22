@@ -78,7 +78,7 @@ function plotter_setup(canvas, ref) {
             ref = globals.active_vessel.ref;
         }
         else {
-            ref = "Sun";
+            ref = "Kerbin";
         }
     }
     
@@ -188,7 +188,7 @@ function create_plot_marker(plotter, color)
     marker.addChild(new scope.Path.Line(new scope.Point(0, 10),  new scope.Point(0, 5)));
     marker.addChild(new scope.Path.Line(new scope.Point(-10, 0), new scope.Point(-5, 0)));
     marker.addChild(new scope.Path.Line(new scope.Point(10, 0),  new scope.Point(5, 0)));
-    var text = new scope.PointText(new scope.Point(20, 0));
+    var text = new scope.PointText(new scope.Point(20, 10));
     marker.addChild(text);
     marker.text = text;
     marker.strokeColor = "lime";
@@ -436,7 +436,10 @@ function onPlotterMouseMove(event)
         console.log("WOOT WOOT");
         P.hilight_object = d[keys[0]];
         P.marker_hilight.visible = true;
-        P.marker_hilight.position = P.C[d[keys[0]]].position;
+        //P.marker_hilight.position = P.C[d[keys[0]]].position;
+        P.marker_hilight.position.x = P.C[d[keys[0]]].position.x + P.marker_hilight.bounds.width/2 - 10;
+        P.marker_hilight.position.y = P.C[d[keys[0]]].position.y + P.marker_hilight.bounds.height/2 - 10;
+
         P.marker_hilight.text.content = d[keys[0]];
         console.log(P.marker_hilight.position);
         console.log(P.C[d[keys[0]]]);
