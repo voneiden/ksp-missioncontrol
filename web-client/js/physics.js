@@ -285,7 +285,7 @@ function determine_rv_at_t(object, t, depth)
     depth = depth || 1;
     
     if (object.name == "Sun") {
-        return;
+        return false;
     }
     var mu = globals.celestials[object.ref].mu
     
@@ -365,6 +365,21 @@ function determine_rv_at_t(object, t, depth)
     
     return [R, V];
 }
+
+/* This function attemps to determine relative position to reference object */
+/* HMM why not use absolute system instead?
+function determine_relative_rv_at_t(ref, obj, ut) {
+    // 1) obj is child of ref
+    if (obj.ref == ref.name) { return determine_rv_at_t(obj, ut); }
+
+    // 2) obj is parent of ref
+    else if (ref.ref == obj.name) {
+        var rv = determine_rv_at_t(ref, ut);
+        rv[0] = rv[0].mutliply(-1);
+
+    }
+}
+*/
 // TODO deal with hyperbolic orbits
 // One way to do this could be to solve
 // encounters and escapes and determine the

@@ -24,7 +24,7 @@ function get_plotter()
     plotter = $("#"+id);
     console.log(plotter);
     plotter_initialize(id);         
-    plotter_set_mode(id, "solar");  
+    //plotter_set_mode(id, "solar");
     plotter.mousedown(onPlotterMouseDown);
     plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
     plotter.mousewheel(onPlotterMouseWheel);
@@ -89,9 +89,35 @@ function plotter_setup(canvas, ref) {
     plotter.ref = ref;                  // Reference object
     plotter.camera = NaN;                     // Camera position
 
+    // TODO clear old visible objects!
+
     // Check what objects to render
     plotter.visible_objects = new Object();
     plotter_find_visible_objects(plotter);
+
+    // Determine furthest (child) object to initialize canvas pos
+    var ut = globals.ut || 0;
+    var distance = globals.celestials[ref].radius;
+    var keys = Object.keys(plotter.visible_objects);
+    for (var i=0; i < keys.length; i++) {
+        var uid = keys[i];
+        var data_object = plotter.visible_objects[uid].object;
+        if (data_object.ref == globals.celestials[plotter.ref].name) {
+            var object_distance = determine_rv_at_t(data_object, ut)[0].modulus();
+            if (object_distance > distance) { distance = object_distance; }
+        }
+    }
+
+    console.log("Peak distance determined as",distance)
+    //var r = determine_rv_at_t(globals.celestials[ref], ut)[0];
+    plotter.camera = Vector.create([0, 0, -object_distance]);
+    plotter.camera_rotz = 0
+    plotter.camera_rotx = 0
+    plotter.camera_roty = 0
+
+    //plotter.camera_ut = ut;
+    //plotter.camera_utr = r;
+    //console.log(plotter.camera_utr);
     plotter_draw(canvas);
 
 }
@@ -102,7 +128,7 @@ function plotter_find_visible_objects(plotter) {
 
     // Check celestials
     var keys = Object.keys(globals.celestials);
-
+    var ref = globals.celestials[plotter.ref];
     for (var i=0; i < keys.length; i++) {
         var celestial = globals.celestials[keys[i]];
 
@@ -110,13 +136,16 @@ function plotter_find_visible_objects(plotter) {
         if (visible_objects.indexOf(celestial) != -1) { continue; }
 
         // Child objects
-        if (celestial.ref) { visible_objects.push(celestial); }
+        if (celestial.ref == ref.name) { visible_objects.push(celestial); }
+
+        // Myself, duh
+        else if (celestial.name == ref.name) { visible_objects.push(celestial); }
 
         // Parent object
-        else if (plotter.ref == celestial.name) { visible_objects.push(celestial); }
+        else if (ref.ref == celestial.name) { visible_objects.push(celestial); }
 
         // Parent of parent object
-        else if (celestial.ref && plotter.ref == globals.celestials[celestial.ref].name) {visible_objects.push(celestial); }
+        else if (globals.celestials[ref.ref] && globals.celestials[ref.ref].ref == celestial.name) {visible_objects.push(celestial); }
     }
 
     // Create graphics for new objects
@@ -140,6 +169,8 @@ function plotter_find_visible_objects(plotter) {
             else if (uid == "Dres") { color = "grey"; }
             else if (uid == "Jool") { color = "lime"; }
             else if (uid == "Eeloo") { color = "cyan"; }
+            else if (uid == "Mun") { color = "grey"; }
+            else if (uid == "Minmus") { color = "turquoise" }
 
             else {
                 var choices = ["red","green","cyan","purple","yellow"]
@@ -275,16 +306,17 @@ function create_plot_marker(plotter, color)
  */
 function plotter_resize(canvas, width, height)
 {
-    P = plotter_data[canvas];
-    var scope = P.scope;
+    var plot = plotter_data[canvas];
+    var scope = plot.scope;
     scope.view.setViewSize(width, height);
-    if (scope.view.center.x > scope.view.center.y) { P.view_size = scope.view.center.y; }
-    else { P.view_size = scope.view.center.x; }
+    if (scope.view.center.x > scope.view.center.y) { plot.view_size = scope.view.center.y; }
+    else { plot.view_size = scope.view.center.x; }
 }
 
 /*
 * Change the mode of the plotter
 */
+/*
 function plotter_set_mode(canvas, mode)
 {
     P = plotter_data[canvas];
@@ -332,16 +364,164 @@ function plotter_set_mode(canvas, mode)
     }
 
 }
+*/
+function plotter_determine_relative_position(plotter, object, reference, ut) {
+    var uid = object.uid || object.name;
+    var relative_position;
 
+    // Check if result is already generated
+    if (plotter.celestial_positions[uid]) {
+        return plotter.celestial_positions[uid];
+    }
+
+    // 1) Object is the reference
+    if (object == reference) {
+        relative_position = Vector.create([0,0,0]);
+    }
+    // 2) Object is a child of the reference
+    else if (object.ref == reference.name) {
+        relative_position = determine_rv_at_t(object, ut)[0]; // The position returned is relative to reference
+    }
+    // 3) Object is a sibling of the reference
+    else if (uid != "Sun" && object.ref == reference.ref) {
+        //console.log("insanity", object.ref, object, reference);
+        //return false;
+        var relative_position_to_parent = determine_rv_at_t(object, ut)[0]; // The position is relative to the parent of the reference
+        var relative_position_of_parent = plotter_determine_relative_position(plotter, globals.celestials[object.ref], reference, ut);
+        var relative_position = relative_position_of_parent.sum(relative_position_to_parent);
+    }
+    // 4) Parent of the reference
+    else if (uid == reference.ref) {
+        var reference_position = determine_rv_at_t(reference, ut)[0];
+        var relative_position = reference_position.multiply(-1);
+    }
+    // 5) Parent of the reference parent
+    else if (reference.ref && uid == globals.celestials[reference.ref].ref) {
+        /*
+        var reference_position = plotter.celestial_positions[reference.name];
+        var parent_position;
+        if (!plotter.celestial_positions[reference.ref]) {
+            plotter_determine_re
+            parent_position = plotter.celestial_positions[reference.ref]
+        }
+        else {
+            parent_position = determine_rv_at_t(globals.celestials[reference.ref], ut);
+            plotter.celestial_positions[reference.ref] = parent_position;
+        }
+        var relative_position = reference_position.add(parent_position).multiply(-1);
+        plotter.celestial_positions[uid]= relative_position;
+        */
+        console.error("Unsupported reference mode");
+    }
+    else {
+        console.error("Body has too many references!")
+        return;
+    }
+    plotter.celestial_positions[uid] = relative_position;
+    return relative_position;
+}
 /*
 * This function updates the canvas
 * with correct positions taking into consideration
 * camera rotation.
 */
-function plotter_draw(canvas) {
-    P = plotter_data[canvas];
-    var scope = P.scope;
-    
+function plotter_draw(canvas) { // TODO implement camera as simple distance and rotations angles insteead of vectors
+    var plotter = plotter_data[canvas];
+    var scope = plotter.scope;
+    var reference = globals.celestials[plotter.ref]; // Pointer to the actual ref object
+
+    // Calculate chasing camera position
+    var ut = globals.ut || 0;
+    /*
+    if (ut != plotter.camera_ut) {
+        var r = determine_rv_at_t(globals.celestials[plotter.ref], ut)[0];
+        plotter.camera = plotter.camera.add(r.subtract(plotter.camera_utr));
+        plotter.camera_ut = ut;
+        plotter.camera_utr = r;
+    }
+    */
+    // Calculate orientation
+    //console.log(plotter.camera_utr);
+    //console.log(plotter.camera);
+    var camera_orientation = plotter.camera.toUnitVector().multiply(Math.PI);
+    //var camera_orientation = plotter.camera.subtract(plotter.camera_utr).toUnitVector().multiply(Math.PI);
+    //var fov = 2.41;
+    var fov = 1;
+
+    // Z-axis
+    //var cam_z_axis = plotter.camera_right.cross(plotter.camera);
+    //var rotz = Matrix.Rotation(Math.atan2(camera_orientation.e(2), camera_orientation.e(1)), cam_z_axis);
+    var rotz = Matrix.RotationZ(plotter.camera_rotz);
+    var roty = Matrix.RotationY(0);
+    var rotx = Matrix.RotationX(plotter.camera_rotx);
+
+    //var rotrix = rotz.multiply(roty.multiply(rotx));
+    var rotrix = rotx.multiply(rotz);
+    //var rotrix = rotx.multiply(roty.multiply(rotz));
+    //var rotrix = Matrix.RotationZ(0);
+    //console.log("rotrix", rotrix);
+    // Render celestials
+
+    plotter.celestial_positions = new Object();
+    plotter.celestial_distance = new Object();
+    // Loop through
+    var keys = Object.keys(plotter.visible_objects);
+    for (var i = 0; i < keys.length; i++) {
+        var uid = keys[i];
+        var render_object = plotter.visible_objects[uid];
+        console.log("Rendering",uid)
+
+
+        var relative_position = plotter_determine_relative_position(plotter, render_object.object, reference, ut);
+        var render_position = rotrix.multiply(relative_position).subtract(plotter.camera);
+
+        plotter.celestial_distance[render_position.e(3)] = render_object;
+        //console.log("reap", real_position);
+        //console.log("orip", origin_position);
+        //console.log("renp", render_position);
+        var render_scale = fov / render_position.e(3) * scope.view.center.y;
+        if (render_scale < 0) {
+            render_object.marker.visible = false;
+            continue;
+        }
+        else {
+            render_object.marker.visible = true;
+        }
+        var x = render_scale * render_position.e(1);
+        var y = render_scale * render_position.e(2);
+        console.log(x,y);
+        //console.warn("Camera distance", render_position.e(3))
+        // Scale the marker
+        var render_size = render_scale * render_object.size
+        //console.log("Presize", render_size);
+        if (render_size < 2) { render_size = 2; }
+
+        var render_marker_scale = render_size / render_object.size;
+        var required_marker_scale = render_marker_scale / render_object.scale;
+
+        render_object.marker.scale(required_marker_scale);
+        /*
+        console.log("Render scale", render_scale);
+        console.log("Current scale", render_object.scale);
+        console.log("New scale", render_marker_scale);
+        console.log("Scale ratio", required_marker_scale);
+        console.log("Render size", render_size);
+        console.log("Real size", render_object.size);
+        */
+        render_object.scale = render_marker_scale;
+
+        render_object.marker.position.x = x + scope.view.center.x;
+        render_object.marker.position.y = y + scope.view.center.y;
+
+    }
+    var keys = Object.keys(plotter.celestial_distance);
+    keys.sort(function (a, b) { return parseFloat(a) - parseFloat(b)});
+    for (var i = keys.length-1; i >= 0; i--) {
+        // Looping from farthest to closest
+        var render_object = plotter.celestial_distance[keys[i]];
+        render_object.marker.bringToFront();
+    }
+    /*
     // Todo calculate on demand
     var rot = calculate_rotation_matrix(P.camera_rotation)
     //var cam_pos = rot.multiply(Vector.create([0, 0, P.camera_distance]))
@@ -378,13 +558,7 @@ function plotter_draw(canvas) {
             
             var render_position = rot.multiply(world_position.multiply(ratio)); 
             obj.render_position = render_position; // Save this 
-            /*
-            console.log("Rendering "+keys[i]+" to ");
-            console.log("Ratio: "+ (P.view_size / P.camera_distance));
-            console.log(P.view_size);
-            console.log(P.camera_distance);
-            console.log(render_position);
-            */
+
             distances[cam_pos.distanceFrom(render_position)] = obj; // I know I'm doing a bit wrong here but it works for now
             obj.position = new scope.Point(render_position.e(1) + scope.view.center.x, render_position.e(2) + scope.view.center.y);
         }
@@ -430,6 +604,7 @@ function plotter_draw(canvas) {
     {
         scope.project.activeLayer.insertChild(0, P.T[keys[i]]);
     }
+    */
     scope.view.draw();
 }
 // event.button 0 left mouse
@@ -458,22 +633,38 @@ function onPlotterMouseDown(event) {
 
 function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
 	// Add a point to the path every time the mouse is dragged
-    P = plotter_data[canvas];
-	P.camera_rotation.setElements([P.camera_rotation.e(1) + delta_y/100, P.camera_rotation.e(2), P.camera_rotation.e(3) - delta_x/100])
+
+    var plotter = plotter_data[canvas];
+    //P.camera_rotation.setElements([P.camera_rotation.e(1) + delta_y/100, P.camera_rotation.e(2), P.camera_rotation.e(3) - delta_x/100])
+    //var camera_origin = plotter.camera.subtract(plotter.camera_utr);
+    //var rotation_axis_Z = plotter.camera_right.cross(plotter.camera).toUnitVector();
+    //var rotz = Matrix.Rotation(delta_x/10);
+    //console.log("rot:",delta_x/10000)
+    //console.log("cam:", plotter.camera);
+    plotter.camera_rotz += delta_x/300;
+    plotter.camera_rotx += delta_y/300;
+    //plotter.camera = Matrix.Rotation(delta_x/1000, rotation_axis_Z).multiply(plotter.camera);
+    //console.warn(plotter.camera.e(1),plotter.camera.e(2),plotter.camera.e(3))
+    //plotter.camera_right = Matrix.Rotation(delta_x/1000, rotation_axis_Z).multiply(plotter.camera_right);
+    //plotter.camera = camera_origin.add(plotter.camera_utr);
     plotter_draw(canvas);
 }
 
 function onPlotterRightMouseDrag(canvas, delta_y) {
 	// Add a point to the path every time the mouse is dragged
-    P = plotter_data[canvas];
+    return;
+    var plotter = plotter_data[canvas];
+
 	P.camera_distance = P.camera_distance + delta_y * 100000000;
     plotter_draw(canvas);
 }
 
 function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
     var canvas = this.id;
-    P = plotter_data[canvas]
-    P.camera_distance = P.camera_distance - delta_y * 0.1*P.camera_distance;
+    var plotter = plotter_data[canvas];
+    var to_ref = plotter.camera;
+
+    plotter.camera = plotter.camera.add(to_ref.toUnitVector().multiply(delta_y * 0.1 * to_ref.modulus()));
     plotter_draw(canvas);
 }
 
@@ -483,6 +674,7 @@ function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
 function onPlotterMouseMove(event)
 {
     //console.log("Plotter click");
+    return;
     canvas = this.id;
     P = plotter_data[canvas];
     var scope = P.scope;

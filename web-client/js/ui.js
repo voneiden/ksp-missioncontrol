@@ -22,7 +22,7 @@ function get_plotter()
     plotter = $("#"+id);
     
     plotter_initialize(id);         // TODO: use object
-    plotter_set_mode(id, "solar");  // TODO: use object
+    //plotter_set_mode(id, "solar");  // TODO: use object
     plotter.mousedown(onPlotterMouseDown);
     plotter.bind("contextmenu", function() { return false; }); // Disable right click context menu
     plotter.mousewheel(onPlotterMouseWheel);
