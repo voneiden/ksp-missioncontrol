@@ -429,56 +429,29 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
     var plotter = plotter_data[canvas];
     var scope = plotter.scope;
     var reference = globals.celestials[plotter.ref]; // Pointer to the actual ref object
-
-    // Calculate chasing camera position
+    
     var ut = globals.ut || 0;
-    /*
-    if (ut != plotter.camera_ut) {
-        var r = determine_rv_at_t(globals.celestials[plotter.ref], ut)[0];
-        plotter.camera = plotter.camera.add(r.subtract(plotter.camera_utr));
-        plotter.camera_ut = ut;
-        plotter.camera_utr = r;
-    }
-    */
-    // Calculate orientation
-    //console.log(plotter.camera_utr);
-    //console.log(plotter.camera);
-    var camera_orientation = plotter.camera.toUnitVector().multiply(Math.PI);
-    //var camera_orientation = plotter.camera.subtract(plotter.camera_utr).toUnitVector().multiply(Math.PI);
-    //var fov = 2.41;
-    var fov = 1;
+    var fov = 1; // 90 degree FoV
 
-    // Z-axis
-    //var cam_z_axis = plotter.camera_right.cross(plotter.camera);
-    //var rotz = Matrix.Rotation(Math.atan2(camera_orientation.e(2), camera_orientation.e(1)), cam_z_axis);
     var rotz = Matrix.RotationZ(plotter.camera_rotz);
-    var roty = Matrix.RotationY(0);
     var rotx = Matrix.RotationX(plotter.camera_rotx);
-
-    //var rotrix = rotz.multiply(roty.multiply(rotx));
     var rotrix = rotx.multiply(rotz);
-    //var rotrix = rotx.multiply(roty.multiply(rotz));
-    //var rotrix = Matrix.RotationZ(0);
-    //console.log("rotrix", rotrix);
-    // Render celestials
 
+    // Render celestials
     plotter.celestial_positions = new Object();
     plotter.celestial_distance = new Object();
-    // Loop through
+    // Loop through all visible objects
     var keys = Object.keys(plotter.visible_objects);
     for (var i = 0; i < keys.length; i++) {
         var uid = keys[i];
         var render_object = plotter.visible_objects[uid];
-        console.log("Rendering",uid)
-
 
         var relative_position = plotter_determine_relative_position(plotter, render_object.object, reference, ut);
         var render_position = rotrix.multiply(relative_position).subtract(plotter.camera);
 
+        // Store distance for depth sorting
         plotter.celestial_distance[render_position.e(3)] = render_object;
-        //console.log("reap", real_position);
-        //console.log("orip", origin_position);
-        //console.log("renp", render_position);
+
         var render_scale = fov / render_position.e(3) * scope.view.center.y;
         if (render_scale < 0) {
             render_object.marker.visible = false;
@@ -489,31 +462,24 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
         }
         var x = render_scale * render_position.e(1);
         var y = render_scale * render_position.e(2);
-        console.log(x,y);
-        //console.warn("Camera distance", render_position.e(3))
+
         // Scale the marker
         var render_size = render_scale * render_object.size
-        //console.log("Presize", render_size);
         if (render_size < 2) { render_size = 2; }
 
         var render_marker_scale = render_size / render_object.size;
         var required_marker_scale = render_marker_scale / render_object.scale;
 
         render_object.marker.scale(required_marker_scale);
-        /*
-        console.log("Render scale", render_scale);
-        console.log("Current scale", render_object.scale);
-        console.log("New scale", render_marker_scale);
-        console.log("Scale ratio", required_marker_scale);
-        console.log("Render size", render_size);
-        console.log("Real size", render_object.size);
-        */
         render_object.scale = render_marker_scale;
 
+        // Position the marker
         render_object.marker.position.x = x + scope.view.center.x;
         render_object.marker.position.y = y + scope.view.center.y;
 
     }
+
+    // Depth sorting of markers
     var keys = Object.keys(plotter.celestial_distance);
     keys.sort(function (a, b) { return parseFloat(a) - parseFloat(b)});
     for (var i = keys.length-1; i >= 0; i--) {
