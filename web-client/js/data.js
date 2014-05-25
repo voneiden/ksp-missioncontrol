@@ -254,4 +254,40 @@ globals.celestials = {
   "t0":0}
  }
 
+/*
+globals.PI2 = Math.PI*2;
+globals.qacc = 3
+globals.qsin_data = new Object();
+globals.qcos_data = new Object();
 
+function qsin(key) {
+    key = key%globals.PI2;
+    if (key < 0) { key += globals.PI2; }
+    var result = globals.qsin_data[key.toFixed(globals.qacc)];
+    if (!result) {
+        console.error("FAIL", key.toFixed(globals.qacc));
+    }
+    return result;
+}
+
+function qcos(key) {
+    key = key%globals.PI2;
+    if (key < 0) { key += globals.PI2; }
+    return globals.qcos_data[key.toFixed(globals.qacc)];
+}
+
+globals.qsin = qsin;
+globals.qcos = qcos;
+
+function generate_qdata() {
+    var decimal_steps = Math.pow(10, globals.qacc);
+    var key, value;
+    for (var i=0; i < globals.PI2*decimal_steps; i++) {
+        key = (i / decimal_steps).toFixed(globals.qacc);
+        globals.qsin_data[key] = Math.sin(parseFloat(key));
+        globals.qcos_data[key] = Math.cos(parseFloat(key));
+    }
+}
+
+generate_qdata();
+*/

@@ -468,7 +468,7 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
 
         if (render_size > 3 && uid == "Kerbin" ) {
             // Attempt to texture the celestial
-
+            var ticks = new Date().getTime();
             // Remove the old texture
             if (plotter.reference_texture) {
                 plotter.reference_texture.remove();
@@ -491,14 +491,20 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
             else { output_scale = 1; }
 
             texture_output.size = new scope.Size(output_size, output_size);
-            //texture_output.scale(output_scale);
+            texture_output.scale(output_scale);
 
             // TODO: Apply day night shading
             // TODO: convert to raster
             // rotx 0 = straight above (latitude 90)
             // rotx -pi = straight below (latitude -90)
+            var theta = deg2rad(render_object.object.rotation_angle + render_object.object.ang_v * (ut - render_object.object.rotation_t0));
+
             var latitude = plotter.camera_rotx + Math.PI/2; // add 90 to bring to to range [-90, 90]
-            var longitude = (plotter.camera_rotz + Math.PI*2) % Math.PI*2; // Range [0, 360]
+            var longitude = (plotter.camera_rotz - theta) % Math.PI*2; // Range [0, 360]
+
+            if (longitude < 0) { longitude += Math.PI*2;}
+
+
             //var longitude = 0;
             //console.log(latitude)
 
@@ -583,7 +589,7 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
             texture_output.position = scope.view.center;
             render_object.marker.visible = false;
             plotter.reference_texture = texture_output;
-
+            console.log("Time taken:", new Date().getTime() - ticks);
         }
         else {
 
