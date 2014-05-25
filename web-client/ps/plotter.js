@@ -457,9 +457,7 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
             render_object.marker.visible = false;
             continue;
         }
-        else {
-            render_object.marker.visible = true;
-        }
+
         var x = render_scale * render_position.e(1);
         var y = render_scale * render_position.e(2);
 
@@ -467,15 +465,145 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
         var render_size = render_scale * render_object.size
         if (render_size < 2) { render_size = 2; }
 
-        var render_marker_scale = render_size / render_object.size;
-        var required_marker_scale = render_marker_scale / render_object.scale;
 
-        render_object.marker.scale(required_marker_scale);
-        render_object.scale = render_marker_scale;
+        if (render_size > 3 && uid == "Kerbin" ) {
+            // Attempt to texture the celestial
 
-        // Position the marker
-        render_object.marker.position.x = x + scope.view.center.x;
-        render_object.marker.position.y = y + scope.view.center.y;
+            // Remove the old texture
+            if (plotter.reference_texture) {
+                plotter.reference_texture.remove();
+            }
+            // First, load a  new raster texture
+            if (!plotter.reference_map) {
+                plotter.reference_map = new scope.Raster('img/kerbin2.png');
+                plotter.reference_map.visible = false;
+            }
+            var texture_input = plotter.reference_map;
+            var texture_output = new scope.Raster();
+
+            // Limit output size
+            var output_size = parseInt(render_size*2);
+            var output_scale;
+            if (output_size > 64) {
+                output_scale = output_size / 64;
+                output_size = 64;
+            }
+            else { output_scale = 1; }
+
+            texture_output.size = new scope.Size(output_size, output_size);
+            //texture_output.scale(output_scale);
+
+            // TODO: Apply day night shading
+            // TODO: convert to raster
+            // rotx 0 = straight above (latitude 90)
+            // rotx -pi = straight below (latitude -90)
+            var latitude = plotter.camera_rotx + Math.PI/2; // add 90 to bring to to range [-90, 90]
+            var longitude = (plotter.camera_rotz + Math.PI*2) % Math.PI*2; // Range [0, 360]
+            //var longitude = 0;
+            //console.log(latitude)
+
+            var radius = texture_output.width / 2;
+            var ux, uy, d, input_latitude, input_longitude, c, p, P, input_y, input_x;
+
+            // ux, uy are unit x-y coordinates on a circle
+            // d is the distance from center
+            // input_latitude & longitude are used to retrieve pixels from texture_input
+            // c, p, P, helper variables
+            // http://pubs.usgs.gov/pp/1395/report.pdf
+            // p == d
+            // c == arcsin(d)
+            P = plotter.camera.modulus() / render_object.object.radius; // Distance of camera
+            for (var x=0; x < texture_output.width; x++) {
+                for (var y=0; y < texture_output.height; y++) {
+                    ux = (x - radius) / radius;
+                    uy = -(y - radius) / radius;
+
+                    d = Math.sqrt(Math.pow(ux, 2) + Math.pow(uy, 2));
+
+                    if (d >= 1) {
+                        texture_output.setPixel(x, y, [0,0,0,0]);
+                    }
+                    else {
+                        /*
+                        delta_latitude = (latitude + rad2deg(Math.asin(uy)));
+                        delta_longitude = ((longitude + rad2deg(Math.asin(ux))) + 360);
+
+                        if (delta_latitude > 180) {
+                            delta_latitude = 360 - delta_latitude%360;
+                            delta_longitude += 180;
+                        }
+                        else if (delta_latitude < 0) {
+                            delta_latitude = -delta_latitude
+                            delta_longitude += 180;
+                        }
+                        */
+                        if (d == 0) {
+                            input_latitude = rad2deg(latitude)+90;
+                            input_longitude = rad2deg(longitude);
+                            //console.log("d0lat",input_latitude)
+                            //console.log("d0lon",input_longitude)
+                        }
+                        else {
+                            c = Math.asin(d)
+                            //a = P - Math.sqrt((1 - Math.pow(d, 2) * (P + 1) / (P - 1)))
+                            //b = (P - 1) / d + d / (P - 1);
+
+                            //c = Math.asin(a / b)
+                            //console.log("P",P,"c",c);
+                            //console.log("a",a,"b",b,"d",d);
+                            input_latitude = rad2deg(Math.asin(Math.cos(c) * Math.sin(latitude) +
+                                                       uy * Math.sin(c) * Math.cos(latitude) / d));
+
+                            input_longitude = rad2deg(longitude) + rad2deg(Math.atan2(ux * Math.sin(c),
+                                                                       d * Math.cos(latitude) * Math.cos(c) - uy * Math.sin(latitude) * Math.sin(c)));
+                            //input_longitude = rad2deg(longitude) + rad2deg(Math.atan(ux * Math.sin(c) /
+                            //                                               Math.cos(latitude) * Math.cos(c) - uy * Math.sin(latitude) * Math.sin(c)));
+                            //input_longitude = rad2deg(longitude) + rad2deg(Math.atan2(Math.cos(latitude) * Math.cos(c) - uy * Math.sin(latitude) * Math.sin(c),
+                            //                                               ux * Math.sin(c)));
+
+
+                            input_latitude = (input_latitude+450)%180;   // Scale latitude to 0-180
+                            input_longitude = (input_longitude+360)%360;
+                        }
+                        //console.log("ilat", input_latitude);
+                        //console.log("ilon", input_longitude);
+
+                        input_y = (180-input_latitude) / 180 * texture_input.height;
+                        input_x = input_longitude / 360 * texture_input.width;
+
+                        //console.log("Input x", input_x, texture_input.height);
+                        //console.log("Input y", input_y, texture_input.width);
+                        texture_output.setPixel(x, y, texture_input.getPixel(input_x, input_y));
+                        //texture_output.setPixel(x, y, [0, input_y/180 ,0]);
+                    }
+                }
+            }
+
+
+            texture_output.position = scope.view.center;
+            render_object.marker.visible = false;
+            plotter.reference_texture = texture_output;
+
+        }
+        else {
+
+            if (uid == "Kerbin" && plotter.reference_texture) {
+                plotter.reference_texture.remove();
+                plotter.reference_texture = null;
+            }
+            // Just draw the marker
+            render_object.marker.visible = true;
+
+            var render_marker_scale = render_size / render_object.size;
+            var required_marker_scale = render_marker_scale / render_object.scale;
+
+            render_object.marker.scale(required_marker_scale);
+            render_object.scale = render_marker_scale;
+
+            // Position the marker
+            render_object.marker.position.x = x + scope.view.center.x;
+            render_object.marker.position.y = y + scope.view.center.y;
+        }
 
     }
 
@@ -486,6 +614,9 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
         // Looping from farthest to closest
         var render_object = plotter.celestial_distance[keys[i]];
         render_object.marker.bringToFront();
+        if (render_object.object.name == plotter.ref && plotter.reference_texture) {
+            plotter.reference_texture.bringToFront();
+        }
     }
     /*
     // Todo calculate on demand
@@ -609,6 +740,9 @@ function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
     //console.log("cam:", plotter.camera);
     plotter.camera_rotz += delta_x/300;
     plotter.camera_rotx += delta_y/300;
+
+    if (plotter.camera_rotx > -0.01) { plotter.camera_rotx = -0.01; }
+    else if (plotter.camera_rotx < -3.13) { plotter.camera_rotx = -3.13; }
     //plotter.camera = Matrix.Rotation(delta_x/1000, rotation_axis_Z).multiply(plotter.camera);
     //console.warn(plotter.camera.e(1),plotter.camera.e(2),plotter.camera.e(3))
     //plotter.camera_right = Matrix.Rotation(delta_x/1000, rotation_axis_Z).multiply(plotter.camera_right);
