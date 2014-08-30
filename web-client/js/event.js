@@ -46,7 +46,8 @@ function onResize()
         if (jQuery.contains($("#display")[0], plotter[0])) { 
             var width = plotter.parent().width();
             var height = plotter.parent().height();
-            plotter_resize(plotter.attr("id"), width, height);    
+            plotter_resize(plotter.attr("id"), width, height);
+            console.log("calling from onResize")
             plotter_draw(plotter.attr("id"));                      
         }
     }
@@ -89,6 +90,25 @@ function refreshState() {
             var width = status.parent().width();
             var height = status.parent().height();
             status_update(status.attr("id"), width, height);
+        }
+    }
+}
+
+function refreshPlotters(reload) {
+    for (var i = globals.plotters.length; i>0; i--)
+    {
+        var plotter = globals.plotters[i-1];
+        if (jQuery.contains($("#display")[0], plotter[0])) {
+            var width = plotter.parent().width();
+            var height = plotter.parent().height();
+            var canvas = plotter.attr("id");
+            plotter_resize(canvas, width, height);
+            if (reload) {
+                //plotter_setup(canvas);
+            }
+            console.log("calling from refresh plotters")
+            console.log(canvas)
+            plotter_draw(canvas);
         }
     }
 }

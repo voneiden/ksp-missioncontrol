@@ -85,9 +85,13 @@ function plotter_setup(canvas, ref) {
     var plotter = plotter_data[canvas];
     var scope = plotter.scope;
 
+    scope.project.clear();
+
     if (!globals.celestials[ref]) { console.error("Reference undefined"); return; }
     plotter.ref = ref;                  // Reference object
-    plotter.camera = NaN;                     // Camera position
+    plotter.camera = NaN;               // Camera position
+    plotter.main_layer = new scope.Layer();
+    plotter.main_layer.activate();
 
     // TODO clear old visible objects!
 
@@ -123,10 +127,43 @@ function plotter_setup(canvas, ref) {
 }
 
 function plotter_find_visible_objects(plotter) {
+    // This function determines what objects to
+    // render and creates necessary graphic elements
+    // for those objects.
 
+    // plotter.visible_objects is a Object
+    // local variable found_objects is an array
+
+    // Clear the main  layer and remove any traces of previous visible objects
+    plotter.main_layer.activate();
+    plotter.main_layer.removeChildren();
+    if (plotter.visible_objects) {
+        var visible_objects_keys = Object.keys(plotter.visible_objects);
+        for (var i=0; i < visible_objects_keys.length; i++) {
+            var uid = visible_objects_keys[i];
+            var render_object = plotter.visible_objects[uid];
+            if (render_object.marker) {
+                render_object.marker.remove();
+            }
+            if (render_object.trajectory) {
+                console.log("Remove trajectory layer");
+                render_object.trajectory.remove();
+            }
+            else {
+                console.log("No trajectory for " + render_object.name)
+                console.log(render_object)
+            }
+        }
+
+        delete plotter.visible_objects;
+        plotter.visible_objects = new Object();
+    }
+
+    console.log("DEBUG PLOTTER_FIND_VISIBLE_OBJECTS")
     var visible_objects = new Array();
 
-    // Check celestials
+    // Browse through celestial objects
+    // and fill visible_objects
     var keys = Object.keys(globals.celestials);
     var ref = globals.celestials[plotter.ref];
     for (var i=0; i < keys.length; i++) {
@@ -147,18 +184,25 @@ function plotter_find_visible_objects(plotter) {
         // Parent of parent object
         else if (globals.celestials[ref.ref] && globals.celestials[ref.ref].ref == celestial.name) {visible_objects.push(celestial); }
     }
-
+    console.log("DEBUG 2")
     // Create graphics for new objects
     for (var i=0; i < visible_objects.length; i++) {
         var object = visible_objects[i];
 
         // Define unique identifier for the object (vessels have uid, planets have names)
         var uid;
-        if (object.uid) { uid = object.uid; }
+        if (typeof object.uid != 'undefined') { uid = object.uid; }
         else { uid = object.name; }
 
-        if (!plotter.visible_objects[uid]) {
-
+        if (typeof uid == 'undefined') {
+            console.log("ERROR ERRROR ERROR")
+            console.log(object)
+            console.log(object.uid)
+            console.log(object.name)
+        }
+        console.log("DEBUG 3: " + uid)
+        if (!visible_objects[uid]) {
+            console.log("DEBUG 4")
             // Determine object color
             var color;
             if (uid == "Sun") { color = "yellow"; }
@@ -192,9 +236,16 @@ function plotter_find_visible_objects(plotter) {
             render_object.object = object;
             render_object.uid = uid;
             render_object.scale = 1;
-            render_object.marker = new plotter.scope.Path.Circle(plotter.scope.view.center, size);
-            render_object.marker.fillColor = color;
 
+            plotter.main_layer.activate();
+            console.log("NEW MARKER GENERATED");
+            console.log(plotter.main_layer);
+            console.log(paper.project.activeLayer);
+            render_object.marker = new paper.Path.Circle(plotter.scope.view.center, size);
+            console.log(render_object.marker.layer);
+            console.log("###");
+            render_object.marker.fillColor = color;
+            plotter_generate_trajectory(plotter, render_object);
             plotter.visible_objects[uid] = render_object;
 
         }
@@ -214,62 +265,35 @@ function plotter_find_visible_objects(plotter) {
         }
     }
     */
-}   /*
-    // Default camera setup
-    if (ref == "Sun") {
-        plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
-        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-        
-        // Create paths for all celestials
-        // Todo simplify?
-        plotter.C = new Object(); // Celestial dots
-        plotter.T = new Object(); // Trajectory paths
-        plotter.C.Sun = new scope.Path.Circle(scope.view.center, 7);
-        plotter.C.Sun.fillColor = "yellow"
-        plotter.C.Sun.visible = false;
-        
-        create_plot_celestial(plotter, "Sun",    7, "yellow");
-        create_plot_celestial(plotter, "Moho",   2, "red");
-        create_plot_celestial(plotter, "Eve",    4, "purple");
-        create_plot_celestial(plotter, "Kerbin", 3, "SpringGreen");
-        create_plot_celestial(plotter, "Duna",   3, "orange");
-        create_plot_celestial(plotter, "Dres",   2, "grey");
-        create_plot_celestial(plotter, "Jool",   5, "lime");
-        create_plot_celestial(plotter, "Eeloo",  3, "cyan");
+}
+function plotter_generate_trajectory(plotter, render_object) {
+    var steps = 10;
+
+    if (render_object.object.e >= 1 || isNaN(render_object.object.period)) {
+        render_object.trajectory_data = false;
+        render_object.trajectory = false;
     }
-    else if (ref == "Kerbin") {
-        console.log("KERBIN MODE");
-        plotter.camera_distance = globals.celestials.Minmus.position.modulus()
-        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-        
-        // Create paths for all celestials
-        // Todo simplify?
-        plotter.C = new Object(); // Celestial dots
-        plotter.T = new Object(); // Trajectory paths
-        plotter.C.Kerbin = new scope.Path.Circle(scope.view.center, 7);
-        plotter.C.Kerbin.fillColor = "cyan"
-        plotter.C.Kerbin.visible = true;
-        
-        //create_plot_celestial(plotter, "Kerbin",    7, "cyan");
-        create_plot_celestial(plotter, "Mun",   4, "grey");
-        create_plot_celestial(plotter, "Minmus",    3, "purple");
-        
-        for (var i=0; i<visible_objects.length; i++) {
-            var object = visible_objects[i];
-            if (object.name == "Mun" || object.name == "Minmus") { continue; }
-            else {
-                create_plot_celestial(plotter, object.uid, 2, "lime");
-            }
+    else {
+        render_object.trajectory_data = new Array();
+        if (render_object.trajectory) {
+            render_object.trajectory.remove();
+        }
+        console.log("NEW T-LAYER GENERATED")
+        if (render_object.trajectory) {
+            console.log("Removing old tlayer")
+            render_object.trajectory.remove()
+        }
+        render_object.trajectory = new plotter.scope.Layer();
+        render_object.trajectory.position = plotter.scope.view.center;
+
+        for (var i=0; i < steps; i++) {
+            ut = i / steps * render_object.object.period;
+            render_object.trajectory_data.push(plotter_determine_relative_position(plotter, render_object.object, globals.celestials[plotter.ref], ut));
         }
     }
-    plotter.marker_hilight = create_plot_marker(plotter, "yellow");
-    plotter.marker_focus = create_plot_marker(plotter, "cyan");
-    plotter.marker_select = create_plot_marker(plotter, "red");
-
-    var active_mode = null;
-    scope.view.draw();
 }
-*/
+
+
 /* Creates new celestial planet and trajectory */
 function create_plot_celestial(plotter, name, size, color)
 { 
@@ -313,69 +337,18 @@ function plotter_resize(canvas, width, height)
     else { plot.view_size = scope.view.center.x; }
 }
 
-/*
-* Change the mode of the plotter
-*/
-/*
-function plotter_set_mode(canvas, mode)
-{
-    P = plotter_data[canvas];
-    var scope = P.scope;
-    return;
-    // Disable all celestial dots
-    var keys = Object.keys(P.C)
-    for (var i = 0; i < keys.length; i++)
-    {
-        P.C[keys[i]].visible = false;
-    }
-    // Disable all trajectories
-    var keys = Object.keys(P.T)
-    for (var i = 0; i < keys.length; i++)
-    {
-        P.T[keys[i]].visible = false;
-    }
-    
-    if (mode == "solar") {
-        active_mode = "solar";
-        // todo allow dynamic scaling
-        P.C.Sun.visible = true;
-        P.C.Sun.scale(14 / P.C.Sun.bounds.width)
-        P.C.Moho.visible = true;
-        P.C.Moho.scale(2 / P.C.Moho.bounds.width)
-        P.T.Moho.visible = true;
-        P.C.Eve.visible = true;
-        P.C.Eve.scale(6 / P.C.Eve.bounds.width)
-        P.T.Eve.visible = true;
-        P.C.Kerbin.visible = true;
-        P.C.Kerbin.scale(4 / P.C.Kerbin.bounds.width)
-        P.T.Kerbin.visible = true;
-        P.C.Duna.visible = true;
-        P.C.Duna.scale(4 / P.C.Duna.bounds.width)
-        P.T.Duna.visible = true;
-        P.C.Dres.visible = true;
-        P.C.Dres.scale(4 / P.C.Dres.bounds.width)
-        P.T.Dres.visible = true;
-        P.C.Jool.visible = true;
-        P.C.Jool.scale(8 / P.C.Jool.bounds.width)
-        P.T.Jool.visible = true;
-        P.C.Eeloo.visible = true;
-        P.C.Eeloo.scale(4 / P.C.Eeloo.bounds.width)
-        P.T.Eeloo.visible = true;
-    }
 
-}
-*/
 function plotter_determine_relative_position(plotter, object, reference, ut) {
     var uid = object.uid || object.name;
     var relative_position;
 
     // Check if result is already generated
-    if (plotter.celestial_positions[uid]) {
+    if (ut == plotter.celestial_positions_ut && plotter.celestial_positions[uid]) {
         return plotter.celestial_positions[uid];
     }
 
     // 1) Object is the reference
-    if (object == reference) {
+    if (uid == reference.name) {
         relative_position = Vector.create([0,0,0]);
     }
     // 2) Object is a child of the reference
@@ -386,6 +359,8 @@ function plotter_determine_relative_position(plotter, object, reference, ut) {
     else if (uid != "Sun" && object.ref == reference.ref) {
         //console.log("insanity", object.ref, object, reference);
         //return false;
+        console.log("rpos", uid);
+        console.log("rnam", reference.name);
         var relative_position_to_parent = determine_rv_at_t(object, ut)[0]; // The position is relative to the parent of the reference
         var relative_position_of_parent = plotter_determine_relative_position(plotter, globals.celestials[object.ref], reference, ut);
         var relative_position = relative_position_of_parent.sum(relative_position_to_parent);
@@ -417,7 +392,7 @@ function plotter_determine_relative_position(plotter, object, reference, ut) {
         console.error("Body has too many references!")
         return;
     }
-    plotter.celestial_positions[uid] = relative_position;
+    if (ut == plotter.celestial_positions_ut) { plotter.celestial_positions[uid] = relative_position; }
     return relative_position;
 }
 /*
@@ -433,6 +408,12 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
     var ut = globals.ut || 0;
     var fov = 1; // 90 degree FoV
 
+    // TESTING
+    plotter_find_visible_objects(plotter);
+
+    plotter.main_layer.activate(); // Draw most of the stuff on this layer
+    console.log("Main layer activated")
+    console.log(plotter.main_layer)
     var rotz = Matrix.RotationZ(plotter.camera_rotz);
     var rotx = Matrix.RotationX(plotter.camera_rotx);
     var rotrix = rotx.multiply(rotz);
@@ -445,7 +426,7 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
     for (var i = 0; i < keys.length; i++) {
         var uid = keys[i];
         var render_object = plotter.visible_objects[uid];
-
+        console.log("MCHECK: ", render_object.uid, render_object.marker.layer);
         var relative_position = plotter_determine_relative_position(plotter, render_object.object, reference, ut);
         var render_position = rotrix.multiply(relative_position).subtract(plotter.camera);
 
@@ -455,6 +436,9 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
         var render_scale = fov / render_position.e(3) * scope.view.center.y;
         if (render_scale < 0) {
             render_object.marker.visible = false;
+            if (render_object.trajectory) {
+                render_object.trajectory.visible = false;
+            }
             continue;
         }
 
@@ -465,8 +449,9 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
         var render_size = render_scale * render_object.size
         if (render_size < 2) { render_size = 2; }
 
-
-        if (render_size > 3 && uid == "Kerbin" ) {
+        // Texture rendering
+        // TODO: doesn't delete the texture after use?
+        if (render_size > 3 && uid == "Kerbin" && false) {
             // Attempt to texture the celestial
             var ticks = new Date().getTime();
             // Remove the old texture
@@ -479,7 +464,7 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
                 plotter.reference_map.visible = false;
             }
             var texture_input = plotter.reference_map;
-            var texture_output = new scope.Raster();
+            var texture_output = new plotter.scope.Raster();
 
             // Limit output size
             var output_size = parseInt(render_size*2);
@@ -498,13 +483,14 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
             // rotx 0 = straight above (latitude 90)
             // rotx -pi = straight below (latitude -90)
             var theta = deg2rad(render_object.object.rotation_angle + render_object.object.ang_v * (ut - render_object.object.rotation_t0));
+            //console.log(rad2deg(plotter.camera_rotz), rad2deg(theta));
 
             var latitude = plotter.camera_rotx + Math.PI/2; // add 90 to bring to to range [-90, 90]
-            var longitude = (plotter.camera_rotz - theta) % Math.PI*2; // Range [0, 360]
+            var longitude = (plotter.camera_rotz - theta + Math.PI) % (Math.PI*2); // Range [0, 360]
 
             if (longitude < 0) { longitude += Math.PI*2;}
 
-
+            //console.log(rad2deg(longitude));
             //var longitude = 0;
             //console.log(latitude)
 
@@ -609,6 +595,64 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
             // Position the marker
             render_object.marker.position.x = x + scope.view.center.x;
             render_object.marker.position.y = y + scope.view.center.y;
+
+            // Draw the trajectory
+
+            if (render_object.trajectory_data.length) {
+
+                // Clear the old group
+                render_object.trajectory.removeChildren();
+                render_object.trajectory.activate();
+
+                var current_path = false;
+
+
+                // Loop through segments
+                for (var ti=0; ti < render_object.trajectory_data.length; ti++) {
+
+                    render_position = rotrix.multiply(render_object.trajectory_data[ti]).subtract(plotter.camera);
+                    render_scale = fov / render_position.e(3) * scope.view.center.y;
+
+                    // Check if point is beyond the camera
+                    // TODO wtf? current_path is not defined anywhere
+                    if (render_scale < 0.000001) {
+                        if (current_path) {
+                            if (current_path.segments.length < 3) {
+                                current_path.visible = false;
+                            }
+                            //current_path.smooth();
+                            current_path.fullySelected = true;
+                            current_path = false;
+
+                        }
+                        continue;
+                        //render_object.trajectory.visible = false;
+                        //break;
+                    }
+                    else if (!current_path) { // Create a new path
+                        current_path = new scope.Path();
+                        current_path.strokeColor = render_object.color;
+                    }
+                    x = render_scale * render_position.e(1);
+                    y = render_scale * render_position.e(2);
+
+                    // Position the marker
+                    //render_object.trajectory.segments[ti].point.x = x + scope.view.center.x;
+                    //render_object.trajectory.segments[ti].point.y = y + scope.view.center.y;
+
+                    current_path.add(new scope.Point(x + scope.view.center.x, y + scope.view.center.y));
+                    //render_object.trajectory.segments[].point = new plotter.scope.Point(x + scope.view.center.x, y + scope.view.center.y)
+                    //console.log(uid,"ti",ti,render_object.trajectory.segments[ti].point)
+
+                }
+                if (current_path) {
+                    current_path.smooth()
+                    //current_path.fullySelected = true;
+                }
+                //render_object.trajectory.smooth()
+                //render_object.trajectory.fullySelected = true;
+            }
+
         }
 
     }
@@ -619,6 +663,11 @@ function plotter_draw(canvas) { // TODO implement camera as simple distance and 
     for (var i = keys.length-1; i >= 0; i--) {
         // Looping from farthest to closest
         var render_object = plotter.celestial_distance[keys[i]];
+        console.log("Marker of depth", keys[i]);
+        console.log(render_object);
+        console.log(render_object.marker);
+        console.log(render_object.marker.layer);
+        console.log("---");
         render_object.marker.bringToFront();
         if (render_object.object.name == plotter.ref && plotter.reference_texture) {
             plotter.reference_texture.bringToFront();

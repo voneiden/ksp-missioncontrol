@@ -163,6 +163,7 @@ function ws_receive(event)
         var ticks_start = new Date().getTime();
         refreshGroundtracks();
         refreshState();
+        refreshPlotters(true);
         var ticks = new Date().getTime() - ticks_start;
         ticks /= 1000;
         $(".debug-groundtrack-ticks").text(ticks.toFixed(3))
