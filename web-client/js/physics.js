@@ -28,7 +28,7 @@ function rad2deg(radians) {
 // Todo, implement theta
 function LatLonAtUT(vessel, ut) {
     var state = vessel.state;
-
+    console.log("UTUTUTUTasdasUT", ut);
     // Do not attempt to determine orbit for non orbital states
     if (state == "prelaunch" || state == "landed" || state == "splashed" || state == "flying") {
         //console.log("Vessel not orbiting")
@@ -38,6 +38,7 @@ function LatLonAtUT(vessel, ut) {
     else {
         //console.log("Vessel is orbiting");
         if (ut == 0) { console.log("Determine..");}
+       console.log("UTUTUTUTUT", ut);
        var cur_position = determine_rv_at_t(vessel, ut)[0];
        if (!cur_position) {
            console.log("FIX", vessel);
@@ -264,6 +265,132 @@ function FindC2C3(psi)
     return [c2, c3]
 
 }
+
+function KEPLER (r0, v0, dt, mu)
+{
+    var Small = 0.0000000001;
+    var Infinite = 999999.9;
+    var Undefined = 999999.1;
+
+    var Pi = Math.PI;
+    var HalfPi = 0.5 * Pi;
+    var TwoPi = 2 * Pi;
+    var Rad2Deg = 180/Pi;
+    var Deg2Rad = Pi/180;
+
+    var NumIter = 35;
+    var xOld = 0.0;
+    var ZNew = 0.0;
+    var Error = "ok";
+
+    if (Math.abs(dt) < Small) {
+        return [r0, v0];
+    }
+
+    var magro = r0.modulus();
+    var magvo = v0.modulus();
+    var RDotV = r0.dot(v0);
+
+    var SME = (magvo*magvo*0.5) - ( mu/magro);
+    var Alpha = -SME*2 / mu;
+
+    var A;
+    console.log("DTDT", dt);
+    if (Math.abs(SME) > Small) {
+        A = -mu / (2*SME);
+    }
+    else {
+        A = Infinite;
+    }
+
+    if (Math.abs(Alpha) < Small) { // Parabola
+        Alpha = 0.0;
+    }
+
+    if (Alpha > Small) {
+        var Period = TwoPi * Math.sqrt(Math.pow(Math.abs(A), 3) / mu);
+        if (Math.abs(dt) > Math.abs(Period)) {
+            dt = dt % Period;
+        }
+        if (Math.abs(Alpha-1) > Small) {
+            xOld = Math.sqrt(mu) * dt * Alpha;
+        }
+        else {
+            xOld = Math.sqrt(mu) * dtsec*Alpha*0.97;
+        }
+    }
+    else {
+        if (Math.abs(Alpha) < Small) {
+            var h = r0.cross(v0);
+            var magh = h.modulus();
+            var p = magh*magh/mu;
+            var S = 0.5 * (HalfPi - Math.atan(3 * Math.sqrt( mu / Math.pow(p, 3)) * dt));
+            var W = Math.atan(Math.pow(Math.tan(S), 1/3));
+            xOld = Math.sqrt(p) * (2*cot(2*W));
+            Alpha = 0.0;
+        }
+        else {
+
+            var Temp = -2 * mu * dt / ( A * (RDotV + sign(dt) * Math.sqrt(-mu * A)*(1-magro*Alpha)));
+            console.log("Temp",Temp);
+            xOld = sign(dt) * Math.sqrt(-A) * Math.log(Temp);
+        }
+    }
+    console.log("Alpha", Alpha);
+    console.log("A", A);
+
+    var Ktr = 1;
+    var DtNew = -10;
+    console.log("DTNew",DtNew);
+    console.log("dt", dt);
+    console.log("mu", mu);
+
+    console.log("WHILE", Math.abs(DtNew - Math.sqrt(mu) * dt) / (Math.abs(dt) + Math.abs(DtNew)));
+    while (Math.abs(DtNew - Math.sqrt(mu) * dt) / (Math.abs(dt) + Math.abs(DtNew)) > Small && Ktr < NumIter) {
+        xOldSqrd = Math.pow(xOld, 2);
+        ZNew = xOldSqrd * Alpha;
+
+        var C2C3 = FindC2C3(ZNew)
+        var C2New = C2C3[0];
+        var C3New = C2C3[1];
+
+        DtNew = xOldSqrd * xOld * C3New + (RDotV / Math.sqrt(mu)) * xOldSqrd * C2New + magro * xOld * (1 - ZNew * C3New);
+        Rval = xOldSqrd * C2New + (RDotV / Math.sqrt(mu)) * xOld * (1-ZNew*C3New) + magro * (1 - ZNew*C2New);
+        console.log("DtNew", DtNew);
+        console.log("Rval", Rval);
+        XNew = xOld + (Math.sqrt(mu) * dt - DtNew) / Rval;
+        console.log("XNew", XNew);
+        Ktr = Ktr + 1;
+        xOld = XNew;
+    }
+    if (Ktr > NumIter) {
+        console.log("Not converged");
+    }
+    else {
+        console.log("XNew again", XNew);
+        var XNewSqrd = Math.pow(XNew, 2);
+        console.log("XN2", XNewSqrd);
+        console.log("C2New", C2New);
+        console.log("magro", magro);
+        var F = 1 - (XNewSqrd * C2New / magro);
+        var G = dt - XNewSqrd*XNew*C3New/Math.sqrt(mu);
+        console.log("F",F)
+        console.log("G",G)
+
+
+        var R = r0.multiply(F).add(v0.multiply(G));
+
+        var magr = R.modulus();
+        var GDot = 1 - (XNewSqrd * C2New / magr);
+        var FDot = (Math.sqrt(mu) * XNew / (magro*magr)) * (ZNew*C3New-1);
+
+        var V = r0.multiply(FDot).add(v0.multiply(GDot));
+
+        return [R, V];
+    }
+}
+
+
 function determine_rv_at_t(object, t, depth)
 {
     /*
@@ -293,7 +420,14 @@ function determine_rv_at_t(object, t, depth)
     if (dt == 0) {
         return [object.position, object.velocity]
     }
-    
+
+    console.log("MEGA T", t);
+    if (isNaN(dt)) {
+        console.log("DT object", object);
+        console.trace()
+
+    }
+
     var X0;
     // Circular and elliptic orbits
     if (object.e < 1) {
@@ -351,7 +485,9 @@ function determine_rv_at_t(object, t, depth)
         {
             return determine_rv_at_t(object, t+0.001, depth+1);
         }
+        var test = KEPLER(object.position, object.velocity, dt, mu);
         console.log("Was unable to find solution (depth "+depth+")",t,object);
+        console.log("KEPLER", test[0].e(1), test[0].e(2), test[0].e(3));
         return false;
     }
     
@@ -362,7 +498,11 @@ function determine_rv_at_t(object, t, depth)
 
     var R = object.position.multiply(f).add(object.velocity.multiply(g));
     var V = object.position.multiply(fd).add(object.velocity.multiply(gd));
-    
+
+    //console.log("&&&&&&&");
+    //console.log("KEPLER", test[0].e(1), test[0].e(2), test[0].e(3));
+    //console.log("ORIGIN", R.e(1), R.e(2), R.e(3));
+    //console.log("$$$$$$$");
     return [R, V];
 }
 // TODO deal with hyperbolic orbits
@@ -390,6 +530,7 @@ function create_trajectory(object)
         {
             // TODO test for undefined
             // Is that required?
+            console.log("CHECKIGN", i*step);
             var RV = determine_rv_at_t(object, i*step);
             if (RV == false)
             {

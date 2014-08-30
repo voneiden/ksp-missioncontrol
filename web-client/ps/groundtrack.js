@@ -86,6 +86,9 @@ function groundtrack_draw(canvas) {
         }
     }
     // TODO use Object.keys()?
+    if (groundtrack.ref == "Sun") {
+        return;
+    }
 
     for (var i=0; i<globals.vessels.length; i++) 
     {
@@ -302,8 +305,15 @@ function groundtrack_update_trajectory(groundtrack, vessel, render) {
     
     // TODO hyperbolic orbits don't have a period.
     // Determine drawing distance and accuracy
-    var start = globals.ut - vessel.period;
-    var end = globals.ut + vessel.period;
+    var start, end;
+    if (vessel.e < 1) {
+        start = globals.ut - vessel.period;
+        end = globals.ut + vessel.period;
+    }
+    else {
+        start = globals.ut - 10000;
+        end = globals.ut + 10000;
+    }
     var steps = 100;
     var step_size = Math.round((end-start) / steps);
     
@@ -534,16 +544,16 @@ function groundtrack_load_map(canvas, ref) {
         groundtrack.ref = "Kerbin";
     }
 
-    if (groundtrack.ref == "Sun") {
-        return;
-    }
+
 
     // Activate map layer and remove old map, if any
     groundtrack.layer_map.activate();
     if (groundtrack.map && groundtrack.map.remove) {
         groundtrack.map.remove();
     }
-
+    if (groundtrack.ref == "Sun") {
+        return;
+    }
     // Load new map
 
     groundtrack.map = new scope.Raster("img/" + groundtrack.ref + ".png");
