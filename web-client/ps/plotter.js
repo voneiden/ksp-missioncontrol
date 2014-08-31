@@ -152,70 +152,31 @@ function plotter_setup(canvas, ref) {
     }    
     // Default camera setup
 
-    plotter.camera_distance = furthest;
-    plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+    //plotter.camera_distance = furthest;
+    //plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
+
+    plotter.camera = Vector.create([0, 0, -furthest]);
+    plotter.camera_rotz = 0
+    plotter.camera_rotx = 0
+    plotter.camera_roty = 0
+
+
     plotter.render_markers = new Object();
     plotter.render_trajectories = new Object();
 
     // Create the reference object marker
     var reference_object = globals.celestials[ref];
     var sizecolor = get_size_color(reference_object);
-    create_plot_celestial(plotter, ref, sizecolor[0], sizecolor[1]);
+    var size = reference_object.radius || 10;
+    create_plot_celestial(plotter, ref, size, sizecolor[1]);
 
     // Create the other visible objects
     for (var i=0; i < visible_objects.length; i++) {
         sizecolor = get_size_color(visible_objects[i]);
         var name = visible_objects[i].uid || visible_objects[i].name;
-        create_plot_celestial(plotter, name, sizecolor[0], sizecolor[1]);
+        var size = visible_objects[i].radius || 10;
+        create_plot_celestial(plotter, name, size, sizecolor[1]);
     }
-    /*
-    if (ref == "Sun") {
-        plotter.camera_distance = globals.celestials.Eeloo.position.modulus()
-        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-        
-        // Create paths for all celestials
-        // Todo simplify?
-        plotter.render_markers = new Object(); // Celestial dots
-        plotter.render_trajectories = new Object(); // Trajectory paths
-        plotter.render_markers.Sun = new paper.Path.Circle(paper.view.center, 7);
-        plotter.render_markers.Sun.fillColor = "yellow"
-        plotter.render_markers.Sun.visible = false;
-        
-        create_plot_celestial(plotter, "Sun",    7, "yellow");
-        create_plot_celestial(plotter, "Moho",   2, "red");
-        create_plot_celestial(plotter, "Eve",    4, "purple");
-        create_plot_celestial(plotter, "Kerbin", 3, "SpringGreen");
-        create_plot_celestial(plotter, "Duna",   3, "orange");
-        create_plot_celestial(plotter, "Dres",   2, "grey");
-        create_plot_celestial(plotter, "Jool",   5, "lime");
-        create_plot_celestial(plotter, "Eeloo",  3, "cyan");
-    }
-    else if (ref == "Kerbin") {
-        console.log("KERBIN MODE");
-        plotter.camera_distance = globals.celestials.Minmus.position.modulus()
-        plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
-        
-        // Create paths for all celestials
-        // Todo simplify?
-        plotter.C = new Object(); // Celestial dots
-        plotter.T = new Object(); // Trajectory paths
-        plotter.C.Kerbin = new paper.Path.Circle(paper.view.center, 7);
-        plotter.C.Kerbin.fillColor = "cyan"
-        plotter.C.Kerbin.visible = true;
-        
-        //create_plot_celestial(plotter, "Kerbin",    7, "cyan");
-        create_plot_celestial(plotter, "Mun",   4, "grey");
-        create_plot_celestial(plotter, "Minmus",    3, "purple");
-        
-        for (var i=0; i<visible_objects.length; i++) {
-            var object = visible_objects[i];
-            if (object.name == "Mun" || object.name == "Minmus") { continue; }
-            else {
-                create_plot_celestial(plotter, object.uid, 2, "lime");
-            }
-        }
-    } */
-
 
     var active_mode = null;
     paper.view.draw();
@@ -240,10 +201,18 @@ function get_size_color(celestial) {
 function create_plot_celestial(plotter, name, size, color)
 { 
     paper = plotter.scope;
-    
-    plotter.render_markers[name] = new paper.Path.Circle(paper.view.center, size);
-    plotter.render_markers[name].fillColor = color;
-    plotter.render_markers[name].visible = true;
+
+    render_marker = new paper.Path.Circle(paper.view.center, size);
+    render_marker.fillColor = color;
+    render_marker.visible = true;
+    render_marker.real_size = size;
+    //render_marker.marker_size = size; // Used to keep track
+    //render_marker.marker_scale = 1;
+
+    plotter.render_markers[name] = render_marker;
+    //plotter.render_markers[name].fillColor = color;
+    //plotter.render_markers[name].visible = true;
+
 
     if (plotter.ref != name) {
         plotter.render_trajectories[name] = new paper.Path({closed: true, visible: true, strokeColor: color});
@@ -341,6 +310,7 @@ function plotter_set_mode(canvas, mode)
 function plotter_draw(canvas) {
     var plotter = plotter_data[canvas];
     paper = plotter.scope;
+    var fov = 1;
 
     // Check if reference or active vessel has changed
     if (globals.active_vessel && (plotter.ref != globals.active_vessel.ref || plotter.active_vessel != globals.active_vessel)) {
@@ -350,45 +320,85 @@ function plotter_draw(canvas) {
     }
 
     // Todo calculate on demand
-    var rot = calculate_rotation_matrix(plotter.camera_rotation)
+    //var rot = calculate_rotation_matrix(plotter.camera_rotation)
     //var cam_pos = rot.multiply(Vector.create([0, 0, plotter.camera_distance]))
-    var cam_pos = Vector.create([0, 0, plotter.camera_distance]) // TODO: cam pos can be focused on other planets too!
-    
-    // Update visible celestials
+    //var cam_pos = Vector.create([0, 0, plotter.camera_distance]) // TODO: cam pos can be focused on other planets too!
+
+    // Camera rotation variables
+    var rotz = Matrix.RotationZ(plotter.camera_rotz);
+    var rotx = Matrix.RotationX(plotter.camera_rotx);
+    var rotrix = rotx.multiply(rotz);
+
+
+
+    // Update visible markers
     var distances = new Object();
     var keys = Object.keys(plotter.render_markers)
     for (var i = 0; i < keys.length; i++)
     {
         var obj = plotter.render_markers[keys[i]];
-        if (obj.visible == true)
-        {
-            var ratio = (plotter.view_size / plotter.camera_distance);
+        if (obj.visible == true) {
+            //var ratio = (plotter.view_size / plotter.camera_distance);
+
+            // Marker is focus of the frame of reference
+            var frame_position;
+
             if (plotter.ref == keys[i]) {
-                var world_position = Vector.create([0, 0, 0]);
+                frame_position = Vector.create([0, 0, 0]);
             }
             else {
                 if (globals.celestials[keys[i]]) {
-                    var world_position = globals.celestials[keys[i]].position; // TODO position at time?
+                    frame_position = globals.celestials[keys[i]].position;
+                }
+                else if (globals.vessels[keys[i]]) {
+                    frame_position = globals.vessels[keys[i]].position;
                 }
                 else {
-                    console.log("SEARCH");
-                    console.log(keys[i]);
-                    console.log(plotter.render_markers);
-                    var world_position = globals.vessels[keys[i]].position; // TODO this is a hack
+                    console.error("Unable to find object: ", keys[i]);
+                    continue;
                 }
             }
-            
-            var render_position = rot.multiply(world_position.multiply(ratio)); 
-            obj.render_position = render_position; // Save this 
+            var render_position = rotrix.multiply(frame_position).subtract(plotter.camera);
+
+            //var render_position = rot.multiply(world_position.multiply(ratio));
+            //obj.render_position = render_position; // Save this
+
+            // WIP: scaling
+            var render_scale = fov / render_position.e(3) * paper.view.center.y;
+            var x = render_scale * render_position.e(1);
+            var y = render_scale * render_position.e(2);
+            var render_size = render_scale * obj.real_size;
             /*
-            console.log("Rendering "+keys[i]+" to ");
-            console.log("Ratio: "+ (plotter.view_size / plotter.camera_distance));
-            console.log(plotter.view_size);
-            console.log(plotter.camera_distance);
-            console.log(render_position);
+            if (render_size < 10) {
+                render_size = 10;
+            }
+
+            if (render_size > 50) {
+                render_size = 50;
+            }
             */
-            distances[cam_pos.distanceFrom(render_position)] = obj; // I know I'm doing a bit wrong here but it works for now
-            obj.position = new paper.Point(render_position.e(1) + paper.view.center.x, render_position.e(2) + paper.view.center.y);
+            if (render_size < 2) { render_size = 2; }
+            var new_render_object = new paper.Path.Circle(
+                new paper.Point(x + paper.view.center.x, y + paper.view.center.y),
+                render_size
+            );
+
+
+
+            // NOTE: TODO: The main planet is not scaled for some reason
+
+            new_render_object.fillColor = obj.fillColor;
+            new_render_object.visible = obj.visible;
+            new_render_object.real_size = obj.real_size;
+            new_render_object.render_position = render_position;
+
+            obj.remove();
+
+            plotter.render_markers[keys[i]] = new_render_object;
+
+            distances[render_position.e(3)] = new_render_object;
+
+            // TODO: scale marker
         }
     }
     
@@ -396,6 +406,7 @@ function plotter_draw(canvas) {
     var keys = Object.keys(plotter.render_trajectories)
     for (var i = 0; i < keys.length; i++)
     {
+        continue;
         var obj = plotter.render_trajectories[keys[i]];
         var celestial = globals.celestials[keys[i]] || globals.vessels[keys[i]];
         if (obj.visible == true && celestial.trajectory) // TODO: checking that object has trajectory
@@ -462,7 +473,8 @@ function onPlotterMouseDown(event) {
 function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
 	// Add a point to the path every time the mouse is dragged
     var plotter = plotter_data[canvas];
-	plotter.camera_rotation.setElements([plotter.camera_rotation.e(1) + delta_y/100, plotter.camera_rotation.e(2), plotter.camera_rotation.e(3) - delta_x/100])
+	plotter.camera_rotz += delta_x/300;
+    plotter.camera_rotx += delta_y/300;
     plotter_draw(canvas);
 }
 
@@ -476,7 +488,9 @@ function onPlotterRightMouseDrag(canvas, delta_y) {
 function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
     var canvas = this.id;
     var plotter = plotter_data[canvas]
-    plotter.camera_distance = plotter.camera_distance - delta_y * 0.1*plotter.camera_distance;
+
+    plotter.camera = plotter.camera.add(plotter.camera.toUnitVector().multiply(delta_y * 0.1 * plotter.camera.modulus()));
+    plotter_draw(canvas);
     plotter_draw(canvas);
 }
 
@@ -486,6 +500,7 @@ function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
 function onPlotterMouseMove(event)
 {
     //console.log("Plotter click");
+    return;
     canvas = this.id;
     var plotter = plotter_data[canvas];
     paper = plotter.scope;
