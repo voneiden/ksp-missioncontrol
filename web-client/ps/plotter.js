@@ -401,13 +401,14 @@ function plotter_draw(canvas) {
             new_render_object.fillColor = obj.fillColor;
             new_render_object.visible = obj.visible;
             new_render_object.real_size = obj.real_size;
-            new_render_object.render_position = canvas_position[3];
+            //new_render_object.render_position = canvas_position[3];
+            new_render_object.canvas_position = canvas_position;
 
             obj.remove();
 
             plotter.render_markers[keys[i]] = new_render_object;
 
-            distances[new_render_object.render_position.e(3)] = new_render_object;
+            distances[new_render_object.canvas_position[3].e(3)] = new_render_object;
 
             // TODO: scale marker
         }
@@ -564,30 +565,19 @@ function onPlotterMouseWheel(event, delta, delta_x, delta_y) {
 */
 function onPlotterMouseMove(event)
 {
-    //console.log("Plotter click");
-    return;
     canvas = this.id;
     var plotter = plotter_data[canvas];
     paper = plotter.scope;
     
     var keys = Object.keys(plotter.render_markers);
     var d = new Object(); // Distance object
-    var click_x = event.offsetX - plotter.scope.view.center.x;
-    var click_y = event.offsetY - plotter.scope.view.center.y;
-    var click_position = new paper.Point(click_x, click_y);
-    //console.log(click_position);
-    var rot = calculate_rotation_matrix(plotter.camera_rotation) // Todo this needs not to be calculated all the time
-    
-    for (var i = 0; i < keys.length; i++) // Loop through visible objects
-    {
-        if (plotter.render_markers[keys[i]].visible == true)
-        {
-            var ratio = (plotter.view_size / plotter.camera_distance);
-            var render_position = plotter.render_markers[keys[i]].render_position; // Precalculated by plot draw
-            //rot.multiply(globals.celestials[keys[i]].position.multiply(ratio)); 
-            render_position = new paper.Point(render_position.e(1), render_position.e(2))
-            //console.log(keys[i] + ": " + render_position);
-            d[click_position.getDistance(render_position)] = keys[i];
+
+    var click_position = new paper.Point(event.offsetX, event.offsetY);
+
+    for (var i = 0; i < keys.length; i++) {
+        var marker = plotter.render_markers[keys[i]];
+        if (marker.visible == true) {
+            d[click_position.getDistance(marker.position)] = keys[i];
         }
     }
     
@@ -597,14 +587,26 @@ function onPlotterMouseMove(event)
     //console.log(keys);
     if (keys[0] < 10)
     {
-        console.log("WOOT WOOT");
+        var uid = d[keys[0]];
+
         plotter.hilight_object = d[keys[0]];
         plotter.marker_hilight.visible = true;
         //plotter.marker_hilight.position = plotter.render_markers[d[keys[0]]].position;
         plotter.marker_hilight.position.x = plotter.render_markers[d[keys[0]]].position.x + plotter.marker_hilight.bounds.width/2 - 10;
         plotter.marker_hilight.position.y = plotter.render_markers[d[keys[0]]].position.y + plotter.marker_hilight.bounds.height/2 - 10;
 
-        plotter.marker_hilight.text.content = d[keys[0]];
+        var text;
+        if (globals.vessels[uid]) {
+            text = globals.vessels[uid].name;
+        }
+        else if (globals.celestials[uid]) {
+            text = globals.celestials[uid].name;
+        }
+        else {
+            text = "U.F.O."
+        }
+
+        plotter.marker_hilight.text.content = text; //d[keys[0]];
         console.log(plotter.marker_hilight.position);
         console.log(plotter.render_markers[d[keys[0]]]);
         plotter_draw(canvas);
