@@ -436,6 +436,9 @@ function plotter_draw(canvas) {
             {
 
                 if (trajectory_index == globals.trajectory_points) {
+                    if (celestial.e >= 1) {
+                        continue;
+                    }
                     segment_canvas_position = start_position;
                 }
                 else {

@@ -222,7 +222,8 @@ function determine_orbit_constants(object)
         object.apoapsis = (1 + object.e) * object.a;
     }
     else {
-        object.periapsis = Math.pow(object.h_norm, 2) / mu;
+        //object.periapsis = Math.pow(object.h_norm, 2) / mu;
+        object.periapsis = object.a * (1-object.e);
         object.apoapsis = NaN;
     }
     object.rvdot = object.position.dot(object.velocity);
@@ -512,7 +513,8 @@ function determine_rv_at_t(object, t, depth)
 // still a problematic situation if attempting to escape Sun
 function create_trajectory(object) 
 {
-    if (object.name == "Sun") {
+    if (object.name == "Sun" || object.state == "landed" || object.state == "prelaunch" || object.state == "splashed") {
+        object.trajectory = NaN;
         return;
     }
     if (object.e < 1) // Elliptic orbits have periods
@@ -539,8 +541,56 @@ function create_trajectory(object)
         }
     }
     else // Hyperbolic orbits
-    {
-    
+    { // time to periapsi vessel.per_t
+        // create logspace from this time to escape and also
+        // logspace from this time to enter
+
+        var periapsis_ut = object.ut + object.per_t;
+        if (!periapsis_ut) { return; }
+        var escape_ut = find_escape(object, periapsis_ut + 10000);
+        var escape_delta = escape_ut - periapsis_ut;
+
+        //var encounter_ut = periapsis_ut - (escape_ut - periapsis_ut);
+        var ut_steps = []
+
+        var periapsis_index = Math.floor((globals.trajectory_points - 1) / 2);
+        var steps_to_generate = globals.trajectory_points - periapsis_index;
+
+        var space = logspace(1, escape_delta+1, steps_to_generate);
+
+        var is_even = globals.trajectory_points.length%2 == 0;
+
+        ut_steps[periapsis_index] = periapsis_ut;
+
+        for (var i=0; i < space.length; i++) {
+            if (i == 0) {
+                continue; // Periapsis index
+            }
+
+            ut_steps[periapsis_index + i] = periapsis_ut + space[i] - 1;
+            if (is_even && i == space.length-2) {
+                continue;
+            }
+            else {
+                ut_steps[periapsis_index - i] = periapsis_ut - (space[i] - 1);
+            }
+        }
+        console.log("iseven", is_even);
+        console.log("Length ut steps", ut_steps.length);
+        console.log("Length globals", globals.trajectory_points);
+        console.log("steps to gen", steps_to_generate);
+        console.log("space length", space.length);
+        console.log(ut_steps);
+
+        object.trajectory = [];
+        for (var i=0; i < ut_steps.length; i++) {
+            if (!ut_steps[i]) {
+                object.trajectory = null;
+                console.log("Abort trajectory generation");
+                return;
+            }
+            object.trajectory.push(determine_rv_at_t(object, ut_steps[i])[0]);
+        }
     }
 }
 
@@ -633,6 +683,11 @@ function find_escape(object, t)
     if (object.ref == "Sun") { return false; } // Ignore Sun orbits (no escape in KSP)
     
     var parent = globals.celestials[object.ref];
+
+    return find_height(object, parent.soi, t);
+}
+
+function find_height(object, height, t) {
     var RV = determine_rv_at_t(object, t);
     
     if (RV == false)
@@ -643,7 +698,7 @@ function find_escape(object, t)
     
     var rl = RV[0].modulus(); // Current position
     var vl = RV[1].modulus(); // Current velocity
-    var guess_step = (parent.soi - rl) / vl;
+    var guess_step = (height - rl) / vl;
     
     for (var i = 1; i < 10; i++)
     {
@@ -658,12 +713,26 @@ function find_escape(object, t)
         
         rl = RV[0].modulus();
         
-        if (rl > parent.soi) // Okay!
+        if (rl > height) // Okay!
         {
-            return uniroot(function(x) { return determine_rv_at_t(object, x)[0].modulus() - parent.soi; }, t, t2);
+            return uniroot(function(x) { return determine_rv_at_t(object, x)[0].modulus() - height; }, t, t2);
             
         }
     }
+}
+
+
+function logspace(min, max, steps) {
+    steps -= 1; // the algorithm produces otherwise one step extra
+    var base = Math.E;
+    var log_min = Math.log(min);
+    var log_max = Math.log(max);
+    var delta = (log_max - log_min) / steps;
+    var results = [];
+    for (var i=0; i <= steps; i++) {
+        results.push(Math.pow(base, log_min + delta*i))
+    }
+    return results;
 }
 function sanity_test()
 {
