@@ -28,7 +28,7 @@ function rad2deg(radians) {
 // Todo, implement theta
 function LatLonAtUT(vessel, ut) {
     var state = vessel.state;
-    console.log("UTUTUTUTasdasUT", ut);
+    //console.log("UTUTUTUTasdasUT", ut);
     // Do not attempt to determine orbit for non orbital states
     if (state == "prelaunch" || state == "landed" || state == "splashed" || state == "flying") {
         //console.log("Vessel not orbiting")
@@ -38,7 +38,7 @@ function LatLonAtUT(vessel, ut) {
     else {
         //console.log("Vessel is orbiting");
         if (ut == 0) { console.log("Determine..");}
-       console.log("UTUTUTUTUT", ut);
+       //console.log("UTUTUTUTUT", ut);
        var cur_position = determine_rv_at_t(vessel, ut)[0];
        if (!cur_position) {
            console.log("FIX", vessel);
@@ -421,7 +421,7 @@ function determine_rv_at_t(object, t, depth)
         return [object.position, object.velocity]
     }
 
-    console.log("MEGA T", t);
+    //console.log("MEGA T", t);
     if (isNaN(dt)) {
         console.log("DT object", object);
         console.trace()
@@ -515,10 +515,9 @@ function create_trajectory(object)
     if (object.name == "Sun") {
         return;
     }
-    var steps = 10;
     if (object.e < 1) // Elliptic orbits have periods
     {
-        var step = object.period / steps;
+        var step = object.period / globals.trajectory_points;
         if (step == NaN) 
         {
             object.trajectory = NaN;
@@ -526,11 +525,11 @@ function create_trajectory(object)
         }
         
         object.trajectory = [];
-        for (var i = 0; i < steps; i++) 
+        for (var i = 0; i < globals.trajectory_points; i++)
         {
             // TODO test for undefined
             // Is that required?
-            console.log("CHECKIGN", i*step);
+            //console.log("CHECKIGN", i*step);
             var RV = determine_rv_at_t(object, i*step);
             if (RV == false)
             {

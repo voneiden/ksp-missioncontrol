@@ -21,6 +21,8 @@ globals.status = new Array();
 globals.ut = 0;
 globals.active_vessel = false;
 
+globals.fov = 1;
+globals.trajectory_points = 15;
 
 globals.trackers = new Array();
 globals.vessels = new Array();

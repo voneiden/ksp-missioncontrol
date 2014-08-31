@@ -111,7 +111,11 @@ function plotter_setup(canvas, ref) {
     if (plotter.render_trajectories) {
         var old_trajectories_keys = Object.keys(plotter.render_trajectories);
         for (var i=0; i < old_trajectories_keys.length; i++) {
-            plotter.render_trajectories[old_trajectories_keys[i]].remove();
+            var trajectory_object = plotter.render_trajectories[old_trajectories_keys[i]];
+            while (trajectory_object.length > 0) {
+                var trajectory = trajectory_object.pop();
+                trajectory.remove();
+            }
         }
     }
 
@@ -156,10 +160,12 @@ function plotter_setup(canvas, ref) {
     //plotter.camera_rotation = Vector.create([0.0, 0.0, 0.0]);
 
     plotter.camera = Vector.create([0, 0, -furthest]);
-    plotter.camera_rotz = 0
-    plotter.camera_rotx = 0
-    plotter.camera_roty = 0
-
+    plotter.camera_rotz = 0;
+    plotter.camera_rotx = 0;
+    plotter.camera_rotz_matrix = Matrix.RotationZ(plotter.camera_rotz);
+    plotter.camera_rotx_matrix = Matrix.RotationX(plotter.camera_rotx);
+    plotter.camera_rotrix = plotter.camera_rotx_matrix.multiply(plotter.camera_rotx_matrix);
+    plotter.camera_fov = 1;
 
     plotter.render_markers = new Object();
     plotter.render_trajectories = new Object();
@@ -215,10 +221,15 @@ function create_plot_celestial(plotter, name, size, color)
 
 
     if (plotter.ref != name) {
-        plotter.render_trajectories[name] = new paper.Path({closed: true, visible: true, strokeColor: color});
+        plotter.render_trajectories[name] = [];
+        plotter.render_trajectories[name].color = color;
+
+        /* trajectory multi-segment rewrite
+        plotter.render_trajectories[name] = new paper.Path({closed: false, visible: true, strokeColor: color});
         for (var i = 0; i < 10; i++) {
             plotter.render_trajectories[name].add(new paper.Point(0, 0));
         }
+        */
     }
 }
 /* Creates a new marker with text */
@@ -325,9 +336,7 @@ function plotter_draw(canvas) {
     //var cam_pos = Vector.create([0, 0, plotter.camera_distance]) // TODO: cam pos can be focused on other planets too!
 
     // Camera rotation variables
-    var rotz = Matrix.RotationZ(plotter.camera_rotz);
-    var rotx = Matrix.RotationX(plotter.camera_rotx);
-    var rotrix = rotx.multiply(rotz);
+
 
 
 
@@ -341,33 +350,35 @@ function plotter_draw(canvas) {
             //var ratio = (plotter.view_size / plotter.camera_distance);
 
             // Marker is focus of the frame of reference
-            var frame_position;
+            var orbit_position;
 
             if (plotter.ref == keys[i]) {
-                frame_position = Vector.create([0, 0, 0]);
+                orbit_position = Vector.create([0, 0, 0]);
             }
             else {
                 if (globals.celestials[keys[i]]) {
-                    frame_position = globals.celestials[keys[i]].position;
+                    orbit_position = globals.celestials[keys[i]].position;
                 }
                 else if (globals.vessels[keys[i]]) {
-                    frame_position = globals.vessels[keys[i]].position;
+                    orbit_position = globals.vessels[keys[i]].position;
                 }
                 else {
                     console.error("Unable to find object: ", keys[i]);
                     continue;
                 }
             }
-            var render_position = rotrix.multiply(frame_position).subtract(plotter.camera);
+            //var render_position = rotrix.multiply(frame_position).subtract(plotter.camera);
 
             //var render_position = rot.multiply(world_position.multiply(ratio));
             //obj.render_position = render_position; // Save this
 
             // WIP: scaling
-            var render_scale = fov / render_position.e(3) * paper.view.center.y;
-            var x = render_scale * render_position.e(1);
-            var y = render_scale * render_position.e(2);
-            var render_size = render_scale * obj.real_size;
+            //var render_scale = fov / render_position.e(3) * paper.view.center.y;
+            //var x = render_scale * render_position.e(1);
+            //var y = render_scale * render_position.e(2);
+
+            var canvas_position = get_canvas_position_from_orbit_position(canvas, orbit_position)
+            var render_size = canvas_position[2] * obj.real_size;
             /*
             if (render_size < 10) {
                 render_size = 10;
@@ -379,7 +390,7 @@ function plotter_draw(canvas) {
             */
             if (render_size < 2) { render_size = 2; }
             var new_render_object = new paper.Path.Circle(
-                new paper.Point(x + paper.view.center.x, y + paper.view.center.y),
+                new paper.Point(canvas_position[0] + paper.view.center.x, canvas_position[1] + paper.view.center.y),
                 render_size
             );
 
@@ -390,13 +401,13 @@ function plotter_draw(canvas) {
             new_render_object.fillColor = obj.fillColor;
             new_render_object.visible = obj.visible;
             new_render_object.real_size = obj.real_size;
-            new_render_object.render_position = render_position;
+            new_render_object.render_position = canvas_position[3];
 
             obj.remove();
 
             plotter.render_markers[keys[i]] = new_render_object;
 
-            distances[render_position.e(3)] = new_render_object;
+            distances[new_render_object.render_position.e(3)] = new_render_object;
 
             // TODO: scale marker
         }
@@ -406,29 +417,53 @@ function plotter_draw(canvas) {
     var keys = Object.keys(plotter.render_trajectories)
     for (var i = 0; i < keys.length; i++)
     {
-        continue;
         var obj = plotter.render_trajectories[keys[i]];
         var celestial = globals.celestials[keys[i]] || globals.vessels[keys[i]];
-        if (obj.visible == true && celestial.trajectory) // TODO: checking that object has trajectory
-        {
-            for (var j = 0; j < 10; j++)
-            {
-                var render_segment_position = rot.multiply(celestial.trajectory[j].multiply(plotter.view_size / plotter.camera_distance));
-                //console.log(keys[i]);
-                //console.log(globals.celestials[keys[i]].trajectory);
-                //if (globals.celestials[keys[i]]) {
-                //    var render_segment_position = rot.multiply(globals.celestials[keys[i]].trajectory[j].multiply(plotter.view_size / plotter.camera_distance));
-                //}
-                //else {
-                //    console.log("SEARCH",keys[i]);
-                //    var render_segment_position = rot.multiply(globals.vessels[keys[i]].trajectory[j].multiply(plotter.view_size / plotter.camera_distance));
-                //}
-
- 
-                //console.log("OK");
-                obj.segments[j].point = new paper.Point(render_segment_position.e(1) + paper.view.center.x, render_segment_position.e(2) + paper.view.center.y);
+        //if (obj.visible == true && celestial.trajectory) // TODO: checking that object has trajectory
+        if (obj && celestial && celestial.trajectory) {
+            var segment_index = 0;
+            var start_position;
+            var segment_canvas_position;
+            var start_new_path = true;
+            var path;
+            while (obj.length > 0) {
+                path = obj.pop();
+                path.remove();
             }
-            obj.smooth();
+
+
+            for (var trajectory_index = 0; trajectory_index < globals.trajectory_points+1; trajectory_index++)
+            {
+
+                if (trajectory_index == globals.trajectory_points) {
+                    segment_canvas_position = start_position;
+                }
+                else {
+                    segment_canvas_position = get_canvas_position_from_orbit_position(canvas, celestial.trajectory[trajectory_index])
+                }
+
+                if (trajectory_index == 0) {
+                    start_position = segment_canvas_position;
+                }
+
+                if (segment_canvas_position[3].e(3) < 0) {
+                    start_new_path = true;
+                }
+                else {
+                    if (start_new_path) {
+                        path = new paper.Path({closed: false, visible: true, strokeColor: obj.color});
+                        obj.push(path);
+                        start_new_path = false;
+                    }
+                    path.add(new paper.Point(segment_canvas_position[0] + paper.view.center.x, segment_canvas_position[1] + paper.view.center.y));
+                }
+            }
+
+            // Since trajectory segments are no longer closed add the final point to the object
+            for (object_trajectory=0; object_trajectory<obj.length; object_trajectory++) {
+                //obj[i].smooth();
+                obj[object_trajectory].selected = true;
+            }
         }
     }
 
@@ -436,16 +471,38 @@ function plotter_draw(canvas) {
     keys.sort(function(a,b){return a-b});
     for (var i = 0; i < keys.length; i++)
     {
-        paper.project.activeLayer.insertChild(i, distances[keys[i]]);
+        //paper.project.activeLayer.insertChild(i, distances[keys[i]]);
     }
     
     var keys = Object.keys(plotter.render_trajectories)
     for (var i = 0; i < keys.length; i++)
     {
-        paper.project.activeLayer.insertChild(0, plotter.render_trajectories[keys[i]]);
+       // paper.project.activeLayer.insertChild(0, plotter.render_trajectories[keys[i]]);
     }
     paper.view.draw();
 }
+
+function get_canvas_position_from_orbit_position(canvas, orbit_position)
+{
+    var plotter = plotter_data[canvas];
+    paper = plotter.scope;
+
+    var render_position = plotter.camera_rotrix.multiply(orbit_position).subtract(plotter.camera);
+    var render_scale;
+    //if (render_position.e(3) > 0) {
+    render_scale = plotter.camera_fov / render_position.e(3) * paper.view.center.y;
+    //}
+    //else {
+    //    render_scale = 100000; // This ensures that points that are behind the camera get rendered somewhere damn far away. Trust me, it works.
+    //}
+
+    var canvas_x = render_scale * render_position.e(1);
+    var canvas_y = render_scale * render_position.e(2);
+
+    return [canvas_x, canvas_y, render_scale, render_position];
+}
+
+
 // event.button 0 left mouse
 // event.button 2 right mouse
 // event.button 1 middle mouse
@@ -475,6 +532,11 @@ function onPlotterLeftMouseDrag(canvas, delta_x, delta_y) {
     var plotter = plotter_data[canvas];
 	plotter.camera_rotz += delta_x/300;
     plotter.camera_rotx += delta_y/300;
+
+    plotter.camera_rotz_matrix = Matrix.RotationZ(plotter.camera_rotz);
+    plotter.camera_rotx_matrix = Matrix.RotationX(plotter.camera_rotx);
+    plotter.camera_rotrix = plotter.camera_rotx_matrix.multiply(plotter.camera_rotz_matrix);
+
     plotter_draw(canvas);
 }
 
